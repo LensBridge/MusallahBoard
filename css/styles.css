@@ -1,0 +1,1022 @@
+/* =====================================================
+   UTM MSA Musallah Digital Board - Stylesheet
+   ===================================================== */
+
+/* CSS Variables - Color Scheme */
+:root {
+    /* Primary Colors from UTM MSA Brand */
+    --navy-blue: #082D5D;
+    --chambray: #2E5380;
+    --energy-yellow: #F8E15D;
+    --black: #000000;
+    --white: #FFFFFF;
+    
+    /* Extended Palette */
+    --navy-light: #0a3a75;
+    --navy-dark: #051d3d;
+    --chambray-light: #3d6a9e;
+    --yellow-light: #fae88a;
+    --yellow-dark: #d4c24e;
+    
+    /* Semantic Colors */
+    --bg-primary: var(--navy-blue);
+    --bg-secondary: var(--chambray);
+    --accent: var(--energy-yellow);
+    --text-primary: var(--white);
+    --text-secondary: rgba(255, 255, 255, 0.85);
+    --text-muted: rgba(255, 255, 255, 0.6);
+    
+    /* Dark Mode Colors (applied after Isha) */
+    --dark-bg-primary: #03121f;
+    --dark-bg-secondary: #0a1f33;
+    --dark-accent: #d4c24e;
+    
+    /* Fonts */
+    --font-display: 'Cinzel', serif;
+    --font-body: 'Montserrat', sans-serif;
+    --font-decorative: 'Great Vibes', cursive;
+    
+    /* Spacing */
+    --spacing-xs: 0.5rem;
+    --spacing-sm: 1rem;
+    --spacing-md: 1.5rem;
+    --spacing-lg: 2rem;
+    --spacing-xl: 3rem;
+    
+    /* Border Radius */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+    
+    /* Transitions */
+    --transition-fast: 0.2s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.5s ease;
+}
+
+/* Dark Mode */
+body.dark-mode {
+    --bg-primary: var(--dark-bg-primary);
+    --bg-secondary: var(--dark-bg-secondary);
+    --accent: var(--dark-accent);
+}
+
+/* =====================================================
+   Base Styles
+   ===================================================== */
+
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    font-family: var(--font-body);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+body {
+    transition: background-color var(--transition-slow);
+    font-size: clamp(12px, 1.2vw, 18px);
+}
+
+/* =====================================================
+   Main Layout
+   ===================================================== */
+
+.board-container {
+    display: grid;
+    grid-template-columns: minmax(280px, 32%) 1fr;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--navy-dark) 100%);
+}
+
+/* =====================================================
+   Left Panel - Prayer Times
+   ===================================================== */
+
+.left-panel {
+    background: linear-gradient(180deg, var(--bg-primary) 0%, var(--navy-dark) 100%);
+    padding: clamp(0.75rem, 1.5vw, 1.25rem);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(0.6rem, 1.1vh, 1rem);
+    border-right: 3px solid var(--accent);
+    position: relative;
+    overflow: hidden;
+    overflow-y: hidden;
+}
+
+.left-panel > * {
+    flex-shrink: 0;
+}
+
+.left-panel > .islamic-content-section {
+    flex-shrink: 1;
+}
+
+/* Decorative Pattern */
+.left-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0L30 60M0 30L60 30' stroke='%23F8E15D' stroke-width='0.5' opacity='0.05'/%3E%3C/svg%3E");
+    pointer-events: none;
+}
+
+/* Header */
+.panel-header {
+    display: flex;
+    align-items: center;
+    gap: clamp(0.75rem, 1.5vw, 1.25rem);
+    padding-bottom: clamp(0.5rem, 1vh, 0.75rem);
+    border-bottom: 1px solid rgba(248, 225, 93, 0.25);
+    position: relative;
+    z-index: 1;
+}
+
+.msa-logo {
+    width: clamp(50px, 7vw, 75px);
+    height: clamp(50px, 7vw, 75px);
+    object-fit: contain;
+    filter: drop-shadow(0 2px 8px rgba(248, 225, 93, 0.2));
+}
+
+.date-display {
+    flex: 1;
+    text-align: right;
+}
+
+.gregorian-date {
+    font-family: var(--font-display);
+    font-size: clamp(0.95rem, 1.4vw, 1.3rem);
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 0.5px;
+}
+
+.hijri-date {
+    font-family: var(--font-body);
+    font-size: clamp(0.75rem, 1vw, 0.9rem);
+    color: var(--accent);
+    margin-top: 2px;
+    font-weight: 500;
+}
+
+/* Countdown Hero Section - Primary Focus */
+.countdown-hero {
+    text-align: center;
+    padding: clamp(1rem, 2vh, 1.5rem);
+    position: relative;
+    z-index: 1;
+    background: linear-gradient(135deg, rgba(248, 225, 93, 0.15) 0%, rgba(248, 225, 93, 0.05) 100%);
+    border-radius: var(--radius-lg);
+    border: 2px solid rgba(248, 225, 93, 0.4);
+    box-shadow: 
+        0 0 30px rgba(248, 225, 93, 0.1),
+        inset 0 0 30px rgba(248, 225, 93, 0.05);
+}
+
+.current-time-display {
+    font-family: var(--font-display);
+    font-size: clamp(2.2rem, 4vh, 3.5rem);
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-shadow: 0 2px 10px rgba(248, 225, 93, 0.3);
+    padding-bottom: clamp(0.5rem, 1vh, 0.75rem);
+    margin-bottom: clamp(0.5rem, 1vh, 0.75rem);
+    border-bottom: 1px solid rgba(248, 225, 93, 0.2);
+}
+
+.countdown-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.countdown-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(0.5rem, 1vw, 0.75rem);
+    margin-bottom: clamp(0.3rem, 0.6vh, 0.5rem);
+}
+
+.countdown-label {
+    font-size: clamp(0.7rem, 0.95vw, 0.85rem);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 500;
+}
+
+.countdown-prayer {
+    font-family: var(--font-display);
+    font-size: clamp(1.1rem, 1.5vw, 1.4rem);
+    font-weight: 700;
+    color: var(--accent);
+    text-shadow: 0 2px 10px rgba(248, 225, 93, 0.3);
+}
+
+.countdown-timer-display {
+    margin: 0;
+}
+
+.countdown-timer {
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 3vh, 2.5rem);
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 3px;
+    text-shadow: 0 4px 20px rgba(255, 255, 255, 0.1);
+}
+
+@keyframes timer-pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.85;
+    }
+}
+
+.current-time-small {
+    font-family: var(--font-body);
+    font-size: clamp(0.9rem, 1.2vw, 1.1rem);
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    padding-top: clamp(0.4rem, 0.8vh, 0.6rem);
+    border-top: 1px solid rgba(248, 225, 93, 0.2);
+    margin-top: clamp(0.4rem, 0.8vh, 0.6rem);
+}
+
+/* Prayer Times Section */
+.prayer-times-section {
+    flex: 0 0 auto;
+    position: relative;
+    z-index: 1;
+    background: linear-gradient(135deg, rgba(46, 83, 128, 0.25) 0%, rgba(8, 45, 93, 0.3) 100%);
+    border: 1px solid rgba(248, 225, 93, 0.2);
+    border-radius: var(--radius-md);
+    padding: clamp(0.75rem, 1.2vh, 1rem);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.prayer-times-section .section-title {
+    font-size: clamp(0.85rem, 1.2vw, 1rem);
+    letter-spacing: 2px;
+    margin-bottom: clamp(0.5rem, 1vh, 0.75rem);
+    opacity: 0.9;
+}
+
+.section-title {
+    font-family: var(--font-display);
+    font-size: clamp(0.85rem, 1.2vw, 1rem);
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: clamp(0.4rem, 0.8vh, 0.6rem);
+    text-align: center;
+}
+
+/* Prayer Times List - Clean Row Layout */
+.prayer-times-list {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(0.25rem, 0.5vh, 0.4rem);
+}
+
+.prayer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: clamp(0.5rem, 0.9vh, 0.7rem) clamp(0.75rem, 1.2vw, 1rem);
+    background: linear-gradient(90deg, rgba(46, 83, 128, 0.3) 0%, rgba(8, 45, 93, 0.2) 100%);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid transparent;
+    transition: all var(--transition-normal);
+}
+
+.prayer-row:hover {
+    background: linear-gradient(90deg, rgba(46, 83, 128, 0.5) 0%, rgba(8, 45, 93, 0.4) 100%);
+}
+
+.prayer-row.next {
+    background: linear-gradient(90deg, rgba(248, 225, 93, 0.15) 0%, rgba(248, 225, 93, 0.05) 100%);
+    border-left-color: var(--accent);
+    animation: row-glow 2s ease-in-out infinite;
+}
+
+@keyframes row-glow {
+    0%, 100% {
+        box-shadow: 0 0 8px rgba(248, 225, 93, 0.2);
+    }
+    50% {
+        box-shadow: 0 0 16px rgba(248, 225, 93, 0.35);
+    }
+}
+
+.prayer-row .prayer-name {
+    font-family: var(--font-body);
+    font-size: clamp(0.85rem, 1.1vw, 1rem);
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+}
+
+.prayer-row .prayer-time {
+    font-family: var(--font-display);
+    font-size: clamp(1.1rem, 1.5vw, 1.3rem);
+    font-weight: 700;
+    color: var(--accent);
+    text-shadow: 0 2px 8px rgba(248, 225, 93, 0.15);
+}
+
+.prayer-row.next .prayer-name {
+    color: var(--text-primary);
+}
+
+.prayer-row.next .prayer-time {
+    color: var(--accent);
+    font-size: clamp(1.2rem, 1.6vw, 1.4rem);
+}
+
+/* Jummah Section */
+.jummah-section {
+    background: linear-gradient(135deg, rgba(248, 225, 93, 0.08) 0%, rgba(248, 225, 93, 0.02) 100%);
+    border-radius: var(--radius-md);
+    padding: clamp(0.6rem, 1vh, 0.85rem) clamp(0.75rem, 1.2vw, 1rem);
+    border: 1px solid rgba(248, 225, 93, 0.25);
+    position: relative;
+    z-index: 1;
+}
+
+.jummah-section .section-title {
+    margin-bottom: clamp(0.5rem, 0.8vh, 0.7rem);
+    font-size: clamp(0.8rem, 1.1vw, 0.95rem);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.jummah-section .section-title::before {
+    content: '🕌';
+    font-size: clamp(0.9rem, 1.2vw, 1.1rem);
+}
+
+.jummah-prayers-container {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(0.3rem, 0.5vh, 0.4rem);
+}
+
+.jummah-card {
+    display: flex;
+    align-items: center;
+    gap: clamp(0.5rem, 1vw, 0.75rem);
+    padding: clamp(0.4rem, 0.7vh, 0.55rem) clamp(0.6rem, 1vw, 0.8rem);
+    background: linear-gradient(90deg, rgba(8, 45, 93, 0.4) 0%, rgba(46, 83, 128, 0.2) 100%);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--accent);
+    transition: all var(--transition-normal);
+}
+
+.jummah-card:hover {
+    background: linear-gradient(90deg, rgba(8, 45, 93, 0.6) 0%, rgba(46, 83, 128, 0.4) 100%);
+}
+
+.jummah-number {
+    font-family: var(--font-display);
+    font-size: clamp(0.75rem, 0.95vw, 0.9rem);
+    font-weight: 700;
+    color: var(--navy-blue);
+    width: clamp(1.3rem, 1.6vw, 1.6rem);
+    height: clamp(1.3rem, 1.6vw, 1.6rem);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.jummah-time {
+    font-family: var(--font-display);
+    font-size: clamp(1rem, 1.3vw, 1.2rem);
+    font-weight: 700;
+    color: var(--accent);
+    min-width: clamp(70px, 8vw, 85px);
+}
+
+.jummah-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-width: 0;
+    flex: 1;
+}
+
+.jummah-khatib {
+    font-family: var(--font-body);
+    font-size: clamp(0.7rem, 0.9vw, 0.85rem);
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.jummah-location {
+    font-size: clamp(0.6rem, 0.8vw, 0.75rem);
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Islamic Content Section */
+.islamic-content-section {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(0.4rem, 0.9vh, 0.75rem);
+    overflow: visible;
+    position: relative;
+    z-index: 1;
+    min-height: 0;
+    opacity: 0.9;
+}
+
+.verse-of-day,
+.hadith-of-day {
+    background: linear-gradient(135deg, rgba(46, 83, 128, 0.22) 0%, rgba(8, 45, 93, 0.22) 100%);
+    border-radius: var(--radius-md);
+    padding: clamp(0.4rem, 0.8vh, 0.6rem) clamp(0.5rem, 1vw, 0.65rem);
+    border-left: 2px solid rgba(248, 225, 93, 0.5);
+    flex: 0 0 auto;
+    min-height: 0;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(0.2rem, 0.5vh, 0.4rem);
+}
+
+.content-title {
+    font-family: var(--font-display);
+    font-size: clamp(0.7rem, 0.9vw, 0.85rem);
+    font-weight: 600;
+    color: rgba(248, 225, 93, 0.85);
+    margin-bottom: clamp(0.2rem, 0.4vh, 0.3rem);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+}
+
+.verse-arabic {
+    font-size: clamp(0.95rem, 1.2vw, 1.15rem);
+    line-height: 1.6;
+    color: var(--text-primary);
+    text-align: right;
+    direction: rtl;
+    margin-bottom: clamp(0.2rem, 0.4vh, 0.3rem);
+    font-family: 'Traditional Arabic', 'Scheherazade', serif;
+}
+
+.verse-translation {
+    font-size: clamp(0.68rem, 0.9vw, 0.82rem);
+    font-style: italic;
+    color: var(--text-secondary);
+    line-height: 1.45;
+}
+
+.verse-reference,
+.hadith-reference {
+    font-size: clamp(0.6rem, 0.8vw, 0.72rem);
+    color: var(--accent);
+    margin-top: clamp(0.2rem, 0.4vh, 0.3rem);
+    text-align: right;
+    opacity: 0.9;
+}
+
+.hadith-text {
+    font-size: clamp(0.68rem, 0.9vw, 0.82rem);
+    color: var(--text-secondary);
+    line-height: 1.45;
+    font-style: italic;
+}
+
+/* Weather Section */
+.weather-section {
+    position: relative;
+    z-index: 1;
+    flex: 0 0 auto;
+    margin-top: auto;
+}
+
+.weather-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(0.5rem, 1vw, 0.75rem);
+    padding: clamp(0.5rem, 1vh, 0.75rem);
+    background: linear-gradient(135deg, rgba(46, 83, 128, 0.4) 0%, rgba(8, 45, 93, 0.3) 100%);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(248, 225, 93, 0.2);
+}
+
+.weather-icon {
+    font-size: clamp(1.5rem, 2vw, 1.8rem);
+}
+
+.weather-temp {
+    font-family: var(--font-display);
+    font-size: clamp(1.2rem, 1.5vw, 1.4rem);
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.weather-desc {
+    font-size: clamp(0.75rem, 1vw, 0.9rem);
+    color: var(--text-muted);
+}
+
+/* =====================================================
+   Right Panel - Events
+   ===================================================== */
+
+.right-panel {
+    background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Decorative Pattern */
+.right-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='40' cy='40' r='30' stroke='%23F8E15D' stroke-width='0.5' fill='none' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* =====================================================
+   Fullscreen Slideshow
+   ===================================================== */
+
+.slideshow-container {
+    flex: 1;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    /* reserve space for the progress bar below slides so it doesn't overlap */
+    padding-bottom: clamp(10px, 1.6vh, 18px);
+}
+
+/* Track that holds slides side-by-side for translateX animation */
+.slides-track {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+    will-change: transform;
+}
+
+.slide {
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.slide.active {
+    /* kept for compatibility */
+}
+
+/* Poster Slide */
+.poster-slide {
+    background: var(--navy-dark);
+}
+
+.fullscreen-poster {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 0;
+    box-shadow: 0 0 60px rgba(0, 0, 0, 0.5);
+}
+
+/* Calendar Slide */
+.calendar-slide {
+    flex-direction: column;
+    padding: 0;
+    background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+}
+
+/* Fullscreen Calendar */
+.fullscreen-calendar {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: clamp(0.75rem, 1.5vh, 1.5rem);
+}
+
+.fullscreen-calendar-header {
+    text-align: center;
+    padding: clamp(0.5rem, 1vh, 1rem) 0;
+    border-bottom: 2px solid rgba(248, 225, 93, 0.3);
+    margin-bottom: clamp(0.5rem, 1vh, 0.75rem);
+}
+
+.fullscreen-calendar-month {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 3vw, 2.5rem);
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+}
+
+.fullscreen-calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: clamp(2px, 0.3vw, 6px);
+    margin-bottom: clamp(4px, 0.5vh, 8px);
+}
+
+.weekday-header {
+    font-family: var(--font-display);
+    font-size: clamp(0.75rem, 1.2vw, 1.1rem);
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    text-align: center;
+    padding: clamp(0.4rem, 0.8vh, 0.75rem);
+    background: rgba(248, 225, 93, 0.1);
+    border-radius: var(--radius-sm);
+    letter-spacing: 1px;
+}
+
+/* Grid wrapper for positioning multi-day events */
+.calendar-grid-wrapper {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.fullscreen-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    /* 5 rows that fill available height */
+    grid-template-rows: repeat(5, 1fr);
+    gap: clamp(2px, 0.3vw, 6px);
+    flex: 1;
+    min-height: 0;
+}
+
+/* Multi-day events overlay */
+.multi-day-events-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.multi-day-event-bar {
+    position: absolute;
+    height: clamp(18px, 2.2vh, 26px);
+    background: linear-gradient(135deg, rgba(248, 225, 93, 0.2) 0%, rgba(248, 225, 93, 0.1) 100%);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    padding: 0 clamp(0.4rem, 0.6vw, 0.75rem);
+    pointer-events: auto;
+    cursor: default;
+    transition: all var(--transition-fast);
+    overflow: hidden;
+}
+
+.multi-day-event-bar:hover {
+    background: linear-gradient(135deg, rgba(248, 225, 93, 0.3) 0%, rgba(248, 225, 93, 0.15) 100%);
+}
+
+.multi-day-event-bar .event-bar-name {
+    font-family: var(--font-body);
+    font-size: clamp(0.55rem, 0.8vw, 0.75rem);
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.multi-day-event-bar .event-bar-dates {
+    font-size: clamp(0.5rem, 0.7vw, 0.65rem);
+    color: var(--accent);
+    font-weight: 500;
+    margin-left: clamp(0.3rem, 0.5vw, 0.5rem);
+    white-space: nowrap;
+}
+
+/* Single-day all-day chip appearance */
+.multi-day-event-bar.single-day-all {
+    border-left-width: 3px;
+    background: linear-gradient(135deg, rgba(248, 225, 93, 0.22) 0%, rgba(248, 225, 93, 0.14) 100%);
+}
+
+/* Segment caps and continuation chevrons */
+.multi-day-event-bar.seg-start { border-top-left-radius: var(--radius-sm); border-bottom-left-radius: var(--radius-sm); }
+.multi-day-event-bar.seg-end { border-top-right-radius: var(--radius-sm); border-bottom-right-radius: var(--radius-sm); }
+
+.multi-day-event-bar.cont-left::before,
+.multi-day-event-bar.cont-right::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    width: 10px;
+    height: 100%;
+    pointer-events: none;
+}
+
+.multi-day-event-bar.cont-left::before {
+    left: -1px;
+    background: linear-gradient(90deg, rgba(248, 225, 93, 0.0) 0%, rgba(248, 225, 93, 0.35) 80%);
+}
+
+.multi-day-event-bar.cont-right::after {
+    right: -1px;
+    background: linear-gradient(270deg, rgba(248, 225, 93, 0.0) 0%, rgba(248, 225, 93, 0.35) 80%);
+}
+
+.calendar-cell {
+    background: rgba(8, 45, 93, 0.4);
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    transition: all var(--transition-fast);
+    overflow: hidden;
+}
+
+.calendar-cell:hover {
+    background: rgba(8, 45, 93, 0.6);
+    border-color: rgba(248, 225, 93, 0.2);
+}
+
+.calendar-cell.today {
+    border: 2px solid var(--accent);
+    background: rgba(248, 225, 93, 0.1);
+}
+
+.calendar-cell.other-month {
+    opacity: 0.35;
+}
+
+.calendar-cell-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: clamp(0.25rem, 0.5vh, 0.5rem) clamp(0.4rem, 0.6vw, 0.6rem);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.calendar-cell-day {
+    font-family: var(--font-display);
+    font-size: clamp(0.9rem, 1.4vw, 1.3rem);
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.calendar-cell.today .calendar-cell-day {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.calendar-cell-events {
+    flex: 1;
+    padding: clamp(0.2rem, 0.4vh, 0.4rem);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(3px, 0.4vh, 5px);
+    /* allow scrolling inside a cell if there are too many events */
+    overflow: auto;
+}
+
+.calendar-event-card {
+    background: linear-gradient(135deg, rgba(248, 225, 93, 0.2) 0%, rgba(248, 225, 93, 0.1) 100%);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius-sm);
+    padding: clamp(0.2rem, 0.4vh, 0.35rem) clamp(0.3rem, 0.5vw, 0.5rem);
+    cursor: default;
+    transition: all var(--transition-fast);
+}
+
+.calendar-event-card:hover {
+    background: linear-gradient(135deg, rgba(248, 225, 93, 0.3) 0%, rgba(248, 225, 93, 0.15) 100%);
+}
+
+.calendar-event-name {
+    font-family: var(--font-body);
+    font-size: clamp(0.55rem, 0.85vw, 0.8rem);
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: normal;
+    word-wrap: break-word;
+    line-height: 1.3;
+}
+
+.calendar-event-time {
+    font-size: clamp(0.5rem, 0.7vw, 0.7rem);
+    color: var(--accent);
+    font-weight: 500;
+}
+
+.calendar-event-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(248, 225, 93, 0.15);
+    border: 1px solid rgba(248, 225, 93, 0.4);
+    border-radius: 50px;
+    font-size: clamp(0.8rem, 1.2vw, 1rem);
+}
+
+.calendar-event-chip .event-chip-date {
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.calendar-event-chip .event-chip-name {
+    color: var(--text-primary);
+}
+
+/* Slide Indicators - Progress Bar (non-overlapping) */
+.slide-indicators {
+    position: relative;
+    width: 100%;
+    height: clamp(6px, 1vh, 10px);
+    display: flex;
+    gap: 2px;
+    z-index: 10;
+    background: rgba(8, 45, 93, 0.9);
+    margin-top: clamp(6px, 1vh, 10px);
+    border-radius: 0; /* flush with bottom */
+}
+
+.slide-indicator {
+    flex: 1;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.slide-indicator::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-indicator:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.slide-indicator.active {
+    flex: 2;
+}
+
+.slide-indicator.active::before {
+    transform: scaleX(1);
+}
+
+.slide-indicator.calendar-indicator.active::before {
+    background: linear-gradient(90deg, var(--accent) 0%, rgba(248, 225, 93, 0.7) 100%);
+}
+
+/* =====================================================
+   Animations
+   ===================================================== */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.prayer-card {
+    animation: fadeIn 0.5s ease forwards;
+}
+
+.prayer-card:nth-child(1) { animation-delay: 0.1s; }
+.prayer-card:nth-child(2) { animation-delay: 0.2s; }
+.prayer-card:nth-child(3) { animation-delay: 0.3s; }
+.prayer-card:nth-child(4) { animation-delay: 0.4s; }
+.prayer-card:nth-child(5) { animation-delay: 0.5s; }
+.prayer-card:nth-child(6) { animation-delay: 0.6s; }
+
+.event-item {
+    animation: slideIn 0.5s ease forwards;
+}
+
+.event-item:nth-child(1) { animation-delay: 0.1s; }
+.event-item:nth-child(2) { animation-delay: 0.2s; }
+.event-item:nth-child(3) { animation-delay: 0.3s; }
+.event-item:nth-child(4) { animation-delay: 0.4s; }
+
+/* =====================================================
+   Poster Transitions
+   ===================================================== */
+
+.poster-image {
+    animation: posterFade 0.8s ease;
+}
+
+@keyframes posterFade {
+    from {
+        opacity: 0;
+        transform: scale(1.05);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* =====================================================
+   Scrollbar (hidden but functional)
+   ===================================================== */
+
+::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+}
+
+/* =====================================================
+   Dark Mode Transitions
+   ===================================================== */
+
+.left-panel,
+.right-panel,
+.prayer-card,
+.event-item,
+.mini-calendar {
+    transition: background-color var(--transition-slow), 
+                border-color var(--transition-slow);
+}

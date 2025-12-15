@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UTM MSA Musallah Board</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Great+Vibes&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="board-container">
+        <!-- LEFT SIDE - Prayer Times & Islamic Content -->
+        <aside class="left-panel">
+            <!-- Header with Logo and Date -->
+            <header class="panel-header">
+                <img src="images/msa_logo_white.png" alt="UTM MSA Logo" class="msa-logo" onerror="this.style.display='none'">
+                <div class="date-display">
+                    <div class="gregorian-date" id="gregorianDate"></div>
+                    <div class="hijri-date" id="hijriDate"></div>
+                </div>
+            </header>
+
+            <!-- Next Prayer Countdown - Primary Focus -->
+            <section class="countdown-hero">
+                <div class="current-time-display" id="currentTime"></div>
+                <div class="countdown-section">
+                    <div class="countdown-header">
+                        <span class="countdown-label">Time Until</span>
+                        <span class="countdown-prayer" id="nextPrayerName">Loading...</span>
+                    </div>
+                    <div class="countdown-timer-display">
+                        <div class="countdown-timer" id="countdownTimer">--:--:--</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Prayer Times Table -->
+            <section class="prayer-times-section">
+                <h2 class="section-title" id="prayerTimesTitle">Today's Prayer Times</h2>
+                <div class="prayer-times-list">
+                    <div class="prayer-row" data-prayer="fajr">
+                        <span class="prayer-name">Fajr</span>
+                        <span class="prayer-time" id="fajrTime">--:--</span>
+                    </div>
+                    <div class="prayer-row" data-prayer="sunrise">
+                        <span class="prayer-name">Sunrise</span>
+                        <span class="prayer-time" id="sunriseTime">--:--</span>
+                    </div>
+                    <div class="prayer-row" data-prayer="dhuhr">
+                        <span class="prayer-name">Dhuhr</span>
+                        <span class="prayer-time" id="dhuhrTime">--:--</span>
+                    </div>
+                    <div class="prayer-row" data-prayer="asr">
+                        <span class="prayer-name">Asr</span>
+                        <span class="prayer-time" id="asrTime">--:--</span>
+                    </div>
+                    <div class="prayer-row" data-prayer="maghrib">
+                        <span class="prayer-name">Maghrib</span>
+                        <span class="prayer-time" id="maghribTime">--:--</span>
+                    </div>
+                    <div class="prayer-row" data-prayer="isha">
+                        <span class="prayer-name">Isha</span>
+                        <span class="prayer-time" id="ishaTime">--:--</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Jummah Section (Fridays) -->
+            <section class="jummah-section" id="jummahSection">
+                <h2 class="section-title">Jumu'ah Prayers</h2>
+                <div class="jummah-prayers-container" id="jummahPrayersContainer">
+                    <!-- Jummah prayers will be populated by JavaScript -->
+                </div>
+            </section>
+
+            <!-- Islamic Content -->
+            <section class="islamic-content-section">
+                <div class="verse-of-day" id="verseSection">
+                    <h3 class="content-title">Verse of the Day</h3>
+                    <p class="verse-arabic" id="verseArabic"></p>
+                    <p class="verse-translation" id="verseTranslation"></p>
+                    <p class="verse-reference" id="verseReference"></p>
+                </div>
+                <div class="hadith-of-day" id="hadithSection">
+                    <h3 class="content-title">Hadith of the Day</h3>
+                    <p class="hadith-text" id="hadithText"></p>
+                    <p class="hadith-reference" id="hadithReference"></p>
+                </div>
+            </section>
+
+            <!-- Weather Widget -->
+            <section class="weather-section" id="weatherSection">
+                <div class="weather-info">
+                    <span class="weather-icon" id="weatherIcon">🌤️</span>
+                    <span class="weather-temp" id="weatherTemp">--°C</span>
+                    <span class="weather-desc" id="weatherDesc">Mississauga</span>
+                </div>
+            </section>
+        </aside>
+
+        <!-- RIGHT SIDE - Full Screen Slideshow -->
+        <main class="right-panel">
+            <!-- Slideshow Container -->
+            <div class="slideshow-container" id="slideshowContainer">
+                <!-- Calendar Slide -->
+                <div class="slide calendar-slide" id="calendarSlide">
+                    <div class="fullscreen-calendar">
+                        <div class="fullscreen-calendar-header">
+                            <span class="fullscreen-calendar-month" id="fullCalendarMonth"></span>
+                        </div>
+                        <div class="fullscreen-calendar-weekdays">
+                            <div class="weekday-header">Sun</div>
+                            <div class="weekday-header">Mon</div>
+                            <div class="weekday-header">Tue</div>
+                            <div class="weekday-header">Wed</div>
+                            <div class="weekday-header">Thu</div>
+                            <div class="weekday-header">Fri</div>
+                            <div class="weekday-header">Sat</div>
+                        </div>
+                        <div class="calendar-grid-wrapper">
+                            <div class="fullscreen-calendar-grid" id="fullCalendarGrid">
+                                <!-- Calendar will be populated by JavaScript -->
+                            </div>
+                            <div class="multi-day-events-overlay" id="multiDayEventsOverlay">
+                                <!-- Multi-day spanning events rendered here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Poster Slides -->
+                <div class="slide poster-slide active" id="posterSlide">
+                    <img src="" alt="Event Poster" class="fullscreen-poster" id="posterImage">
+                </div>
+            </div>
+
+            <!-- Slide Indicators -->
+            <div class="slide-indicators" id="slideIndicators"></div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/data.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
