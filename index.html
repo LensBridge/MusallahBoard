@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Great+Vibes&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css">
     
     <!-- Stylesheets -->
     <link rel="stylesheet" href="css/styles.css">
@@ -110,28 +111,7 @@
             <div class="slideshow-container" id="slideshowContainer">
                 <!-- Calendar Slide -->
                 <div class="slide calendar-slide" id="calendarSlide">
-                    <div class="fullscreen-calendar">
-                        <div class="fullscreen-calendar-header">
-                            <span class="fullscreen-calendar-month" id="fullCalendarMonth"></span>
-                        </div>
-                        <div class="fullscreen-calendar-weekdays">
-                            <div class="weekday-header">Sun</div>
-                            <div class="weekday-header">Mon</div>
-                            <div class="weekday-header">Tue</div>
-                            <div class="weekday-header">Wed</div>
-                            <div class="weekday-header">Thu</div>
-                            <div class="weekday-header">Fri</div>
-                            <div class="weekday-header">Sat</div>
-                        </div>
-                        <div class="calendar-grid-wrapper">
-                            <div class="fullscreen-calendar-grid" id="fullCalendarGrid">
-                                <!-- Calendar will be populated by JavaScript -->
-                            </div>
-                            <div class="multi-day-events-overlay" id="multiDayEventsOverlay">
-                                <!-- Multi-day spanning events rendered here -->
-                            </div>
-                        </div>
-                    </div>
+                    <div id="fullCalendarContainer" class="fullcalendar-container" aria-label="Event calendar"></div>
                 </div>
 
                 <!-- Poster Slides -->
@@ -146,6 +126,7 @@
     </div>
 
     <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
     <script src="js/data.js"></script>
     <script src="js/app.js"></script>
 </body>

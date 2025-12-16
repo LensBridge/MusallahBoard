@@ -12,7 +12,8 @@ const state = {
     totalSlides: 0,
     ishaTime: null,
     isDarkMode: false,
-    nextPrayer: null
+    nextPrayer: null,
+    fullCalendarInstance: null
 };
 
 // =====================================================
@@ -390,315 +391,92 @@ function initializeSlideshow() {
 }
 
 function buildFullCalendar() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    
-    // Update month header
-    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                        'July', 'August', 'September', 'October', 'November', 'December'];
-    document.getElementById('fullCalendarMonth').textContent = `${monthNames[month]} ${year}`;
-    
-    // Build calendar grid
-    const grid = document.getElementById('fullCalendarGrid');
-    grid.innerHTML = '';
-    
-    // Get first day of month and total days
-    const firstDay = new Date(year, month, 1).getDay();
-    const totalDays = new Date(year, month + 1, 0).getDate();
-    const prevMonthDays = new Date(year, month, 0).getDate();
-    
-    // Separate events into: single-day timed, single-day all-day, and multi-day
-    const singleDayTimedEvents = [];
-    const singleDayAllDayEvents = [];
-    const multiDayEvents = [];
-    
-    EVENTS.forEach(event => {
-        if (event.startDate && event.endDate) {
-            multiDayEvents.push(event);
-        } else if (event.date) {
-            if (event.allDay) singleDayAllDayEvents.push(event);
-            else singleDayTimedEvents.push(event);
-        }
+    const container = document.getElementById('fullCalendarContainer');
+
+    if (!container) {
+        console.warn('Calendar container not found.');
+        return;
+    }
+
+    if (typeof FullCalendar === 'undefined') {
+        console.error('FullCalendar failed to load.');
+        return;
+    }
+
+    // Destroy previous instance for clean re-render
+    if (state.fullCalendarInstance) {
+        state.fullCalendarInstance.destroy();
+        state.fullCalendarInstance = null;
+        container.innerHTML = '';
+    }
+
+    const calendar = new FullCalendar.Calendar(container, {
+        initialView: 'dayGridMonth',
+        height: '100%',
+        expandRows: true,
+        fixedWeekCount: false,
+        showNonCurrentDates: true,
+        firstDay: 0,
+        headerToolbar: {
+            left: 'title',
+            center: '',
+            right: ''
+        },
+        titleFormat: { month: 'long', year: 'numeric' },
+        dayMaxEventRows: 3,
+        displayEventEnd: true,
+        eventDisplay: 'block',
+        events: mapEventsToCalendarEvents(),
+        eventContent: renderEventContent
     });
-    
-    // Create a map of single-day events by date for quick lookup
-    const eventsByDate = {};
-    singleDayTimedEvents.forEach(event => {
-        if (event.date.getMonth() === month && event.date.getFullYear() === year) {
-            const day = event.date.getDate();
-            if (!eventsByDate[day]) {
-                eventsByDate[day] = [];
-            }
-            eventsByDate[day].push(event);
-        }
-    });
-    
-    // Previous month days
-    for (let i = firstDay - 1; i >= 0; i--) {
-        const cell = createCalendarCell(prevMonthDays - i, true, false, []);
-        grid.appendChild(cell);
-    }
 
-    // Current month days
-    for (let day = 1; day <= totalDays; day++) {
-        const isToday = day === now.getDate() && month === now.getMonth() && year === now.getFullYear();
-        const dayEvents = eventsByDate[day] || [];
-        const cell = createCalendarCell(day, false, isToday, dayEvents);
-        grid.appendChild(cell);
-    }
-
-    // Fill remaining cells to complete the grid (support 5- or 6-week months)
-    const filledCells = grid.children.length;
-    const rowsNeeded = Math.max(5, Math.ceil((firstDay + totalDays) / 7)); // clamp to at least 5 rows for consistent height
-    const targetCells = rowsNeeded * 7;
-    const remainingCells = targetCells - filledCells;
-    for (let i = 1; i <= remainingCells; i++) {
-        const cell = createCalendarCell(i, true, false, []);
-        grid.appendChild(cell);
-    }
-
-    // Render all-day overlay: multi-day spans + single-day all-day chips (deduped)
-    renderMultiDayEvents(
-        dedupeEvents(multiDayEvents),
-        dedupeEvents(singleDayAllDayEvents),
-        year,
-        month,
-        firstDay,
-        totalDays
-    );
+    calendar.render();
+    state.fullCalendarInstance = calendar;
 }
 
-function renderMultiDayEvents(multiDay, singleDayAll, year, month, firstDayOffset, totalDays) {
-    const overlay = document.getElementById('multiDayEventsOverlay');
-    const grid = document.getElementById('fullCalendarGrid');
-    if (!overlay || !grid) return;
+function mapEventsToCalendarEvents() {
+    const addOneDay = (date) => {
+        const d = new Date(date);
+        d.setDate(d.getDate() + 1);
+        return d;
+    };
 
-    overlay.innerHTML = '';
+    return EVENTS.map(ev => {
+        const isRange = ev.startDate && ev.endDate;
+        const start = isRange ? ev.startDate : ev.date;
+        const end = isRange ? addOneDay(ev.endDate) : undefined; // FullCalendar treats end as exclusive
+        const hasExplicitTime = Boolean(ev.time && ev.time.match(/\d/));
 
-    // Reset any row padding previously applied
-    grid.querySelectorAll('.calendar-cell .calendar-cell-events').forEach(ec => {
-        ec.style.marginTop = '0px';
-    });
-
-    const cells = grid.querySelectorAll('.calendar-cell');
-    if (cells.length === 0) return;
-
-    // Measure shared metrics
-    const overlayRect = overlay.getBoundingClientRect();
-    const firstCell = cells[0];
-    const headerEl = firstCell.querySelector('.calendar-cell-header');
-    const headerHeight = headerEl ? headerEl.getBoundingClientRect().height : 0;
-
-    // Create temp bar to measure height
-    const tempBar = document.createElement('div');
-    tempBar.className = 'multi-day-event-bar';
-    tempBar.style.position = 'absolute';
-    tempBar.style.left = '-9999px';
-    tempBar.style.top = '-9999px';
-    tempBar.textContent = '';
-    overlay.appendChild(tempBar);
-    const barHeight = tempBar.offsetHeight || 22;
-    overlay.removeChild(tempBar);
-    const barGap = 6;
-
-    // Determine rows count from grid
-    const totalCells = cells.length; // 35 or 42 depending on month
-    const rows = Math.ceil(totalCells / 7);
-
-    // Preserve lane assignment across week rows so long spans do not jump vertically
-    const eventLaneMap = new Map();
-
-    // Helper to get cell rect by index safely
-    const getCellRect = (idx) => cells[idx]?.getBoundingClientRect();
-
-    // Build visible spans for this month only
-    const monthStart = new Date(year, month, 1);
-    const monthEnd = new Date(year, month, totalDays, 23, 59, 59);
-
-    // Per-row segments to lane-pack
-    const rowSegments = Array.from({ length: rows }, () => []);
-
-    // 1) Multi-day event segments across week rows
-    multiDay.forEach(event => {
-        const startDate = event.startDate;
-        const endDate = event.endDate;
-        if (!startDate || !endDate) return;
-        if (endDate < monthStart || startDate > monthEnd) return;
-
-        const visibleStartDay = (startDate.getMonth() === month && startDate.getFullYear() === year)
-            ? startDate.getDate() : 1;
-        const visibleEndDay = (endDate.getMonth() === month && endDate.getFullYear() === year)
-            ? endDate.getDate() : totalDays;
-
-        const startIdx = firstDayOffset + visibleStartDay - 1; // 0-based cell index
-        const endIdx = firstDayOffset + visibleEndDay - 1;
-
-        const startRow = Math.floor(startIdx / 7);
-        const endRow = Math.floor(endIdx / 7);
-
-        for (let row = startRow; row <= endRow; row++) {
-            const weekStartIdx = row * 7;
-            const weekEndIdx = row * 7 + 6;
-            const segStart = Math.max(startIdx, weekStartIdx);
-            const segEnd = Math.min(endIdx, weekEndIdx);
-            if (segStart <= segEnd) {
-                rowSegments[row].push({
-                    event,
-                    row,
-                    startCell: segStart,
-                    endCell: segEnd,
-                    isAllDaySingle: false,
-                    isStart: segStart === startIdx,
-                    isEnd: segEnd === endIdx
-                });
+        return {
+            id: ev.id,
+            title: ev.name,
+            start,
+            end,
+            allDay: ev.allDay || isRange || !hasExplicitTime,
+            extendedProps: {
+                time: ev.time || (isRange ? 'All Day' : ''),
+                location: ev.location || ''
             }
-        }
-    });
-
-    // 2) Single-day all-day events as single-cell segments
-    singleDayAll.forEach(event => {
-        const d = event.date;
-        if (!d) return;
-        if (d.getMonth() !== month || d.getFullYear() !== year) return;
-        const cellIdx = firstDayOffset + d.getDate() - 1;
-        const row = Math.floor(cellIdx / 7);
-        rowSegments[row].push({
-            event,
-            row,
-            startCell: cellIdx,
-            endCell: cellIdx,
-            isAllDaySingle: true,
-            isStart: true,
-            isEnd: true
-        });
-    });
-
-    // For each row, pack segments into lanes to avoid overlap
-    rowSegments.forEach((segments, row) => {
-        if (segments.length === 0) return;
-
-        // Sort by start, then by end
-        segments.sort((a, b) => a.startCell - b.startCell || a.endCell - b.endCell);
-
-        const lanes = []; // each lane holds the endCell of last placed segment
-
-        const isLaneFree = (idx, startCell) => lanes[idx] === undefined || lanes[idx] < startCell;
-
-        segments.forEach(seg => {
-            const eventKey = seg.event.id ?? `${seg.event.name}-${seg.startCell}-${seg.endCell}`;
-
-            let laneIndex = eventLaneMap.has(eventKey) ? eventLaneMap.get(eventKey) : null;
-            if (laneIndex !== null && !isLaneFree(laneIndex, seg.startCell)) {
-                laneIndex = null; // fall back to next free lane when prior lane is blocked
-            }
-
-            if (laneIndex === null) {
-                laneIndex = lanes.findIndex(end => end < seg.startCell);
-            }
-
-            if (laneIndex === -1 || laneIndex === null) {
-                laneIndex = lanes.length;
-            }
-
-            lanes[laneIndex] = seg.endCell;
-            eventLaneMap.set(eventKey, laneIndex);
-
-            // Compute geometry for this segment
-            const firstRect = getCellRect(seg.startCell);
-            const lastRect = getCellRect(seg.endCell);
-            if (!firstRect || !lastRect) return;
-
-            const left = firstRect.left - overlayRect.left + 2;
-            const width = (lastRect.right - firstRect.left) - 4;
-            const top = firstRect.top - overlayRect.top + headerHeight + (laneIndex * (barHeight + barGap)) + 4;
-
-            const bar = document.createElement('div');
-            bar.className = 'multi-day-event-bar';
-            if (seg.isAllDaySingle) bar.classList.add('single-day-all');
-            if (seg.isStart) bar.classList.add('seg-start'); else bar.classList.add('cont-left');
-            if (seg.isEnd) bar.classList.add('seg-end'); else bar.classList.add('cont-right');
-            bar.style.left = `${left}px`;
-            bar.style.top = `${top}px`;
-            bar.style.width = `${width}px`;
-
-            const e = seg.event;
-            if (seg.isAllDaySingle) {
-                bar.innerHTML = `
-                    <span class="event-bar-name">${e.name}</span>
-                    <span class="event-bar-dates">All Day</span>
-                `;
-            } else {
-                const startStr = `${e.startDate.getMonth() + 1}/${e.startDate.getDate()}`;
-                const endStr = `${e.endDate.getMonth() + 1}/${e.endDate.getDate()}`;
-                bar.innerHTML = `
-                    <span class="event-bar-name">${e.name}</span>
-                    <span class="event-bar-dates">${startStr} - ${endStr}</span>
-                `;
-            }
-            overlay.appendChild(bar);
-        });
-
-        // After laying out, push per-day events down in this row to avoid overlap
-        const lanesCount = lanes.length;
-        const rowExtra = lanesCount > 0 ? (lanesCount * (barHeight + barGap)) + 6 : 0;
-        for (let c = 0; c < 7; c++) {
-            const cellIdx = row * 7 + c;
-            const cell = cells[cellIdx];
-            if (!cell) continue;
-            const eventsContainer = cell.querySelector('.calendar-cell-events');
-            if (eventsContainer) {
-                eventsContainer.style.marginTop = `${rowExtra}px`;
-            }
-        }
+        };
     });
 }
 
-function createCalendarCell(day, isOtherMonth, isToday, events) {
-    const cell = document.createElement('div');
-    cell.className = 'calendar-cell';
-    
-    if (isOtherMonth) {
-        cell.classList.add('other-month');
-    }
-    if (isToday) {
-        cell.classList.add('today');
-    }
-    
-    // Cell header with day number
-    const header = document.createElement('div');
-    header.className = 'calendar-cell-header';
-    header.innerHTML = `<span class="calendar-cell-day">${day}</span>`;
-    cell.appendChild(header);
-    
-    // Events container
-    const eventsContainer = document.createElement('div');
-    eventsContainer.className = 'calendar-cell-events';
-    
-    events.forEach(event => {
-        const eventCard = document.createElement('div');
-        eventCard.className = 'calendar-event-card';
-        eventCard.innerHTML = `
-            <div class="calendar-event-name">${event.name}</div>
-            <div class="calendar-event-time">${event.time}</div>
-        `;
-        eventsContainer.appendChild(eventCard);
-    });
-    
-    cell.appendChild(eventsContainer);
-    
-    return cell;
-}
+function renderEventContent(arg) {
+    const time = arg.event.extendedProps.time;
+    const location = arg.event.extendedProps.location;
 
-// Small helper to strip duplicate mock entries so bars and cards don't double-render
-function dedupeEvents(events) {
-    const seen = new Set();
-    return events.filter(ev => {
-        const key = [ev.id, ev.name, ev.date?.toISOString?.(), ev.startDate?.toISOString?.(), ev.endDate?.toISOString?.()].join('|');
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-    });
+    const timeLine = time ? `<div class="fc-event-time-line">${time}</div>` : '';
+    const locLine = location ? `<div class="fc-event-location">${location}</div>` : '';
+
+    return {
+        html: `
+            <div class="fc-event-inner">
+                ${timeLine}
+                <div class="fc-event-title-line">${arg.event.title}</div>
+                ${locLine}
+            </div>
+        `
+    };
 }
 
 function showSlide(index) {

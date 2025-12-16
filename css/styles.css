@@ -935,6 +935,150 @@ body {
 }
 
 /* =====================================================
+   FullCalendar Overrides
+   ===================================================== */
+.fullcalendar-container {
+    width: 100%;
+    height: 100%;
+    padding: clamp(1rem, 2vh, 1.5rem);
+    background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+}
+
+.fc {
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    --fc-border-color: rgba(255, 255, 255, 0.08);
+    --fc-today-bg-color: rgba(248, 225, 93, 0.12);
+    --fc-page-bg-color: transparent;
+}
+
+.fc .fc-toolbar-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 2.4vw, 2.4rem);
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+    text-align: center;
+    width: 100%;
+}
+
+.fc .fc-daygrid-day-frame {
+    background: rgba(8, 45, 93, 0.35);
+    border-radius: var(--radius-sm);
+    padding: clamp(0.35rem, 0.7vh, 0.6rem);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.fc .fc-daygrid-day:hover .fc-daygrid-day-frame {
+    background: rgba(8, 45, 93, 0.55);
+    box-shadow: inset 0 0 0 1px rgba(248, 225, 93, 0.25);
+}
+
+.fc .fc-daygrid-day-number {
+    font-family: var(--font-display);
+    font-size: clamp(1rem, 1.4vw, 1.3rem);
+    color: var(--text-secondary);
+}
+
+.fc .fc-day-today .fc-daygrid-day-frame {
+    border: 2px solid var(--accent);
+    background: rgba(248, 225, 93, 0.12);
+}
+
+.fc .fc-col-header-cell {
+    padding: clamp(0.6rem, 0.9vh, 0.8rem);
+    background: rgba(248, 225, 93, 0.1);
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.fc .fc-col-header-cell-cushion {
+    font-family: var(--font-display);
+    font-size: clamp(1rem, 1.4vw, 1.2rem);
+    color: var(--accent);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.fc .fc-daygrid-event {
+    border: none;
+    padding: clamp(0.3rem, 0.5vh, 0.45rem);
+    border-left: 4px solid var(--accent);
+    background: linear-gradient(135deg, rgba(248, 225, 93, 0.2) 0%, rgba(248, 225, 93, 0.1) 100%);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.fc .fc-daygrid-event-harness {
+    width: 100%;
+    max-width: 100%;
+}
+
+.fc-event-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+}
+
+.fc-event-time-line {
+    font-size: clamp(0.8rem, 0.95vw, 0.95rem);
+    color: var(--accent);
+    font-weight: 700;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fc-event-title-line {
+    font-size: clamp(0.9rem, 1.1vw, 1.05rem);
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fc-event-location {
+    font-size: clamp(0.72rem, 0.9vw, 0.85rem);
+    color: var(--text-muted);
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Constrain event height and let long content ellipsize instead of overflowing */
+.fc .fc-daygrid-event-harness, 
+.fc .fc-daygrid-event {
+    max-height: clamp(78px, 9vh, 96px);
+}
+
+.fc .fc-daygrid-event:hover {
+    overflow: visible;
+}
+
+.fc .fc-daygrid-day.fc-day-other .fc-daygrid-day-frame {
+    opacity: 0.35;
+}
+
+.fc .fc-scrollgrid {
+    border: none;
+}
+
+.fc-theme-standard td, .fc-theme-standard th {
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* =====================================================
    Animations
    ===================================================== */
 
@@ -1019,4 +1163,213 @@ body {
 .mini-calendar {
     transition: background-color var(--transition-slow), 
                 border-color var(--transition-slow);
+}
+
+/* =====================================================
+   Large Display (1080p+ poster view)
+   ===================================================== */
+@media (min-width: 1500px) and (min-height: 900px) {
+    /* Base scaling for long-distance readability */
+    body {
+        font-size: clamp(16px, 1.6vw, 24px);
+    }
+
+    .board-container {
+        grid-template-columns: minmax(400px, 38%) 1fr;
+    }
+
+    .left-panel {
+        padding: 1.4rem 1.6rem;
+        gap: 1.1rem;
+    }
+
+    .panel-header {
+        gap: 1.25rem;
+        padding-bottom: 1rem;
+    }
+
+    .msa-logo {
+        width: clamp(80px, 8vw, 110px);
+        height: clamp(80px, 8vw, 110px);
+    }
+
+    .gregorian-date {
+        font-size: clamp(1.3rem, 2vw, 1.8rem);
+    }
+
+    .hijri-date {
+        font-size: clamp(1.05rem, 1.5vw, 1.35rem);
+    }
+
+    .countdown-hero {
+        padding: 1.5rem 1.6rem;
+        border-width: 3px;
+    }
+
+    .current-time-display {
+        font-size: clamp(3rem, 4vw, 4.5rem);
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+        letter-spacing: 3px;
+    }
+
+    .countdown-prayer {
+        font-size: clamp(1.6rem, 2vw, 2rem);
+        letter-spacing: 1px;
+    }
+
+    .countdown-timer {
+        font-size: clamp(2.4rem, 3vw, 3.2rem);
+        letter-spacing: 4px;
+    }
+
+    .prayer-times-section {
+        padding: 1.2rem 1.25rem;
+        border-width: 2px;
+    }
+
+    .section-title {
+        font-size: clamp(1.1rem, 1.6vw, 1.4rem);
+        letter-spacing: 2.5px;
+    }
+
+    .prayer-times-list {
+        gap: 0.5rem;
+    }
+
+    .prayer-row {
+        padding: 0.9rem 1.2rem;
+        border-left-width: 4px;
+    }
+
+    .prayer-row .prayer-name {
+        font-size: clamp(1.1rem, 1.4vw, 1.35rem);
+    }
+
+    .prayer-row .prayer-time {
+        font-size: clamp(1.35rem, 1.8vw, 1.7rem);
+    }
+
+    .prayer-row.next .prayer-time {
+        font-size: clamp(1.5rem, 2vw, 1.9rem);
+    }
+
+    .jummah-section {
+        padding: 1rem 1.2rem;
+    }
+
+    .jummah-number {
+        font-size: clamp(1rem, 1.4vw, 1.3rem);
+        width: 2rem;
+        height: 2rem;
+    }
+
+    .jummah-time {
+        font-size: clamp(1.2rem, 1.6vw, 1.5rem);
+        min-width: 100px;
+    }
+
+    .jummah-khatib {
+        font-size: clamp(0.95rem, 1.2vw, 1.15rem);
+    }
+
+    .jummah-location {
+        font-size: clamp(0.85rem, 1.1vw, 1rem);
+    }
+
+    .islamic-content-section {
+        gap: 1rem;
+    }
+
+    .verse-of-day,
+    .hadith-of-day {
+        padding: 1rem 1.1rem;
+        border-left-width: 3px;
+        gap: 0.6rem;
+    }
+
+    .content-title {
+        font-size: clamp(1rem, 1.4vw, 1.25rem);
+    }
+
+    .verse-arabic {
+        font-size: clamp(1.4rem, 2vw, 1.9rem);
+        line-height: 1.75;
+    }
+
+    .verse-translation,
+    .hadith-text {
+        font-size: clamp(0.95rem, 1.2vw, 1.15rem);
+        line-height: 1.6;
+    }
+
+    .verse-reference,
+    .hadith-reference {
+        font-size: clamp(0.85rem, 1.1vw, 1rem);
+    }
+
+    .weather-info {
+        padding: 1rem 1.25rem;
+        gap: 1rem;
+    }
+
+    .weather-icon {
+        font-size: clamp(2.1rem, 2.4vw, 2.6rem);
+    }
+
+    .weather-temp {
+        font-size: clamp(1.6rem, 2vw, 2rem);
+    }
+
+    .weather-desc {
+        font-size: clamp(1rem, 1.3vw, 1.2rem);
+    }
+
+    .fullscreen-calendar {
+        padding: 1.4rem 1.6rem;
+    }
+
+    .fullscreen-calendar-header {
+        padding: 1rem 0;
+        margin-bottom: 1rem;
+    }
+
+    .fullscreen-calendar-month {
+        font-size: clamp(2.2rem, 3vw, 3rem);
+        letter-spacing: 6px;
+    }
+
+    .weekday-header {
+        font-size: clamp(1.1rem, 1.6vw, 1.4rem);
+        padding: 0.9rem;
+    }
+
+    .calendar-cell-day {
+        font-size: clamp(1.2rem, 1.7vw, 1.5rem);
+    }
+
+    .calendar-event-name {
+        font-size: clamp(0.9rem, 1.2vw, 1.1rem);
+    }
+
+    .calendar-event-time {
+        font-size: clamp(0.8rem, 1vw, 0.95rem);
+    }
+
+    .multi-day-event-bar {
+        height: clamp(26px, 2.6vh, 34px);
+        padding: 0 0.85rem;
+    }
+
+    .multi-day-event-bar .event-bar-name {
+        font-size: clamp(0.85rem, 1.1vw, 1rem);
+    }
+
+    .multi-day-event-bar .event-bar-dates {
+        font-size: clamp(0.75rem, 1vw, 0.95rem);
+    }
+
+    .slide-indicators {
+        height: 12px;
+    }
 }
