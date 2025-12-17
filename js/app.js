@@ -10,10 +10,17 @@ const state = {
     hijriDate: null,
     currentSlideIndex: 0,
     totalSlides: 0,
+    maghribTime: null,
     ishaTime: null,
+    tomorrowFajr: null,
     isDarkMode: false,
     nextPrayer: null,
-    fullCalendarInstance: null
+    currentPrayer: null,
+    fullCalendarInstance: null,
+    slideDurations: [], // Array to store duration for each slide
+    slideTimer: null, // Timer for current slide
+    weekEventCount: 0, // Track events in week view
+    todayEventCount: 0 // Track events in today view
 };
 
 // =====================================================
@@ -34,7 +41,6 @@ const PRAYER_DISPLAY_ORDER = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Ish
 // Initialization
 // =====================================================
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🕌 UTM MSA Musallah Board Initializing...');
     
     // Start the clock
     updateClock();
@@ -45,26 +51,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Initialize UI components
     updateGregorianDate();
-    initializeJummahSection();
-    initializeIslamicContent();
     initializeSlideshow();
     initializeWeather();
+    fetchIslamicQuotes();
+    initializeScrollingMessage();
     
     // Refresh weather every hour (3600000 ms = 1 hour)
     setInterval(initializeWeather, 3600000);
+    
+    // Refresh Islamic quotes once per day (86400000 ms = 24 hours)
+    setInterval(fetchIslamicQuotes, 86400000);
     
     // Start countdown timer
     updateCountdown();
     setInterval(updateCountdown, 1000);
     
-    // Start slideshow cycling
-    setInterval(cycleSlides, BOARD_CONFIG.posterCycleInterval);
+    // Slideshow cycling will be handled by scheduleNextSlide() with dynamic durations
     
-    // Check for dark mode and refresh
+    // Check for dark mode and refresh immediately, then every minute
+    checkDarkModeAndRefresh();
     setInterval(checkDarkModeAndRefresh, 60000); // Check every minute
-    
-    console.log('✅ Musallah Board Ready!');
-});
+    });
 
 // =====================================================
 // Aladhan API Integration
@@ -80,22 +87,61 @@ async function fetchPrayerTimes() {
         const timesResponse = await fetch(timesUrl);
         const timesData = await timesResponse.json();
         
+        const hanafiUrl = `https://api.aladhan.com/v1/timings/${dateStr}?latitude=${latitude}&longitude=${longitude}&method=${method}&school=1`;
+        const hanafiResponse = await fetch(hanafiUrl);
+        const hanafiData = await hanafiResponse.json();
+
         if (timesData.code === 200) {
+            const hanafiAsr = hanafiData.data.timings.Asr;
+            timesData.data.timings.hanafiAsr = hanafiAsr;
             state.prayerTimes = timesData.data.timings;
             state.hijriDate = timesData.data.date.hijri;
             
             updatePrayerTimesUI();
             updateHijriDate();
             
-            // Store Isha time for dark mode and refresh logic
+            // Store Maghrib time for dark mode
+            state.maghribTime = parseTimeString(state.prayerTimes.Maghrib);
+            
+            // Store Isha time for tomorrow's prayer time fetching logic
             state.ishaTime = parseTimeString(state.prayerTimes.Isha);
             
-            console.log('📿 Prayer times loaded:', state.prayerTimes);
+            // Fetch tomorrow's prayer times if it's after Isha
+            await checkAndFetchTomorrowPrayerTimes();
         }
     } catch (error) {
         console.error('Error fetching prayer times:', error);
         // Show error state in UI
         showPrayerTimesError();
+    }
+}
+
+async function checkAndFetchTomorrowPrayerTimes() {
+    if (!state.ishaTime) return;
+    
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const ishaMinutes = state.ishaTime.hours * 60 + state.ishaTime.minutes;
+    
+    // If it's after Isha, fetch tomorrow's prayer times for accurate Fajr countdown
+    if (currentMinutes >= ishaMinutes) {
+        const { latitude, longitude, method } = BOARD_CONFIG.location;
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowDateStr = `${tomorrow.getDate()}-${tomorrow.getMonth() + 1}-${tomorrow.getFullYear()}`;
+        
+        try {
+            const timesUrl = `https://api.aladhan.com/v1/timings/${tomorrowDateStr}?latitude=${latitude}&longitude=${longitude}&method=${method}`;
+            const timesResponse = await fetch(timesUrl);
+            const timesData = await timesResponse.json();
+            
+            if (timesData.code === 200) {
+                // Store tomorrow's Fajr time for accurate countdown
+                state.tomorrowFajr = parseTimeString(timesData.data.timings.Fajr);
+            }
+        } catch (error) {
+            console.error('Error fetching tomorrow\'s prayer times:', error);
+        }
     }
 }
 
@@ -122,11 +168,20 @@ function updatePrayerTimesUI() {
     PRAYER_DISPLAY_ORDER.forEach(prayer => {
         const elementId = `${PRAYER_NAMES[prayer]}Time`;
         const element = document.getElementById(elementId);
-        if (element) {
-            const time24 = state.prayerTimes[prayer];
-            element.textContent = formatTo12Hour(time24);
+        const time24 = state.prayerTimes[prayer];
+        
+        // Special handling for Asr to show both Shafi and Hanafi times
+        if (prayer === 'Asr' && state.prayerTimes.hanafiAsr) {
+            const shafiFormatted = formatTo12Hour(time24);
+            const hanafiFormatted = formatTo12Hour(state.prayerTimes.hanafiAsr);
+            if (element) element.textContent = `${shafiFormatted} / ${hanafiFormatted}`;
+        } else {
+            const formatted = formatTo12Hour(time24);
+            if (element) element.textContent = formatted;
         }
     });
+
+    renderJummahRows();
     
     // Highlight next prayer
     highlightNextPrayer();
@@ -163,7 +218,18 @@ function highlightNextPrayer() {
         card.classList.remove('active', 'next');
     });
     
-    // Find next prayer
+    // Get sunrise and dhuhr times to check if we're between them
+    const sunriseTime = parseTimeString(state.prayerTimes.Sunrise);
+    const dhuhrTime = parseTimeString(state.prayerTimes.Dhuhr);
+    const sunriseMinutes = sunriseTime.hours * 60 + sunriseTime.minutes;
+    const dhuhrMinutes = dhuhrTime.hours * 60 + dhuhrTime.minutes;
+    
+    // Check if current time is between sunrise and dhuhr (no prayer should be highlighted)
+    const isBetweenSunriseAndDhuhr = currentMinutes > sunriseMinutes && currentMinutes < dhuhrMinutes;
+    
+    // Find current prayer and next prayer
+    let currentPrayer = null;
+    let currentPrayerMinutes = -Infinity;
     let nextPrayer = null;
     let nextPrayerMinutes = Infinity;
     
@@ -174,6 +240,16 @@ function highlightNextPrayer() {
         const time = parseTimeString(state.prayerTimes[prayer]);
         const prayerMinutes = time.hours * 60 + time.minutes;
         
+        // Current prayer is the most recent one that has passed
+        // BUT don't highlight if we're between sunrise and dhuhr
+        if (prayerMinutes <= currentMinutes && prayerMinutes > currentPrayerMinutes) {
+            if (!(isBetweenSunriseAndDhuhr && prayer === 'Fajr')) {
+                currentPrayer = prayer;
+                currentPrayerMinutes = prayerMinutes;
+            }
+        }
+        
+        // Next prayer is the next one coming up
         if (prayerMinutes > currentMinutes && prayerMinutes < nextPrayerMinutes) {
             nextPrayer = prayer;
             nextPrayerMinutes = prayerMinutes;
@@ -186,16 +262,29 @@ function highlightNextPrayer() {
     }
     
     state.nextPrayer = nextPrayer;
+    state.currentPrayer = currentPrayer;
     
-    // Highlight next prayer row (support both old and new class names)
-    const nextRow = document.querySelector(`.prayer-row[data-prayer="${PRAYER_NAMES[nextPrayer]}"]`) ||
-                    document.querySelector(`.prayer-card[data-prayer="${PRAYER_NAMES[nextPrayer]}"]`);
-    if (nextRow) {
-        nextRow.classList.add('next');
+    // Highlight current prayer row (support both old and new class names)
+    // Don't highlight if we're between sunrise and dhuhr
+    if (currentPrayer && !isBetweenSunriseAndDhuhr) {
+        const currentRow = document.querySelector(`.prayer-row[data-prayer="${PRAYER_NAMES[currentPrayer]}"]`) ||
+                        document.querySelector(`.prayer-card[data-prayer="${PRAYER_NAMES[currentPrayer]}"]`);
+        if (currentRow) {
+            currentRow.classList.add('active');
+        }
     }
     
-    // Update countdown display
-    document.getElementById('nextPrayerName').textContent = nextPrayer;
+    // Update current prayer display in hero
+    const currentPrayerDisplay = document.getElementById('currentPrayerDisplay');
+    if (currentPrayerDisplay && currentPrayer) {
+        currentPrayerDisplay.textContent = currentPrayer;
+    }
+    
+    // Update next prayer display on next prayer slide
+    const nextPrayerDisplayName = document.getElementById('nextPrayerDisplayName');
+    if (nextPrayerDisplayName) {
+        nextPrayerDisplayName.textContent = nextPrayer;
+    }
     
     // Update prayer times title based on whether we're past Isha
     updatePrayerTimesTitle();
@@ -223,7 +312,14 @@ function updateCountdown() {
     if (!state.prayerTimes || !state.nextPrayer) return;
     
     const now = new Date();
-    const prayerTime = parseTimeString(state.prayerTimes[state.nextPrayer]);
+    let prayerTime;
+    
+    // If next prayer is Fajr and we have tomorrow's Fajr time, use that
+    if (state.nextPrayer === 'Fajr' && state.tomorrowFajr) {
+        prayerTime = state.tomorrowFajr;
+    } else {
+        prayerTime = parseTimeString(state.prayerTimes[state.nextPrayer]);
+    }
     
     let targetTime = new Date();
     targetTime.setHours(prayerTime.hours, prayerTime.minutes, 0, 0);
@@ -246,7 +342,12 @@ function updateCountdown() {
     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
     
     const countdownStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    document.getElementById('countdownTimer').textContent = countdownStr;
+    
+    // Update the large countdown timer on next prayer slide
+    const countdownTimerLarge = document.getElementById('countdownTimerLarge');
+    if (countdownTimerLarge) {
+        countdownTimerLarge.textContent = countdownStr;
+    }
 }
 
 // =====================================================
@@ -269,6 +370,8 @@ function updateGregorianDate() {
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     const dateStr = now.toLocaleDateString('en-US', options);
     document.getElementById('gregorianDate').textContent = dateStr;
+    const heroDate = document.getElementById('heroDate');
+    if (heroDate) heroDate.textContent = dateStr.toUpperCase();
 }
 
 function updateHijriDate() {
@@ -282,44 +385,37 @@ function updateHijriDate() {
 // =====================================================
 // Jummah Section
 // =====================================================
-function initializeJummahSection() {
-    const jummahSection = document.getElementById('jummahSection');
-    const container = document.getElementById('jummahPrayersContainer');
+function renderJummahRows() {
     const today = new Date();
-    const dayOfWeek = today.getDay();
+    const isFriday = today.getDay() === 5;
+    const jummahSection = document.getElementById('jummahSection');
+    const subcards = document.getElementById('jummahSubcards');
     
-    // Show Jummah section only on Thursday (4) or Friday (5)
-    if ((dayOfWeek !== 4 && dayOfWeek !== 5)) {
-        jummahSection.style.display = 'none';
-        return;
-    }
-    else {
-        // Remove the hadith and verse of the day to make space
-        hadithSection.style.display = 'none';
-        verseSection.style.display = 'none';
-    }
-    
+    if (!jummahSection || !subcards) return;
+
+    // Clear existing subcards
+    subcards.innerHTML = '';
+
+    // Only show Jummah card if it's Friday AND there are prayers configured
     const prayers = BOARD_CONFIG.jummahPrayers || [];
     
-    if (prayers.length === 0) {
+    if (!isFriday || prayers.length === 0) {
         jummahSection.style.display = 'none';
         return;
     }
     
-    container.innerHTML = '';
+    jummahSection.style.display = 'block';
     
     prayers.forEach((prayer, index) => {
-        const card = document.createElement('div');
-        card.className = 'jummah-card';
-        card.innerHTML = `
-            <div class="jummah-number">${index + 1}</div>
+        const subcard = document.createElement('div');
+        subcard.className = 'jummah-subcard';
+        
+        subcard.innerHTML = `
             <div class="jummah-time">${prayer.time}</div>
-            <div class="jummah-details">
-                <div class="jummah-khatib">${prayer.khatib}</div>
-                <div class="jummah-location">📍 ${prayer.location}</div>
-            </div>
+            <div class="jummah-khatib">${prayer.khatib}</div>
+            <div class="jummah-location">${prayer.location}</div>
         `;
-        container.appendChild(card);
+        subcards.appendChild(subcard);
     });
 }
 
@@ -340,21 +436,29 @@ function initializeIslamicContent() {
 }
 
 // =====================================================
-// Fullscreen Slideshow (Calendar + Posters)
+// Fullscreen Slideshow (Week at Glance + Today + Posters)
 // =====================================================
 function initializeSlideshow() {
-    // Build full calendar first
-    buildFullCalendar();
+    // Build the new widgets
+    buildWeekGlanceWidget();
+    buildTodayWidget();
     
-    // Build slides track: calendar slide + poster slides
+    // Build slides track
     const slideshowContainer = document.getElementById('slideshowContainer');
-
-    // Create a track and move existing calendar slide into it
     const track = document.createElement('div');
     track.className = 'slides-track';
 
-    const calendarSlide = document.getElementById('calendarSlide');
-    if (calendarSlide) track.appendChild(calendarSlide);
+    // Add week glance slide
+    const weekGlanceSlide = document.getElementById('weekGlanceSlide');
+    if (weekGlanceSlide) track.appendChild(weekGlanceSlide);
+
+    // Add today slide
+    const todaySlide = document.getElementById('todaySlide');
+    if (todaySlide) track.appendChild(todaySlide);
+
+    // Add next prayer slide
+    const nextPrayerSlide = document.getElementById('nextPrayerSlide');
+    if (nextPrayerSlide) track.appendChild(nextPrayerSlide);
 
     // Create poster slides from POSTERS and append
     POSTERS.forEach(p => {
@@ -364,18 +468,29 @@ function initializeSlideshow() {
         track.appendChild(slide);
     });
 
-    // Replace slideshowContainer content with track (preserve slide-indicators container below)
-    // Remove any existing direct slide children (posterSlide etc.) then append track
+    // Add Islamic quotes slide (Hadith & Verse of the Day) at the end
+    const islamicQuotesSlide = document.getElementById('islamicQuotesSlide');
+    if (islamicQuotesSlide) track.appendChild(islamicQuotesSlide);
+
+    // Clear and add track
     Array.from(slideshowContainer.children).forEach(ch => {
-        // Keep slide-indicators if present outside slideshowContainer (it is outside in DOM)
         if (ch.id !== 'slideIndicators') ch.remove();
     });
     slideshowContainer.appendChild(track);
 
-    // Calculate total slides: 1 (calendar) + number of posters
-    state.totalSlides = 1 + POSTERS.length;
+    // Calculate total slides: 3 (week + today + next prayer) + number of posters + 1 (Islamic quotes)
+    state.totalSlides = 3 + POSTERS.length + 1;
+    
+    // Build slide durations array
+    state.slideDurations = [
+        calculateWeekDuration(), // Week at a glance
+        calculateTodayDuration(), // Coming up today
+        12000, // Next prayer slide (fixed 12 seconds)
+        ...POSTERS.map(p => p.duration || 10000), // Poster durations
+        20000 // Islamic quotes slide (20 seconds for reading)
+    ];
 
-    // Create slide indicators (progress bar segments)
+    // Create slide indicators
     const indicatorsContainer = document.getElementById('slideIndicators');
     indicatorsContainer.innerHTML = '';
 
@@ -386,97 +501,353 @@ function initializeSlideshow() {
         indicatorsContainer.appendChild(indicator);
     }
 
-    // Start at the first slide
+    // Start at first slide and schedule cycling
     showSlide(0);
+    scheduleNextSlide();
+    
+    // Refresh widgets and recalculate durations periodically
+    setInterval(() => {
+        buildWeekGlanceWidget();
+        buildTodayWidget();
+        // Update durations
+        state.slideDurations[0] = calculateWeekDuration();
+        state.slideDurations[1] = calculateTodayDuration();
+    }, 60000); // Refresh every minute to update "today" widget
 }
 
-function buildFullCalendar() {
-    const container = document.getElementById('fullCalendarContainer');
+function calculateWeekDuration() {
+    // Base duration of 10 seconds
+    // Add 2 seconds per event displayed across the week (up to a max of 30 seconds)
+    const baseDuration = 10000;
+    const perEventDuration = 2000;
+    const maxDuration = 30000;
+    
+    const duration = Math.min(baseDuration + (state.weekEventCount * perEventDuration), maxDuration);
+    return duration;
+}
 
-    if (!container) {
-        console.warn('Calendar container not found.');
+function calculateTodayDuration() {
+    // Base duration of 8 seconds
+    // Add 3 seconds per event (up to a max of 25 seconds)
+    const baseDuration = 8000;
+    const perEventDuration = 3000;
+    const maxDuration = 25000;
+    
+    const duration = Math.min(baseDuration + (state.todayEventCount * perEventDuration), maxDuration);
+    return duration;
+}
+
+function buildWeekGlanceWidget() {
+    const weekGrid = document.getElementById('weekGrid');
+    if (!weekGrid) return;
+    
+    weekGrid.innerHTML = '';
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const currentDay = today.getDay();
+    
+    // Calculate start of week (Sunday)
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - currentDay);
+    
+    const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    let totalWeekEvents = 0; // Track total events for duration calculation
+    
+    // Helper: Get the primary (first upcoming) event for a day
+    function getPrimaryEvent(dayEvents) {
+        if (dayEvents.length === 0) return null;
+        
+        const now = new Date().getTime();
+        
+        // Find first upcoming event
+        const upcoming = dayEvents.find(e => e.startTimestamp >= now);
+        if (upcoming) return upcoming;
+        
+        // If all events have passed, return the last one
+        return dayEvents[dayEvents.length - 1];
+    }
+    
+    // Build 7 day rows
+    for (let i = 0; i < 7; i++) {
+        const dayDate = new Date(weekStart);
+        dayDate.setDate(weekStart.getDate() + i);
+        
+        const dayEvents = getEventsForDay(dayDate);
+        const isToday = dayDate.toDateString() === today.toDateString();
+        const hasEvents = dayEvents.length > 0;
+        
+        const dayRow = document.createElement('div');
+        dayRow.className = 'day-row' + (isToday ? ' today' : '');
+        
+        // Day header
+        const dayHeader = document.createElement('div');
+        dayHeader.className = 'day-header';
+        dayHeader.innerHTML = `<div class="day-name">${weekDays[i]}</div><div class="day-date">${dayDate.getDate()}</div>`;
+        dayRow.appendChild(dayHeader);
+        
+        // Day content
+        const dayContent = document.createElement('div');
+        dayContent.className = 'day-content';
+        
+        if (dayEvents.length === 0) {
+            // Empty day - subtle placeholder
+            const noEventsPlaceholder = document.createElement('div');
+            noEventsPlaceholder.className = 'no-events-placeholder';
+            noEventsPlaceholder.textContent = 'Stay tuned';
+            dayContent.appendChild(noEventsPlaceholder);
+        } else {
+            // Events container with scroll capability
+            const eventsContainer = document.createElement('div');
+            eventsContainer.className = 'day-events';
+            
+            // Create scroll container for auto-scrolling
+            const scrollContainer = document.createElement('div');
+            scrollContainer.className = 'day-events-scroll-container';
+            
+            // Get primary event
+            const primaryEvent = getPrimaryEvent(dayEvents);
+            
+            // Build event cards
+            dayEvents.forEach((event) => {
+                const eventCard = document.createElement('div');
+                const isPrimary = event.id === primaryEvent.id;
+                eventCard.className = `event-card ${isPrimary ? 'primary' : 'secondary'}`;
+                const displayTime = formatEventTimeDisplay(event.startTimestamp, event.endTimestamp, event.allDay);
+                
+                eventCard.innerHTML = `
+                    <div class="event-time">${displayTime}</div>
+                    <div class="event-name">${event.name}</div>
+                    <div class="event-location">${event.location || ''}</div>
+                `;
+                scrollContainer.appendChild(eventCard);
+            });
+            
+            eventsContainer.appendChild(scrollContainer);
+            
+            // Check if we need auto-scroll (after DOM insertion)
+            setTimeout(() => {
+                const container = eventsContainer;
+                const scrollCont = scrollContainer;
+                
+                if (scrollCont.scrollWidth > container.clientWidth) {
+                    // Duplicate content for seamless loop
+                    const originalCards = scrollCont.innerHTML;
+                    scrollCont.innerHTML = originalCards + originalCards;
+                    scrollCont.classList.add('auto-scroll');
+                }
+            }, 100);
+            
+            dayContent.appendChild(eventsContainer);
+        }
+        
+        dayRow.appendChild(dayContent);
+        weekGrid.appendChild(dayRow);
+        
+        // Count visible events
+        totalWeekEvents += dayEvents.length;
+    }
+    
+    // Update state with event count for duration calculation
+    state.weekEventCount = totalWeekEvents;
+}
+
+function formatEventTimeDisplay(startTimestamp, endTimestamp, allDay) {
+    if (allDay) return 'All Day';
+    
+    const start = new Date(startTimestamp);
+    const startTime = start.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    
+    const end = new Date(endTimestamp);
+    const endTime = end.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    
+    return `${startTime} - ${endTime}`;
+}
+
+function buildTodayWidget() {
+    const todayEvents = document.getElementById('todayEvents');
+    if (!todayEvents) return;
+    
+    todayEvents.innerHTML = '';
+    
+    const today = new Date();
+    const events = getEventsForDay(today);
+    
+    if (events.length === 0) {
+        todayEvents.innerHTML = '<div class="no-events-today">Stay Tuned!<br><span style="font-size: 0.6em; opacity: 0.8;">Check back soon for upcoming events</span></div>';
         return;
     }
-
-    if (typeof FullCalendar === 'undefined') {
-        console.error('FullCalendar failed to load.');
+    
+    // Sort events by start time
+    events.sort((a, b) => a.startTimestamp - b.startTimestamp);
+    
+    // Get current time in milliseconds
+    const now = Date.now();
+    
+    // Categorize events into three tiers
+    const happeningNow = [];
+    const comingSoon = [];
+    
+    events.forEach(event => {
+        // Check if happening now (event has started but not ended)
+        if (event.startTimestamp <= now && event.endTimestamp >= now) {
+            happeningNow.push(event);
+        }
+        // Check if still upcoming today
+        else if (event.startTimestamp > now) {
+            comingSoon.push(event);
+        }
+        // Otherwise it's past - don't include
+    });
+    
+    // If all events have passed, show "Stay Tuned" message
+    if (happeningNow.length === 0 && comingSoon.length === 0) {
+        todayEvents.innerHTML = '<div class="no-events-today">Stay Tuned!<br><span style="font-size: 0.6em; opacity: 0.8;">Check back soon for upcoming events</span></div>';
         return;
     }
-
-    // Destroy previous instance for clean re-render
-    if (state.fullCalendarInstance) {
-        state.fullCalendarInstance.destroy();
-        state.fullCalendarInstance = null;
-        container.innerHTML = '';
-    }
-
-    const calendar = new FullCalendar.Calendar(container, {
-        initialView: 'dayGridMonth',
-        height: '100%',
-        expandRows: true,
-        fixedWeekCount: false,
-        showNonCurrentDates: true,
-        firstDay: 0,
-        headerToolbar: {
-            left: 'title',
-            center: '',
-            right: ''
-        },
-        titleFormat: { month: 'long', year: 'numeric' },
-        dayMaxEventRows: 3,
-        displayEventEnd: true,
-        eventDisplay: 'block',
-        events: mapEventsToCalendarEvents(),
-        eventContent: renderEventContent
-    });
-
-    calendar.render();
-    state.fullCalendarInstance = calendar;
-}
-
-function mapEventsToCalendarEvents() {
-    const addOneDay = (date) => {
-        const d = new Date(date);
-        d.setDate(d.getDate() + 1);
-        return d;
-    };
-
-    return EVENTS.map(ev => {
-        const isRange = ev.startDate && ev.endDate;
-        const start = isRange ? ev.startDate : ev.date;
-        const end = isRange ? addOneDay(ev.endDate) : undefined; // FullCalendar treats end as exclusive
-        const hasExplicitTime = Boolean(ev.time && ev.time.match(/\d/));
-
-        return {
-            id: ev.id,
-            title: ev.name,
-            start,
-            end,
-            allDay: ev.allDay || isRange || !hasExplicitTime,
-            extendedProps: {
-                time: ev.time || (isRange ? 'All Day' : ''),
-                location: ev.location || ''
-            }
-        };
-    });
-}
-
-function renderEventContent(arg) {
-    const time = arg.event.extendedProps.time;
-    const location = arg.event.extendedProps.location;
-
-    const timeLine = time ? `<div class="fc-event-time-line">${time}</div>` : '';
-    const locLine = location ? `<div class="fc-event-location">${location}</div>` : '';
-
-    return {
-        html: `
-            <div class="fc-event-inner">
-                ${timeLine}
-                <div class="fc-event-title-line">${arg.event.title}</div>
-                ${locLine}
+    
+    // Build the signage display
+    const widget = document.createElement('div');
+    widget.className = 'today-signage-display';
+    
+    // TIER 1: Happening Now (if exists)
+    if (happeningNow.length > 0) {
+        const nowSection = document.createElement('div');
+        nowSection.className = 'signage-tier happening-now-tier';
+        
+        const event = happeningNow[0]; // Show first happening now event
+        const minutesLeft = Math.max(0, Math.floor((event.endTimestamp - now) / (1000 * 60)));
+        
+        nowSection.innerHTML = `
+            <div class="tier-label">Happening Now</div>
+            <div class="tier-content">
+                <div class="event-name-large">${event.name}</div>
+                <div class="event-meta-large">
+                    <div class="event-location-large">${event.location || 'TBA'}</div>
+                    <div class="event-ends-in">${minutesLeft > 0 ? `${minutesLeft} min remaining` : 'Ending soon'}</div>
+                </div>
             </div>
-        `
-    };
+        `;
+        
+        widget.appendChild(nowSection);
+    }
+    
+    // TIER 2: Coming Soon (show up to 3 upcoming events)
+    if (comingSoon.length > 0) {
+        const soonSection = document.createElement('div');
+        soonSection.className = 'signage-tier coming-soon-tier' + (happeningNow.length === 0 ? ' primary' : '');
+        
+        if (happeningNow.length === 0) {
+            soonSection.innerHTML += '<div class="tier-label">Up Next</div>';
+        } else {
+            soonSection.innerHTML += '<div class="tier-label">Coming Up</div>';
+        }
+        
+        const eventsList = document.createElement('div');
+        eventsList.className = 'upcoming-events-list';
+        
+        // Show next upcoming event prominently, then others more subtly
+        comingSoon.slice(0, 5).forEach((event, index) => {
+            const timeUntil = Math.floor((event.startTimestamp - now) / (1000 * 60));
+            const timeText = formatTimeUntil(timeUntil);
+            const displayTime = formatEventTimeDisplay(event.startTimestamp, event.endTimestamp, event.allDay);
+            
+            const eventItem = document.createElement('div');
+            eventItem.className = `upcoming-event-item${index === 0 && happeningNow.length === 0 ? ' primary' : ''}`;
+            
+            eventItem.innerHTML = `
+                <div class="upcoming-event-time">${displayTime}</div>
+                <div class="upcoming-event-info">
+                    <div class="upcoming-event-name">${event.name}</div>
+                    <div class="upcoming-event-in">${timeText}</div>
+                </div>
+                <div class="upcoming-event-location">${event.location || 'TBA'}</div>
+            `;
+            
+            eventsList.appendChild(eventItem);
+        });
+        
+        soonSection.appendChild(eventsList);
+        widget.appendChild(soonSection);
+    }
+    
+    todayEvents.appendChild(widget);
+    
+    // Update state with event count for duration calculation
+    state.todayEventCount = happeningNow.length + Math.min(comingSoon.length, 5);
+}
+
+function parseEventEndTime(timeStr, startMinutes) {
+    // Try to parse duration from time string (e.g., "2:00 - 3:30 PM")
+    if (timeStr.includes(' - ')) {
+        const parts = timeStr.split(' - ');
+        const endPart = parts[1];
+        
+        const match = endPart.match(/(\d{1,2}):(\d{2})/);
+        if (match) {
+            let hours = parseInt(match[1]);
+            const minutes = parseInt(match[2]);
+            
+            if (endPart.includes('PM') && hours !== 12) {
+                hours += 12;
+            } else if (endPart.includes('AM') && hours === 12) {
+                hours = 0;
+            }
+            
+            return hours * 60 + minutes;
+        }
+    }
+    
+    // If no end time found, assume 1 hour duration
+    return startMinutes + 60;
+}
+
+function formatTimeUntil(minutes) {
+    if (minutes < 1) return 'Starting now';
+    if (minutes < 60) return `In ${minutes} min`;
+    
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    
+    if (mins === 0) {
+        return `In ${hours}h`;
+    }
+    return `In ${hours}h ${mins}m`;
+}
+
+function getEventsForDay(date) {
+    const dayStart = new Date(date);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayStartMs = dayStart.getTime();
+    
+    const dayEnd = new Date(date);
+    dayEnd.setHours(23, 59, 59, 999);
+    const dayEndMs = dayEnd.getTime();
+    
+    return EVENTS.filter(event => {
+        // Event overlaps with this day if:
+        // event starts before day ends AND event ends after day starts
+        return event.startTimestamp <= dayEndMs && event.endTimestamp >= dayStartMs;
+    });
+}
+
+function parseEventTime(timeStr) {
+    if (!timeStr || timeStr === 'All Day') return -1; // All-day events at start
+    
+    const match = timeStr.match(/(\d{1,2}):(\d{2})/);
+    if (!match) return -1;
+    
+    let hours = parseInt(match[1]);
+    const minutes = parseInt(match[2]);
+    
+    // Handle PM times
+    if (timeStr.includes('PM') && hours !== 12) {
+        hours += 12;
+    } else if (timeStr.includes('AM') && hours === 12) {
+        hours = 0;
+    }
+    
+    return hours * 60 + minutes;
 }
 
 function showSlide(index) {
@@ -495,6 +866,22 @@ function showSlide(index) {
     state.currentSlideIndex = index;
 }
 
+function scheduleNextSlide() {
+    // Clear any existing timer
+    if (state.slideTimer) {
+        clearTimeout(state.slideTimer);
+    }
+    
+    // Get duration for current slide
+    const currentDuration = state.slideDurations[state.currentSlideIndex] || 10000;
+    
+    // Schedule next slide transition
+    state.slideTimer = setTimeout(() => {
+        cycleSlides();
+        scheduleNextSlide(); // Schedule the next one
+    }, currentDuration);
+}
+
 function cycleSlides() {
     if (state.totalSlides === 0) return;
     const nextIndex = (state.currentSlideIndex + 1) % state.totalSlides;
@@ -504,6 +891,8 @@ function cycleSlides() {
 
 function goToSlide(index) {
     showSlide(index);
+    // Reschedule with new slide's duration
+    scheduleNextSlide();
 }
 
 
@@ -551,72 +940,79 @@ async function initializeWeather() {
     }
 }
 
-
-// async function initializeWeather() {
-//     // Mississauga coordinates
-//     const lat = 43.5890;
-//     const lon = -79.6441;
+// =====================================================
+// Islamic Quotes (Hadith & Verse of the Day)
+// =====================================================
+function fetchIslamicQuotes() {
+    // Get daily content from mock data
+    const dailyContent = getDailyContent();
     
-//     try {
-//         const response = await fetch(
-//             `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&temperature_unit=celsius`
-//         );
-        
-//         if (!response.ok) throw new Error('Weather fetch failed');
-        
-//         const data = await response.json();
-        
-//         // Map WMO weather codes to emojis
-//         const getWeatherIcon = (code) => {
-//             if (code === 0) return '☀️'; // Clear
-//             if (code <= 3) return '☁️'; // Cloudy
-//             if (code <= 49) return '🌫️'; // Fog
-//             if (code <= 59) return '🌦️'; // Drizzle
-//             if (code <= 69) return '🌧️'; // Rain
-//             if (code <= 79) return '❄️'; // Snow
-//             if (code <= 84) return '🌧️'; // Showers
-//             if (code <= 99) return '⛈️'; // Thunderstorm
-//             return '🌡️';
-//         };
-        
-//         const weatherData = {
-//             temp: Math.round(data.current.temperature_2m),
-//             icon: getWeatherIcon(data.current.weather_code),
-//             desc: 'Mississauga, ON'
-//         };
-        
-//         document.getElementById('weatherIcon').textContent = weatherData.icon;
-//         document.getElementById('weatherTemp').textContent = `${weatherData.temp}°C`;
-//         document.getElementById('weatherDesc').textContent = weatherData.desc;
-        
-//     } catch (error) {
-//         console.error('Error fetching weather:', error);
-//         // Fallback to mock data
-//         document.getElementById('weatherIcon').textContent = '🌡️';
-//         document.getElementById('weatherTemp').textContent = '--°C';
-//         document.getElementById('weatherDesc').textContent = 'Mississauga, ON';
-//     }
-// }
+    // Display Verse of the Day
+    if (dailyContent.verse) {
+        document.getElementById('verseArabic').textContent = dailyContent.verse.arabic;
+        document.getElementById('verseTranslation').textContent = dailyContent.verse.translation;
+        document.getElementById('verseReference').textContent = dailyContent.verse.reference;
+    }
+    
+    // Display Hadith of the Day
+    if (dailyContent.hadith) {
+        document.getElementById('hadithText').textContent = dailyContent.hadith.text;
+        document.getElementById('hadithReference').textContent = dailyContent.hadith.reference;
+    }
+}
+
+
+// =====================================================
+// Scrolling Message Bar
+// =====================================================
+function initializeScrollingMessage() {
+    const messageBar = document.querySelector('.scrolling-message-bar');
+    const messageElement = document.getElementById('scrollingMessageContent');
+    const rightPanel = document.querySelector('.right-panel');
+    
+    // Check if scrolling message is enabled
+    if (!BOARD_CONFIG.enableScrollingMessage) {
+        if (messageBar) {
+            messageBar.style.display = 'none';
+        }
+        // Remove padding when message bar is disabled
+        if (rightPanel) {
+            rightPanel.style.paddingBottom = '0';
+        }
+        return;
+    }
+    
+    // Show message bar and restore padding when enabled
+    if (messageBar) {
+        messageBar.style.display = 'flex';
+    }
+    if (rightPanel) {
+        rightPanel.style.paddingBottom = '';
+    }
+    
+    if (messageElement && BOARD_CONFIG.scrollingMessage) {
+        messageElement.textContent = BOARD_CONFIG.scrollingMessage;
+    }
+}
 
 
 // =====================================================
 // Dark Mode & Auto Refresh
 // =====================================================
 function checkDarkModeAndRefresh() {
-    if (!state.ishaTime) return;
+    if (!state.maghribTime) return;
     
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const ishaMinutes = state.ishaTime.hours * 60 + state.ishaTime.minutes;
+    const maghribMinutes = state.maghribTime.hours * 60 + state.maghribTime.minutes;
     
-    // Dark mode: X minutes after Isha
+    // Dark mode: Enable at Maghrib time
     if (BOARD_CONFIG.darkModeAfterIsha) {
-        const darkModeStart = ishaMinutes + BOARD_CONFIG.darkModeMinutesAfterIsha;
         const fajrTime = parseTimeString(state.prayerTimes.Fajr);
         const fajrMinutes = fajrTime.hours * 60 + fajrTime.minutes;
         
-        // Dark mode between Isha+30min and Fajr
-        if (currentMinutes >= darkModeStart || currentMinutes < fajrMinutes) {
+        // Dark mode between Maghrib and Fajr
+        if (currentMinutes >= maghribMinutes || currentMinutes < fajrMinutes) {
             if (!state.isDarkMode) {
                 enableDarkMode();
             }
@@ -627,10 +1023,8 @@ function checkDarkModeAndRefresh() {
         }
     }
     
-    // Auto-refresh: X minutes after Isha
-    const refreshTime = ishaMinutes + BOARD_CONFIG.refreshAfterIshaMinutes;
-    if (currentMinutes >= refreshTime && currentMinutes < refreshTime + 2) {
-        console.log('🔄 Refreshing page for next day...');
+    // Auto-refresh: Only at midnight to fetch next day's prayer times
+    if (currentMinutes === 0) {
         location.reload();
     }
 }
@@ -638,13 +1032,11 @@ function checkDarkModeAndRefresh() {
 function enableDarkMode() {
     document.body.classList.add('dark-mode');
     state.isDarkMode = true;
-    console.log('🌙 Dark mode enabled');
 }
 
 function disableDarkMode() {
     document.body.classList.remove('dark-mode');
     state.isDarkMode = false;
-    console.log('☀️ Dark mode disabled');
 }
 
 // =====================================================
@@ -668,4 +1060,4 @@ window.onerror = function(msg, url, lineNo, columnNo, error) {
 // Console Branding
 // =====================================================
 console.log('%c🕌 UTM MSA Musallah Board', 'font-size: 24px; font-weight: bold; color: #F8E15D; background: #082D5D; padding: 10px 20px; border-radius: 8px;');
-console.log('%cDeveloped with ❤️ for the UTM Muslim community', 'font-size: 12px; color: #2E5380;');
+console.log('%cMade with ❤️ for the UTM Muslim community by IbraSoft', 'font-size: 12px; color: #2E5380;');

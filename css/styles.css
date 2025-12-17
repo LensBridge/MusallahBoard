@@ -121,6 +121,53 @@ body {
     flex-shrink: 1;
 }
 
+/* Sidebar redesign */
+.time-hero {
+    background: linear-gradient(135deg, rgba(8, 45, 93, 0.9), rgba(46, 83, 128, 0.85));
+    border-radius: var(--radius-lg);
+    border: 2px solid rgba(248, 225, 93, 0.35);
+    padding: 1.5rem 1.25rem;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    justify-content: center;
+    align-items: center;
+}
+
+.time-main {
+    font-family: var(--font-display);
+    font-size: clamp(3.8rem, 5.5vw, 5rem);
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-align: center;
+    line-height: 1.05;
+}
+
+.date-row {
+    font-size: clamp(0.9rem, 1.2vw, 1.05rem);
+    text-align: center;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+}
+
+.chip-label {
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.chip-value {
+    font-weight: 700;
+}
+
+.chip-timer {
+    color: var(--text-muted);
+    letter-spacing: 1px;
+}
+
 /* Decorative Pattern */
 .left-panel::before {
     content: '';
@@ -172,278 +219,83 @@ body {
     font-weight: 500;
 }
 
-/* Countdown Hero Section - Primary Focus */
-.countdown-hero {
-    text-align: center;
-    padding: clamp(1rem, 2vh, 1.5rem);
-    position: relative;
-    z-index: 1;
-    background: linear-gradient(135deg, rgba(248, 225, 93, 0.15) 0%, rgba(248, 225, 93, 0.05) 100%);
-    border-radius: var(--radius-lg);
-    border: 2px solid rgba(248, 225, 93, 0.4);
-    box-shadow: 
-        0 0 30px rgba(248, 225, 93, 0.1),
-        inset 0 0 30px rgba(248, 225, 93, 0.05);
-}
-
-.current-time-display {
-    font-family: var(--font-display);
-    font-size: clamp(2.2rem, 4vh, 3.5rem);
-    font-weight: 700;
-    color: var(--accent);
-    letter-spacing: 2px;
-    text-shadow: 0 2px 10px rgba(248, 225, 93, 0.3);
-    padding-bottom: clamp(0.5rem, 1vh, 0.75rem);
-    margin-bottom: clamp(0.5rem, 1vh, 0.75rem);
-    border-bottom: 1px solid rgba(248, 225, 93, 0.2);
-}
-
-.countdown-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.countdown-header {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: clamp(0.5rem, 1vw, 0.75rem);
-    margin-bottom: clamp(0.3rem, 0.6vh, 0.5rem);
-}
-
-.countdown-label {
-    font-size: clamp(0.7rem, 0.95vw, 0.85rem);
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    font-weight: 500;
-}
-
-.countdown-prayer {
-    font-family: var(--font-display);
-    font-size: clamp(1.1rem, 1.5vw, 1.4rem);
-    font-weight: 700;
-    color: var(--accent);
-    text-shadow: 0 2px 10px rgba(248, 225, 93, 0.3);
-}
-
-.countdown-timer-display {
-    margin: 0;
-}
-
-.countdown-timer {
-    font-family: var(--font-display);
-    font-size: clamp(1.8rem, 3vh, 2.5rem);
-    font-weight: 700;
-    color: var(--text-primary);
-    letter-spacing: 3px;
-    text-shadow: 0 4px 20px rgba(255, 255, 255, 0.1);
-}
-
-@keyframes timer-pulse {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.85;
-    }
-}
-
-.current-time-small {
-    font-family: var(--font-body);
-    font-size: clamp(0.9rem, 1.2vw, 1.1rem);
-    color: var(--text-muted);
-    letter-spacing: 1px;
-    padding-top: clamp(0.4rem, 0.8vh, 0.6rem);
-    border-top: 1px solid rgba(248, 225, 93, 0.2);
-    margin-top: clamp(0.4rem, 0.8vh, 0.6rem);
-}
+/* Countdown styles removed in favor of time-hero */
 
 /* Prayer Times Section */
 .prayer-times-section {
-    flex: 0 0 auto;
+    flex: 0 1 auto;
     position: relative;
     z-index: 1;
-    background: linear-gradient(135deg, rgba(46, 83, 128, 0.25) 0%, rgba(8, 45, 93, 0.3) 100%);
+    background: rgba(5, 29, 61, 0.9);
     border: 1px solid rgba(248, 225, 93, 0.2);
     border-radius: var(--radius-md);
-    padding: clamp(0.75rem, 1.2vh, 1rem);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    padding: clamp(0.6rem, 0.8vh, 0.8rem) clamp(0.75rem, 1vw, 0.9rem);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
 }
 
-.prayer-times-section .section-title {
-    font-size: clamp(0.85rem, 1.2vw, 1rem);
-    letter-spacing: 2px;
-    margin-bottom: clamp(0.5rem, 1vh, 0.75rem);
-    opacity: 0.9;
-}
-
-.section-title {
-    font-family: var(--font-display);
-    font-size: clamp(0.85rem, 1.2vw, 1rem);
-    font-weight: 600;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    margin-bottom: clamp(0.4rem, 0.8vh, 0.6rem);
-    text-align: center;
-}
-
-/* Prayer Times List - Clean Row Layout */
 .prayer-times-list {
     display: flex;
     flex-direction: column;
-    gap: clamp(0.25rem, 0.5vh, 0.4rem);
+    gap: clamp(0.25rem, 0.4vh, 0.35rem);
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
 }
 
 .prayer-row {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
     align-items: center;
-    padding: clamp(0.5rem, 0.9vh, 0.7rem) clamp(0.75rem, 1.2vw, 1rem);
-    background: linear-gradient(90deg, rgba(46, 83, 128, 0.3) 0%, rgba(8, 45, 93, 0.2) 100%);
+    gap: 0.3rem;
+    padding: clamp(0.65rem, 0.9vh, 0.85rem) clamp(0.8rem, 1vw, 1rem);
+    background: linear-gradient(90deg, rgba(46, 83, 128, 0.45) 0%, rgba(8, 45, 93, 0.3) 100%);
     border-radius: var(--radius-sm);
-    border-left: 3px solid transparent;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     transition: all var(--transition-normal);
+    flex: 1 1 0;
 }
 
 .prayer-row:hover {
-    background: linear-gradient(90deg, rgba(46, 83, 128, 0.5) 0%, rgba(8, 45, 93, 0.4) 100%);
+    background: linear-gradient(90deg, rgba(46, 83, 128, 0.6) 0%, rgba(8, 45, 93, 0.5) 100%);
+}
+
+.prayer-row.active {
+    background: linear-gradient(90deg, rgba(34, 197, 94, 0.25) 0%, rgba(34, 197, 94, 0.1) 100%);
+    border: 1px solid rgba(34, 197, 94, 0.7);
+    box-shadow: 0 0 14px rgba(34, 197, 94, 0.28);
 }
 
 .prayer-row.next {
-    background: linear-gradient(90deg, rgba(248, 225, 93, 0.15) 0%, rgba(248, 225, 93, 0.05) 100%);
-    border-left-color: var(--accent);
-    animation: row-glow 2s ease-in-out infinite;
+    background: linear-gradient(90deg, rgba(248, 225, 93, 0.25) 0%, rgba(248, 225, 93, 0.1) 100%);
+    border: 1px solid rgba(248, 225, 93, 0.7);
+    box-shadow: 0 0 14px rgba(248, 225, 93, 0.28);
 }
 
-@keyframes row-glow {
-    0%, 100% {
-        box-shadow: 0 0 8px rgba(248, 225, 93, 0.2);
-    }
-    50% {
-        box-shadow: 0 0 16px rgba(248, 225, 93, 0.35);
-    }
-}
-
-.prayer-row .prayer-name {
-    font-family: var(--font-body);
-    font-size: clamp(0.85rem, 1.1vw, 1rem);
-    font-weight: 600;
-    color: var(--text-secondary);
+.prayer-name {
+    font-family: var(--font-display);
+    font-size: clamp(1.9rem, 2.6vw, 2.4rem);
+    color: var(--text-primary);
     letter-spacing: 0.5px;
 }
 
-.prayer-row .prayer-time {
+.prayer-time {
     font-family: var(--font-display);
-    font-size: clamp(1.1rem, 1.5vw, 1.3rem);
+    font-size: clamp(2.1rem, 2.9vw, 2.6rem);
     font-weight: 700;
     color: var(--accent);
-    text-shadow: 0 2px 8px rgba(248, 225, 93, 0.15);
+    letter-spacing: 1px;
+    text-align: right;
+    white-space: nowrap;
 }
 
 .prayer-row.next .prayer-name {
-    color: var(--text-primary);
-}
-
-.prayer-row.next .prayer-time {
     color: var(--accent);
-    font-size: clamp(1.2rem, 1.6vw, 1.4rem);
 }
 
-/* Jummah Section */
-.jummah-section {
-    background: linear-gradient(135deg, rgba(248, 225, 93, 0.08) 0%, rgba(248, 225, 93, 0.02) 100%);
-    border-radius: var(--radius-md);
-    padding: clamp(0.6rem, 1vh, 0.85rem) clamp(0.75rem, 1.2vw, 1rem);
-    border: 1px solid rgba(248, 225, 93, 0.25);
-    position: relative;
-    z-index: 1;
-}
-
-.jummah-section .section-title {
-    margin-bottom: clamp(0.5rem, 0.8vh, 0.7rem);
-    font-size: clamp(0.8rem, 1.1vw, 0.95rem);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-}
-
-.jummah-section .section-title::before {
-    content: '🕌';
-    font-size: clamp(0.9rem, 1.2vw, 1.1rem);
-}
-
-.jummah-prayers-container {
-    display: flex;
-    flex-direction: column;
-    gap: clamp(0.3rem, 0.5vh, 0.4rem);
-}
-
-.jummah-card {
-    display: flex;
-    align-items: center;
-    gap: clamp(0.5rem, 1vw, 0.75rem);
-    padding: clamp(0.4rem, 0.7vh, 0.55rem) clamp(0.6rem, 1vw, 0.8rem);
-    background: linear-gradient(90deg, rgba(8, 45, 93, 0.4) 0%, rgba(46, 83, 128, 0.2) 100%);
-    border-radius: var(--radius-sm);
-    border-left: 3px solid var(--accent);
-    transition: all var(--transition-normal);
-}
-
-.jummah-card:hover {
-    background: linear-gradient(90deg, rgba(8, 45, 93, 0.6) 0%, rgba(46, 83, 128, 0.4) 100%);
-}
-
-.jummah-number {
-    font-family: var(--font-display);
-    font-size: clamp(0.75rem, 0.95vw, 0.9rem);
-    font-weight: 700;
-    color: var(--navy-blue);
-    width: clamp(1.3rem, 1.6vw, 1.6rem);
-    height: clamp(1.3rem, 1.6vw, 1.6rem);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--accent);
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-
-.jummah-time {
-    font-family: var(--font-display);
-    font-size: clamp(1rem, 1.3vw, 1.2rem);
-    font-weight: 700;
+.prayer-row.jummah-row .prayer-name {
     color: var(--accent);
-    min-width: clamp(70px, 8vw, 85px);
-}
-
-.jummah-details {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    min-width: 0;
-    flex: 1;
-}
-
-.jummah-khatib {
-    font-family: var(--font-body);
-    font-size: clamp(0.7rem, 0.9vw, 0.85rem);
-    font-weight: 500;
-    color: var(--text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.jummah-location {
-    font-size: clamp(0.6rem, 0.8vw, 0.75rem);
-    color: var(--text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 /* Islamic Content Section */
@@ -514,6 +366,69 @@ body {
     color: var(--text-secondary);
     line-height: 1.45;
     font-style: italic;
+}
+
+/* Jummah Section */
+.jummah-section {
+    flex: 0 0 auto;
+    padding: clamp(0.75rem, 1.2vh, 1rem);
+}
+
+.jummah-card {
+    background: linear-gradient(135deg, rgba(248, 225, 93, 0.12) 0%, rgba(248, 225, 93, 0.06) 100%);
+    border: 2px solid rgba(248, 225, 93, 0.35);
+    border-radius: var(--radius-md);
+    padding: clamp(0.8rem, 1.2vh, 1rem);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(0.6rem, 1vh, 0.8rem);
+}
+
+.jummah-label {
+    font-family: var(--font-display);
+    font-size: clamp(0.9rem, 1.2vw, 1.05rem);
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    text-align: center;
+}
+
+.jummah-subcards {
+    display: flex;
+    flex-direction: row;
+    gap: clamp(0.5rem, 0.8vw, 0.75rem);
+}
+
+.jummah-subcard {
+    flex: 1;
+    background: rgba(8, 45, 93, 0.4);
+    border: 1px solid rgba(248, 225, 93, 0.25);
+    border-radius: var(--radius-sm);
+    padding: clamp(0.6rem, 0.9vh, 0.8rem);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    text-align: center;
+}
+
+.jummah-time {
+    font-family: var(--font-display);
+    font-size: clamp(0.9rem, 1.1vw, 1.05rem);
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.jummah-khatib {
+    font-size: clamp(0.7rem, 0.9vw, 0.85rem);
+    color: var(--text-primary);
+    font-weight: 600;
+    line-height: 1.1;
+}
+
+.jummah-location {
+    font-size: clamp(0.65rem, 0.8vw, 0.75rem);
+    color: var(--text-muted);
 }
 
 /* Weather Section */
@@ -627,6 +542,52 @@ body {
     object-fit: contain;
     border-radius: 0;
     box-shadow: 0 0 60px rgba(0, 0, 0, 0.5);
+}
+
+/* Next Prayer Slide */
+.next-prayer-slide {
+    background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+}
+
+.next-prayer-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    padding: clamp(2rem, 4vh, 4rem);
+    text-align: center;
+}
+
+.next-prayer-label {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 3vw, 2.5rem);
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: clamp(1.5rem, 3vh, 2.5rem);
+}
+
+.next-prayer-name {
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 8vw, 5rem);
+    font-weight: 700;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: clamp(2rem, 4vh, 3rem);
+    text-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.countdown-timer-large {
+    font-family: var(--font-display);
+    font-size: clamp(4rem, 12vw, 7rem);
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-shadow: 0 4px 20px rgba(248, 225, 93, 0.3);
 }
 
 /* Calendar Slide */
@@ -1079,6 +1040,501 @@ body {
 }
 
 /* =====================================================
+   Week at a Glance Widget
+   ===================================================== */
+
+.week-glance-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: clamp(1.5rem, 3vh, 2.5rem);
+    background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+    overflow: hidden;
+}
+
+.widget-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: clamp(1rem, 2vh, 1.5rem);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.week-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    padding: 1.5rem;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.week-grid::-webkit-scrollbar {
+    width: 6px;
+}
+
+.week-grid::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.week-grid::-webkit-scrollbar-thumb {
+    background: rgba(248, 225, 93, 0.3);
+    border-radius: 10px;
+}
+
+.week-grid::-webkit-scrollbar-thumb:hover {
+    background: rgba(248, 225, 93, 0.5);
+}
+
+/* ===== DAY ROW - REFINED HIERARCHY ===== */
+
+.day-row {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    border-left: 3px solid rgba(255, 193, 7, 0.2);
+    transition: all 0.3s ease;
+}
+
+/* RULE A1: Today row - subtle highlight, reserve yellow for today indicator only */
+.day-row.today {
+    background: rgba(255, 193, 7, 0.08);
+    border-left: 3px solid var(--accent);
+    box-shadow: inset 0 0 30px rgba(255, 193, 7, 0.1);
+}
+
+.day-row.today .day-header {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+/* Light days visually recede */
+.day-row:not(.today) {
+    opacity: 0.85;
+}
+
+.day-row:not(.today):hover {
+    opacity: 1;
+}
+
+/* Day header - strong contrast */
+.day-header {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 0.3rem;
+    min-width: 100px;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    padding-right: 0.8rem;
+}
+
+.day-name {
+    font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgba(255, 255, 255, 0.9);
+    font-family: var(--font-display);
+}
+
+.day-date {
+    font-size: clamp(0.95rem, 2vw, 1.2rem);
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.day-row.today .day-date {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+/* Day content area */
+.day-content {
+    display: flex;
+    align-items: flex-start;
+    min-height: 100px;
+}
+
+/* RULE B: Events container - clear visual structure */
+.day-events {
+    width: 100%;
+    overflow: hidden;
+}
+
+.day-events-scroll-container {
+    display: flex;
+    gap: 0.8rem;
+    width: 100%;
+}
+
+/* RULE C: Event hierarchy - primary vs secondary */
+.event-card {
+    flex-shrink: 0;
+    padding: 0.8rem;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    min-width: 200px;
+    transition: all 0.3s ease;
+}
+
+/* Primary event - slightly larger, stronger contrast, yellow time only */
+.event-card.primary {
+    min-width: 220px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.event-card.primary .event-name {
+    font-size: clamp(1rem, 1.8vw, 1.15rem);
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+/* Secondary events - uniform, no special treatment */
+.event-card.secondary {
+    min-width: 200px;
+    opacity: 0.9;
+}
+
+.event-card.secondary .event-name {
+    font-size: clamp(0.95rem, 1.6vw, 1rem);
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+/* RULE A2: Time indicators - yellow accent (only place yellow is used) */
+.event-time {
+    font-size: clamp(0.85rem, 1.5vw, 0.95rem);
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 0.4rem;
+    letter-spacing: 0.02em;
+}
+
+.event-name {
+    margin-bottom: 0.3rem;
+    line-height: 1.3;
+}
+
+.event-location {
+    font-size: clamp(0.75rem, 1.3vw, 0.85rem);
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 400;
+}
+
+/* Auto-scroll animation */
+.day-events-scroll-container.auto-scroll {
+    animation: auto-scroll-events 30s linear infinite;
+}
+
+@keyframes auto-scroll-events {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+/* No events placeholder - subtle, not emphasized */
+.no-events-placeholder {
+    font-size: clamp(0.9rem, 1.6vw, 1rem);
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+    font-weight: 300;
+}
+
+/* =====================================================
+   Coming up Today Widget - Signage Display
+   ===================================================== */
+
+.today-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: clamp(2rem, 4vh, 3rem);
+    background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+    overflow: hidden;
+}
+
+.today-events {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    width: 100%;
+}
+
+.no-events-today {
+    font-size: clamp(1.8rem, 3vw, 2.2rem);
+    color: var(--text-muted);
+    text-align: center;
+    font-style: italic;
+    animation: fadeIn 0.5s ease;
+}
+
+/* =====================================================
+   Signage Display - Three Tier Structure
+   ===================================================== */
+
+.today-signage-display {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1.5rem, 3vh, 2.5rem);
+    justify-content: center;
+    align-items: center;
+}
+
+.signage-tier {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1rem, 1.5vh, 1.5rem);
+    animation: fadeIn 0.6s ease;
+}
+
+/* TIER 1: Happening Now - Largest and most prominent */
+.happening-now-tier {
+    width: 100%;
+    max-width: 100%;
+    text-align: center;
+}
+
+.happening-now-tier .tier-label {
+    font-family: var(--font-display);
+    font-size: clamp(0.9rem, 1.5vw, 1.2rem);
+    font-weight: 600;
+    color: rgba(248, 225, 93, 0.8);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 0.5rem;
+}
+
+.happening-now-tier .tier-content {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.15) 0%, rgba(76, 175, 80, 0.08) 100%);
+    border: 3px solid rgba(76, 175, 80, 0.6);
+    border-radius: var(--radius-lg);
+    padding: clamp(1.5rem, 3vh, 2.5rem);
+    box-shadow: 0 0 40px rgba(76, 175, 80, 0.25), inset 0 0 30px rgba(76, 175, 80, 0.08);
+}
+
+.event-name-large {
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 5vw, 3.6rem);
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+    margin-bottom: clamp(0.8rem, 1.5vh, 1.2rem);
+}
+
+.event-meta-large {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.event-location-large {
+    font-size: clamp(1.3rem, 2.2vw, 1.7rem);
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.event-ends-in {
+    font-size: clamp(1.2rem, 2vw, 1.5rem);
+    color: rgba(76, 175, 80, 0.9);
+    font-weight: 600;
+}
+
+/* TIER 2: Coming Soon - Secondary focal point */
+.coming-soon-tier {
+    width: 100%;
+    max-width: 100%;
+}
+
+.coming-soon-tier.primary {
+    /* When there's no "happening now", this becomes the primary focal point */
+    text-align: center;
+}
+
+.coming-soon-tier.primary .tier-label {
+    font-family: var(--font-display);
+    font-size: clamp(0.9rem, 1.5vw, 1.2rem);
+    font-weight: 600;
+    color: rgba(248, 225, 93, 0.8);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 0.5rem;
+}
+
+.coming-soon-tier.primary .upcoming-events-list {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1rem, 1.5vh, 1.5rem);
+    align-items: center;
+}
+
+.coming-soon-tier.primary .upcoming-event-item.primary {
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(135deg, rgba(248, 225, 93, 0.15) 0%, rgba(248, 225, 93, 0.08) 100%);
+    border: 3px solid var(--accent);
+    border-radius: var(--radius-lg);
+    padding: clamp(1.5rem, 3vh, 2.5rem);
+    box-shadow: 0 0 40px rgba(248, 225, 93, 0.25), inset 0 0 30px rgba(248, 225, 93, 0.08);
+    opacity: 1;
+    gap: clamp(0.8rem, 1.5vh, 1.2rem);
+    text-align: center;
+}
+
+.coming-soon-tier.primary .upcoming-event-item.primary .upcoming-event-time {
+    font-family: var(--font-display);
+    font-size: clamp(1.4rem, 2.3vw, 1.8rem);
+    font-weight: 700;
+    color: var(--accent);
+    text-align: center;
+}
+
+.coming-soon-tier.primary .upcoming-event-item.primary .upcoming-event-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+}
+
+.coming-soon-tier.primary .upcoming-event-item.primary .upcoming-event-name {
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 5vw, 3.6rem);
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.coming-soon-tier.primary .upcoming-event-item.primary .upcoming-event-in {
+    font-size: clamp(1.2rem, 2vw, 1.5rem);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.coming-soon-tier.primary .upcoming-event-item.primary .upcoming-event-location {
+    font-size: clamp(1.3rem, 2.2vw, 1.7rem);
+    color: var(--text-secondary);
+    font-weight: 500;
+    text-align: center;
+}
+
+.coming-soon-tier .tier-label {
+    font-family: var(--font-display);
+    font-size: clamp(0.9rem, 1.5vw, 1.2rem);
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-left: clamp(0, 5%, 2rem);
+}
+
+.upcoming-events-list {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(0.8rem, 1.2vh, 1rem);
+}
+
+.upcoming-event-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: clamp(1rem, 2vw, 1.5rem);
+    align-items: center;
+    padding: clamp(0.8rem, 1.5vh, 1.2rem);
+    background: rgba(248, 225, 93, 0.08);
+    border-left: 4px solid rgba(248, 225, 93, 0.5);
+    border-radius: 8px;
+    transition: all var(--transition-normal);
+    opacity: 0.85;
+}
+
+.upcoming-event-item.primary {
+    background: linear-gradient(135deg, rgba(248, 225, 93, 0.15) 0%, rgba(248, 225, 93, 0.08) 100%);
+    border-left: 4px solid var(--accent);
+    border-radius: 12px;
+    padding: clamp(1rem, 2vh, 1.5rem);
+    box-shadow: 0 0 25px rgba(248, 225, 93, 0.2);
+    opacity: 1;
+}
+
+.upcoming-event-time {
+    font-family: var(--font-display);
+    font-size: clamp(1rem, 1.8vw, 1.3rem);
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 100px;
+    text-align: right;
+}
+
+.upcoming-event-item.primary .upcoming-event-time {
+    font-size: clamp(1.2rem, 2vw, 1.5rem);
+}
+
+.upcoming-event-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    text-align: left;
+}
+
+.upcoming-event-name {
+    font-size: clamp(0.95rem, 1.6vw, 1.2rem);
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.upcoming-event-item.primary .upcoming-event-name {
+    font-size: clamp(1.1rem, 1.8vw, 1.4rem);
+    font-weight: 700;
+}
+
+.upcoming-event-in {
+    font-size: clamp(0.8rem, 1.3vw, 1rem);
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.upcoming-event-item.primary .upcoming-event-in {
+    font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.upcoming-event-location {
+    font-size: clamp(0.8rem, 1.3vw, 1rem);
+    color: var(--text-muted);
+    text-align: right;
+    min-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.upcoming-event-item.primary .upcoming-event-location {
+    font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* =====================================================
    Animations
    ===================================================== */
 
@@ -1168,7 +1624,7 @@ body {
 /* =====================================================
    Large Display (1080p+ poster view)
    ===================================================== */
-@media (min-width: 1500px) and (min-height: 900px) {
+@media (max-width: 500px) and (min-height: 900px) {
     /* Base scaling for long-distance readability */
     body {
         font-size: clamp(16px, 1.6vw, 24px);
@@ -1372,4 +1828,121 @@ body {
     .slide-indicators {
         height: 12px;
     }
+}
+
+/* Islamic Quotes Slide (Hadith & Verse of the Day) */
+.islamic-quotes-slide {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+}
+
+.islamic-quotes-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    padding: clamp(3rem, 5vh, 5rem) clamp(3rem, 6vw, 8rem);
+    gap: clamp(2rem, 3vh, 3rem);
+}
+
+.quote-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+    max-width: 90%;
+    padding: clamp(2rem, 3vh, 3rem);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 20px;
+    border: 1px solid rgba(248, 225, 93, 0.1);
+}
+
+.quote-header {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 2.5vw, 2rem);
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: clamp(1.5rem, 2vh, 2rem);
+}
+
+.quote-arabic {
+    font-family: 'Amiri', 'Traditional Arabic', serif;
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+    line-height: 1.8;
+    color: var(--text-primary);
+    margin-bottom: clamp(1rem, 2vh, 1.5rem);
+    direction: rtl;
+    text-align: center;
+}
+
+.quote-translation,
+.quote-text {
+    font-family: var(--font-body);
+    font-size: clamp(1.1rem, 1.8vw, 1.5rem);
+    line-height: 1.7;
+    color: var(--text-secondary);
+    margin-bottom: clamp(1rem, 1.5vh, 1.5rem);
+    font-style: italic;
+}
+
+.quote-reference {
+    font-family: var(--font-display);
+    font-size: clamp(0.9rem, 1.2vw, 1.1rem);
+    font-weight: 500;
+    color: var(--accent);
+    opacity: 0.9;
+}
+
+.quote-divider {
+    width: 60%;
+    max-width: 400px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.3;
+}
+
+/* Scrolling Message Bar */
+.scrolling-message-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: clamp(2rem, 4vh, 3rem);
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent-secondary, var(--accent)) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.scrolling-message-content {
+    font-family: var(--font-body);
+    font-size: clamp(1rem, 2vw, 1.5rem);
+    font-weight: 600;
+    color: var(--bg-primary);
+    white-space: nowrap;
+    animation: scrollText 15s linear infinite;
+    padding: 0 2rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes scrollText {
+    0% {
+        transform: translateX(100%);
+    }
+    100% {
+        transform: translateX(-100%);
+    }
+}
+
+/* Adjust right panel to account for scrolling message */
+.right-panel {
+    padding-bottom: clamp(2rem, 4vh, 3rem);
 }
