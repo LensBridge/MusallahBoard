@@ -1,14 +1,12 @@
 /* =====================================================
    UTM MSA Musallah Board - Mock Data Configuration
    =====================================================
-   
-   This file contains all configurable data for the board.
-   Update this file to change events, posters, Jummah times, etc.
-   
-   In the future, this can be replaced with API calls.
+   This file houses all configurable data and helpers for
+   building the prototype payload that mirrors the future
+   backend response shape.
    ===================================================== */
 
-const BOARD_CONFIG = {
+export const BOARD_CONFIG = {
   // Location Settings (for Aladhan API)
   location: {
     city: "Mississauga",
@@ -52,14 +50,15 @@ const BOARD_CONFIG = {
 
   // Scrolling Message (Bottom of RHS)
   enableScrollingMessage: false,
-  scrollingMessage: "Assalamu Alaikum, welcome to the Brothers Musallah. Please rack your shoes. Jazakallah Khair! MusallahBoard v1.0b, powered by IbraSoft",
+  scrollingMessage:
+    "Assalamu Alaikum, welcome to the Brothers Musallah. Please rack your shoes. Jazakallah Khair! MusallahBoard v1.0b, powered by IbraSoft",
 };
 
 // =====================================================
 // MOCK POSTERS - Replace with API data later
 // duration: Time in milliseconds to display this poster
 // =====================================================
-const POSTERS = [
+export const POSTERS = [
   {
     id: 1,
     title: "A Prophetic Blueprint: Redefining Manhood",
@@ -99,20 +98,8 @@ const POSTERS = [
 
 // =====================================================
 // MOCK EVENTS - Replace with API data later
-//
-// Event Model:
-// - startTimestamp: Unix epoch timestamp for event start (replaces date + time)
-// - endTimestamp: Unix epoch timestamp for event end (required for duration calculation)
-// - allDay: (optional) Set to true for all-day events; if true, timestamps should span full day
-// - location: Where the event is happening
-// - description: Event details
-//
-// To create timestamps:
-// new Date(year, month, day, hours, minutes).getTime()
-// NOTE: JavaScript months are 0-indexed! January=0, February=1, ..., December=11
-// Example: Dec 15, 2025 at 12:30 PM = new Date(2025, 11, 15, 12, 30).getTime()
 // =====================================================
-const EVENTS = [
+export const EVENTS = [
   {
     id: 1,
     name: "A Prophetic Blueprint: Redefining Manhood",
@@ -163,7 +150,7 @@ const EVENTS = [
     description: "Casual social to wrap up the conference",
   },
 
-    {
+  {
     id: 6,
     name: "Study Break Social",
     startTimestamp: new Date(2025, 11, 15, 23, 0).getTime(), // Dec 15, 2025 11:00 PM
@@ -276,16 +263,15 @@ const EVENTS = [
 // =====================================================
 // MOCK ISLAMIC CONTENT - Replace with API data later
 // =====================================================
-const VERSES_OF_DAY = [
+export const VERSES_OF_DAY = [
   {
-    arabic: "إِنَّ مَعَ الْعُسْرِ يُسْرًا",
+    arabic: "إِنَّ مَعَ الْعُسْرِ يُسْرًا",
     translation: '"Indeed, with hardship comes ease."',
     reference: "Surah Ash-Sharh (94:6)",
   },
   {
-    arabic: "وَمَن يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ",
-    translation:
-      '"And whoever relies upon Allah - then He is sufficient for him."',
+    arabic: "وَمَن يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ",
+    translation: '"And whoever relies upon Allah - then He is sufficient for him."',
     reference: "Surah At-Talaq (65:3)",
   },
   {
@@ -294,30 +280,28 @@ const VERSES_OF_DAY = [
     reference: "Surah Al-Baqarah (2:152)",
   },
   {
-    arabic: "وَقُل رَّبِّ زِدْنِي عِلْمًا",
+    arabic: "وَقُل رَّبِّ زِدْنِي عِلْمًا",
     translation: "\"And say, 'My Lord, increase me in knowledge.'\"",
     reference: "Surah Ta-Ha (20:114)",
   },
   {
-    arabic: "إِنَّ اللَّهَ مَعَ الصَّابِرِينَ",
+    arabic: "إِنَّ اللَّهَ مَعَ الصَّابِرِينَ",
     translation: '"Indeed, Allah is with the patient."',
     reference: "Surah Al-Baqarah (2:153)",
   },
   {
-    arabic: "رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً",
-    translation:
-      '"Our Lord, give us good in this world and good in the Hereafter."',
+    arabic: "رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الآخِرَةِ حَسَنَةً",
+    translation: '"Our Lord, give us good in this world and good in the Hereafter."',
     reference: "Surah Al-Baqarah (2:201)",
   },
   {
-    arabic: "وَلَسَوْفَ يُعْطِيكَ رَبُّكَ فَتَرْضَىٰ",
-    translation:
-      '"And your Lord is going to give you, and you will be satisfied."',
+    arabic: "وَلَسَوْفَ يُعْطِيكَ رَبُّكَ فَتَرْضَى",
+    translation: '"And your Lord is going to give you, and you will be satisfied."',
     reference: "Surah Ad-Duha (93:5)",
   },
 ];
 
-const HADITHS_OF_DAY = [
+export const HADITHS_OF_DAY = [
   {
     text: '"The best among you are those who have the best manners and character."',
     reference: "Sahih al-Bukhari",
@@ -327,11 +311,13 @@ const HADITHS_OF_DAY = [
     reference: "Jami` at-Tirmidhi",
   },
   {
-    text: '"The strong person is not the one who can wrestle someone else down. The strong person is the one who can control himself when he is angry."',
+    text:
+      '"The strong person is not the one who can wrestle someone else down. The strong person is the one who can control himself when he is angry."',
     reference: "Sahih al-Bukhari",
   },
   {
-    text: '"Make things easy and do not make them difficult, cheer people up and do not drive them away."',
+    text:
+      '"Make things easy and do not make them difficult, cheer people up and do not drive them away."',
     reference: "Sahih al-Bukhari",
   },
   {
@@ -343,7 +329,8 @@ const HADITHS_OF_DAY = [
     reference: "Sahih al-Bukhari",
   },
   {
-    text: '"The most beloved of deeds to Allah are those that are most consistent, even if they are small."',
+    text:
+      '"The most beloved of deeds to Allah are those that are most consistent, even if they are small."',
     reference: "Sahih al-Bukhari",
   },
 ];
@@ -352,8 +339,7 @@ const HADITHS_OF_DAY = [
 // HELPER: Get content based on day of year
 // This ensures content changes daily but is consistent throughout the day
 // =====================================================
-function getDailyContent() {
-  const now = new Date();
+export function getDailyContent(now = new Date()) {
   const start = new Date(now.getFullYear(), 0, 0);
   const diff = now - start;
   const oneDay = 1000 * 60 * 60 * 24;
@@ -365,14 +351,36 @@ function getDailyContent() {
   };
 }
 
-// Export for use in app.js
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = {
-    BOARD_CONFIG,
-    POSTERS,
-    EVENTS,
-    VERSES_OF_DAY,
-    HADITHS_OF_DAY,
-    getDailyContent,
+/**
+ * Build the default frame definitions in the order the backend is expected to send.
+ * Week and Today frames use dynamic durations, posters use their own duration,
+ * and quotes use a fixed read-time.
+ */
+export function buildDefaultFrameDefinitions(posters = POSTERS) {
+  return [
+    { id: "week-at-a-glance", type: "weekAtGlance", duration: "auto" },
+    { id: "today", type: "today", duration: "auto" },
+    { id: "next-prayer", type: "nextPrayer", duration: 12000 },
+    ...posters.map((p) => ({
+      id: `poster-${p.id}`,
+      type: "poster",
+      posterId: p.id,
+      duration: p.duration || BOARD_CONFIG.posterCycleInterval,
+    })),
+    { id: "quotes", type: "quotes", duration: 20000 },
+  ];
+}
+
+/**
+ * Convenience helper for the prototype: returns a payload that mimics the future
+ * backend response shape with board config, events, posters, and frame definitions.
+ */
+export function buildMockPayload() {
+  return {
+    boardConfig: BOARD_CONFIG,
+    events: EVENTS,
+    posters: POSTERS,
+    frames: buildDefaultFrameDefinitions(POSTERS),
+    dailyContent: getDailyContent(),
   };
 }

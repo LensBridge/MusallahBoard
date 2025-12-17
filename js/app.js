@@ -46,11 +46,19 @@ const WEATHER_ICONS = {
   Fog: "🌫️",
 };
 
+function formatLocalDateKey(dateObj) {
+  const y = dateObj.getFullYear();
+  const m = `${dateObj.getMonth() + 1}`.padStart(2, "0");
+  const d = `${dateObj.getDate()}`.padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   initApp();
 });
 
 async function initApp() {
+  setLoadingOverlay(true, "Initializing MusallahBoard v1.0b...");
   const payload = buildMockPayload();
   appState.boardConfig = payload.boardConfig;
   appState.events = payload.events;
@@ -64,6 +72,7 @@ async function initApp() {
   initializeIslamicContent(appState.dailyContent);
   initializeScrollingMessage();
   renderJummahRows();
+  scaleSidebar();
 
   await fetchPrayerTimes();
 
@@ -98,6 +107,12 @@ async function initApp() {
 
   checkDarkModeAndRefresh();
   setInterval(checkDarkModeAndRefresh, 60000);
+
+  // Once initial API/data fetches are done, hide the loader
+  setLoadingOverlay(false);
+
+  // Re-scale on resize
+  window.addEventListener("resize", debounce(scaleSidebar, 150));
 }
 
 /* =====================================================
@@ -399,10 +414,10 @@ function renderJummahRows() {
 
   const prayers = appState.boardConfig.jummahPrayers || [];
 
-  if (!isFriday || prayers.length === 0) {
-    jummahSection.style.display = "none";
-    return;
-  }
+//   if (!isFriday || prayers.length === 0) {
+//     jummahSection.style.display = "none";
+//     return;
+//   }
 
   jummahSection.style.display = "block";
 
@@ -562,7 +577,7 @@ function buildWeatherOutlook(forecastData) {
   if (!forecastData?.list?.length) return null;
   const now = Date.now();
 
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = formatLocalDateKey(new Date());
   const hourly = forecastData.list
     .filter((entry) => entry.dt * 1000 > now)
     .map((entry) => {
@@ -571,7 +586,7 @@ function buildWeatherOutlook(forecastData) {
         hour: "numeric",
         minute: "2-digit",
       });
-      const dayKey = dateObj.toISOString().slice(0, 10);
+      const dayKey = formatLocalDateKey(dateObj);
       return {
         timeLabel,
         temp: Math.round(entry.main.temp),
@@ -583,25 +598,25 @@ function buildWeatherOutlook(forecastData) {
   const dailyMap = new Map();
   forecastData.list.forEach((entry) => {
     const date = new Date(entry.dt * 1000);
-    const dayKey = date.toISOString().slice(0, 10);
+    const dayKey = formatLocalDateKey(date);
     const existing = dailyMap.get(dayKey) || {
       high: -Infinity,
       low: Infinity,
-      icon: WEATHER_ICONS[entry.weather[0].main] || "??",
+      icon: WEATHER_ICONS[entry.weather[0].main] || "\u2601\ufe0f",
       firstIconSet: false,
     };
     existing.high = Math.max(existing.high, entry.main.temp_max);
     existing.low = Math.min(existing.low, entry.main.temp_min);
     if (!existing.firstIconSet) {
-      existing.icon = WEATHER_ICONS[entry.weather[0].main] || "??";
+      existing.icon = WEATHER_ICONS[entry.weather[0].main] || "\u2601\ufe0f";
       existing.firstIconSet = true;
     }
     dailyMap.set(dayKey, existing);
   });
 
   const daily = Array.from(dailyMap.entries())
-    .filter(([dayKey]) => new Date(dayKey).getTime() >= new Date().setHours(0, 0, 0, 0))
-    .slice(0, 2)
+    .filter(([dayKey]) => dayKey >= todayKey)
+    .slice(0, 7)
     .map(([dayKey, info], index) => {
       const label = index === 0 ? "Today" : index === 1 ? "Tomorrow" : dayKey;
       return {
@@ -618,6 +633,16 @@ function buildWeatherOutlook(forecastData) {
 function renderWeather() {
   const modes = ["current", "daily", "hourly"];
   const mode = modes[appState.weatherModeIndex % modes.length];
+  const container = document.getElementById("weatherCards");
+  if (container) {
+    container.classList.add("transitioning");
+    const track = container.querySelector(".weather-track");
+    if (track) {
+      track.classList.add("transitioning");
+      setTimeout(() => track.classList.remove("transitioning"), 400);
+    }
+    setTimeout(() => container.classList.remove("transitioning"), 400);
+  }
   if (mode === "daily") {
     renderWeatherDaily();
   } else if (mode === "hourly") {
@@ -635,16 +660,22 @@ function renderWeatherCurrentInline() {
     return;
   }
   const { temp, icon, desc, condition } = appState.weather.current;
+  const locationLine = appState.boardConfig?.location
+    ? `${appState.boardConfig.location.city}, ${appState.boardConfig.location.country}`
+    : desc;
   container.innerHTML = `
-    <div class="weather-card primary" style="min-width:180px">
-      <div class="weather-time">Now</div>
-      <div class="weather-icon">${icon}</div>
-      <div class="weather-temps">
-        <span class="weather-temp-high">${temp}&deg;C</span>
+    <div class="weather-track">
+      <div class="weather-card primary full">
+        <div class="weather-time">Now</div>
+        <div class="weather-icon">${icon}</div>
+        <div class="weather-temps">
+          <span class="weather-temp-high">${temp}&deg;C</span>
+        </div>
+        <div class="weather-desc">${locationLine} • ${condition}</div>
       </div>
-      <div class="weather-desc">${desc} • ${condition}</div>
     </div>
   `;
+  resetWeatherAutoScroll(container);
 }
 
 function renderWeatherDaily() {
@@ -654,10 +685,11 @@ function renderWeatherDaily() {
     container.innerHTML = `<div class="weather-card primary"><div class="weather-time">Daily</div><div class="weather-desc">No data</div></div>`;
     return;
   }
-  const cards = appState.weather.outlook.daily.map((d, idx) =>
+  const cards = appState.weather.outlook.daily.slice(0, 7).map((d, idx) =>
     buildWeatherCard({ label: d.label, icon: d.icon, high: d.high, low: d.low, highlight: idx === 0 })
   );
-  container.innerHTML = cards.join("");
+  container.innerHTML = `<div class="weather-track">${cards.join("")}</div>`;
+  applyWeatherAutoScroll(container);
 }
 
 function renderWeatherHourly() {
@@ -669,9 +701,10 @@ function renderWeatherHourly() {
   }
   const cards = appState.weather.outlook.hourly
     .filter((h) => h.isToday)
-    .slice(0, 8)
+    .slice(0, 16)
     .map((h, idx) => buildWeatherCard({ label: h.timeLabel, icon: h.icon, high: h.temp, low: h.temp, highlight: idx === 0 }));
-  container.innerHTML = cards.join("");
+  container.innerHTML = `<div class="weather-track">${cards.join("")}</div>`;
+  applyWeatherAutoScroll(container);
 }
 
 function buildWeatherCard({ label, icon, high, low, highlight = false }) {
@@ -698,6 +731,62 @@ function startWeatherCycle() {
     appState.weatherModeIndex = (appState.weatherModeIndex + 1) % 3;
     renderWeather();
   }, 12000);
+}
+
+function setLoadingOverlay(isLoading, message) {
+  const overlay = document.getElementById("loadingOverlay");
+  if (!overlay) return;
+  const subtitle = overlay.querySelector(".loading-subtitle");
+  if (message && subtitle) {
+    subtitle.textContent = message;
+  }
+  overlay.classList.toggle("hidden", !isLoading);
+}
+
+function applyWeatherAutoScroll(container) {
+  resetWeatherAutoScroll(container);
+  const track = container.querySelector(".weather-track");
+  if (track && track.scrollWidth > container.clientWidth) {
+    const original = track.innerHTML;
+    track.innerHTML = original + original;
+    track.classList.add("weather-auto-scroll");
+  }
+}
+
+function resetWeatherAutoScroll(container) {
+  const track = container.querySelector(".weather-track");
+  if (track) {
+    track.classList.remove("weather-auto-scroll");
+  }
+}
+
+function scaleSidebar() {
+  const panel = document.querySelector(".left-panel");
+  const content = document.getElementById("sidebarContent");
+  if (!panel || !content) return;
+
+  // reset before measuring
+  content.style.transform = "scale(1)";
+  content.style.width = "100%";
+
+  const available = panel.clientHeight;
+  const contentHeight = content.scrollHeight;
+  const target = 1080;
+
+  const fitScale = contentHeight > 0 ? available / contentHeight : 1;
+  const targetScale = available / target;
+  const scale = Math.max(0.75, Math.min(Math.max(fitScale, targetScale), 1.1));
+
+  content.style.transform = `scale(${scale})`;
+  content.style.width = `${(1 / scale) * 100}%`;
+}
+
+function debounce(fn, delay) {
+  let t;
+  return (...args) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...args), delay);
+  };
 }
 /* =====================================================
    Utilities

@@ -113,12 +113,9 @@ body {
     overflow-y: hidden;
 }
 
-.left-panel > * {
-    flex-shrink: 0;
-}
-
-.left-panel > .islamic-content-section {
-    flex-shrink: 1;
+.sidebar-content {
+    transform-origin: top left;
+    width: 100%;
 }
 
 /* Sidebar redesign */
@@ -371,17 +368,17 @@ body {
 /* Jummah Section */
 .jummah-section {
     flex: 0 0 auto;
-    padding: clamp(0.75rem, 1.2vh, 1rem);
+    padding: clamp(0.65rem, 1vh, 0.9rem);
 }
 
 .jummah-card {
     background: linear-gradient(135deg, rgba(248, 225, 93, 0.12) 0%, rgba(248, 225, 93, 0.06) 100%);
     border: 2px solid rgba(248, 225, 93, 0.35);
     border-radius: var(--radius-md);
-    padding: clamp(0.8rem, 1.2vh, 1rem);
+    padding: clamp(0.75rem, 1vh, 0.9rem);
     display: flex;
     flex-direction: column;
-    gap: clamp(0.6rem, 1vh, 0.8rem);
+    gap: clamp(0.5rem, 0.8vh, 0.65rem);
 }
 
 .jummah-label {
@@ -397,18 +394,18 @@ body {
 .jummah-subcards {
     display: flex;
     flex-direction: row;
-    gap: clamp(0.5rem, 0.8vw, 0.75rem);
+    gap: clamp(0.45rem, 0.6vw, 0.65rem);
 }
 
 .jummah-subcard {
     flex: 1;
     background: rgba(8, 45, 93, 0.4);
-    border: 1px solid rgba(248, 225, 93, 0.25);
+    border: 1px solid rgba(248, 225, 93, 0.2);
     border-radius: var(--radius-sm);
-    padding: clamp(0.6rem, 0.9vh, 0.8rem);
+    padding: clamp(0.55rem, 0.8vh, 0.75rem);
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.3rem;
     text-align: center;
 }
 
@@ -420,14 +417,14 @@ body {
 }
 
 .jummah-khatib {
-    font-size: clamp(0.7rem, 0.9vw, 0.85rem);
+    font-size: clamp(0.72rem, 0.9vw, 0.88rem);
     color: var(--text-primary);
     font-weight: 600;
-    line-height: 1.1;
+    line-height: 1.15;
 }
 
 .jummah-location {
-    font-size: clamp(0.65rem, 0.8vw, 0.75rem);
+    font-size: clamp(0.62rem, 0.8vw, 0.72rem);
     color: var(--text-muted);
 }
 
@@ -441,25 +438,64 @@ body {
 
 .weather-cards {
     display: flex;
-    gap: clamp(0.6rem, 1vw, 1rem);
-    padding: clamp(0.6rem, 1vh, 0.85rem);
+    flex-wrap: nowrap;
+    gap: clamp(0.7rem, 1vw, 1.1rem);
+    padding: clamp(0.7rem, 1vh, 0.9rem);
     background: linear-gradient(135deg, rgba(46, 83, 128, 0.35) 0%, rgba(8, 45, 93, 0.28) 100%);
     border-radius: var(--radius-md);
     border: 1px solid rgba(248, 225, 93, 0.15);
-    overflow-x: auto;
+    width: 100%;
+    min-height: 120px;
+    overflow: hidden;
+    animation: fadeSlideIn 0.35s ease;
+}
+
+.weather-cards.transitioning {
+    animation: fadeSlideIn 0.4s ease;
+}
+
+.weather-track {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: clamp(0.7rem, 1vw, 1.1rem);
+    width: max-content;
+}
+
+.weather-track.weather-auto-scroll {
+    animation: weatherScroll 25s linear infinite;
+}
+
+.weather-track.weather-auto-scroll:hover {
+    animation-play-state: paused;
+}
+
+.weather-track.transitioning {
+    animation: fadeSlideIn 0.4s ease;
 }
 
 .weather-card {
-    min-width: 90px;
+    flex: 0 0 clamp(120px, 16vw, 160px);
+    min-width: 120px;
+    max-width: 160px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 14px;
-    padding: clamp(0.5rem, 1vh, 0.75rem) clamp(0.6rem, 1vw, 0.9rem);
+    border-radius: 16px;
+    padding: clamp(0.55rem, 1vh, 0.85rem) clamp(0.7rem, 1vw, 1rem);
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.35rem;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.weather-card.full {
+    flex: 1 0 100%;
+    max-width: none;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 1.1rem;
+    padding: clamp(1rem, 1.4vh, 1.3rem) clamp(1.3rem, 2vw, 1.8rem);
 }
 
 .weather-card.primary {
@@ -468,22 +504,30 @@ body {
 }
 
 .weather-card .weather-time {
-    font-size: clamp(0.75rem, 0.95vw, 0.85rem);
+    font-size: clamp(0.75rem, 0.95vw, 0.9rem);
     color: var(--text-secondary);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.6px;
 }
 
 .weather-card .weather-icon {
-    font-size: clamp(1.5rem, 1.9vw, 1.9rem);
+    font-size: clamp(1.5rem, 1.9vw, 2.1rem);
+}
+
+.weather-card.full .weather-icon {
+    font-size: clamp(2.6rem, 3.4vw, 3.4rem);
 }
 
 .weather-card .weather-temps {
     display: flex;
     gap: 0.35rem;
-    font-size: clamp(0.9rem, 1.2vw, 1.05rem);
+    font-size: clamp(0.95rem, 1.2vw, 1.1rem);
     font-weight: 700;
     color: var(--text-primary);
+}
+
+.weather-card.full .weather-temps {
+    font-size: clamp(1.3rem, 1.8vw, 1.6rem);
 }
 
 .weather-card .weather-temp-high {
@@ -495,10 +539,36 @@ body {
 }
 
 .weather-card .weather-desc {
-    font-size: clamp(0.7rem, 0.95vw, 0.85rem);
+    font-size: clamp(0.72rem, 0.95vw, 0.9rem);
     color: var(--text-muted);
     text-align: center;
     line-height: 1.2;
+}
+
+.weather-card.full .weather-desc {
+    text-align: left;
+    font-size: clamp(1rem, 1.4vw, 1.2rem);
+    color: var(--text-primary);
+}
+
+@keyframes fadeSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes weatherScroll {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
 }
 
 /* =====================================================
@@ -1980,4 +2050,61 @@ body {
 /* Adjust right panel to account for scrolling message */
 .right-panel {
     padding-bottom: clamp(2rem, 4vh, 3rem);
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(3, 18, 31, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(2px);
+}
+
+.loading-overlay.hidden {
+    display: none;
+}
+
+.loading-card {
+    background: linear-gradient(135deg, rgba(8, 45, 93, 0.9), rgba(46, 83, 128, 0.9));
+    border: 2px solid rgba(248, 225, 93, 0.4);
+    border-radius: 16px;
+    padding: 2rem 2.5rem;
+    text-align: center;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.loading-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.4rem, 2.2vw, 1.8rem);
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+    letter-spacing: 1px;
+}
+
+.loading-subtitle {
+    font-size: clamp(0.95rem, 1.4vw, 1.05rem);
+    color: var(--text-secondary);
+    margin-bottom: 1.25rem;
+}
+
+.loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid rgba(248, 225, 93, 0.3);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 }

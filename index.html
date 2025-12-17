@@ -14,65 +14,75 @@
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-card">
+            <div class="loading-title">Welcome to MusallahBoard v1.0b</div>
+            <div class="loading-subtitle">Initializing prayer times, events, and weather...</div>
+            <div class="loading-spinner"></div>
+        </div>
+    </div>
+
     <div class="board-container">
         <!-- LEFT SIDE - Prayer Times -->
         <aside class="left-panel">
-            <!-- Header with Logo and Date -->
-            <header class="panel-header">
-                <img src="images/msa_logo_white.png" alt="UTM MSA Logo" class="msa-logo" onerror="this.style.display='none'">
-                <div class="date-display">
-                    <div class="gregorian-date" id="gregorianDate"></div>
-                    <div class="hijri-date" id="hijriDate"></div>
-                </div>
-            </header>
+            <div class="sidebar-content" id="sidebarContent">
+                <!-- Header with Logo and Date -->
+                <header class="panel-header">
+                    <img src="images/msa_logo_white.png" alt="UTM MSA Logo" class="msa-logo" onerror="this.style.display='none'">
+                    <div class="date-display">
+                        <div class="gregorian-date" id="gregorianDate"></div>
+                        <div class="hijri-date" id="hijriDate"></div>
+                    </div>
+                </header>
 
-            <!-- Time Hero -->
-            <section class="time-hero">
-                <div class="time-main" id="currentTime">--:--</div>
-            </section>
+                <!-- Time Hero -->
+                <section class="time-hero">
+                    <div class="time-main" id="currentTime">--:--</div>
+                </section>
 
-            <!-- Prayer Times Table -->
-            <section class="prayer-times-section">
-                <div class="prayer-times-list" id="prayerTimesList">
-                    <div class="prayer-row" data-prayer="fajr">
-                        <span class="prayer-name">Fajr</span>
-                        <span class="prayer-time" id="fajrTime">--:--</span>
+                <!-- Prayer Times Table -->
+                <section class="prayer-times-section">
+                    <div class="prayer-times-list" id="prayerTimesList">
+                        <div class="prayer-row" data-prayer="fajr">
+                            <span class="prayer-name">Fajr</span>
+                            <span class="prayer-time" id="fajrTime">--:--</span>
+                        </div>
+                        <div class="prayer-row" data-prayer="sunrise">
+                            <span class="prayer-name">Sunrise</span>
+                            <span class="prayer-time" id="sunriseTime">--:--</span>
+                        </div>
+                        <div class="prayer-row" data-prayer="dhuhr">
+                            <span class="prayer-name">Dhuhr</span>
+                            <span class="prayer-time" id="dhuhrTime">--:--</span>
+                        </div>
+                        <div class="prayer-row" data-prayer="asr">
+                            <span class="prayer-name">Asr</span>
+                            <span class="prayer-time" id="asrTime">--:--</span>
+                        </div>
+                        <div class="prayer-row" data-prayer="maghrib">
+                            <span class="prayer-name">Maghrib</span>
+                            <span class="prayer-time" id="maghribTime">--:--</span>
+                        </div>
+                        <div class="prayer-row" data-prayer="isha">
+                            <span class="prayer-name">Isha</span>
+                            <span class="prayer-time" id="ishaTime">--:--</span>
+                        </div>
                     </div>
-                    <div class="prayer-row" data-prayer="sunrise">
-                        <span class="prayer-name">Sunrise</span>
-                        <span class="prayer-time" id="sunriseTime">--:--</span>
-                    </div>
-                    <div class="prayer-row" data-prayer="dhuhr">
-                        <span class="prayer-name">Dhuhr</span>
-                        <span class="prayer-time" id="dhuhrTime">--:--</span>
-                    </div>
-                    <div class="prayer-row" data-prayer="asr">
-                        <span class="prayer-name">Asr</span>
-                        <span class="prayer-time" id="asrTime">--:--</span>
-                    </div>
-                    <div class="prayer-row" data-prayer="maghrib">
-                        <span class="prayer-name">Maghrib</span>
-                        <span class="prayer-time" id="maghribTime">--:--</span>
-                    </div>
-                    <div class="prayer-row" data-prayer="isha">
-                        <span class="prayer-name">Isha</span>
-                        <span class="prayer-time" id="ishaTime">--:--</span>
-                    </div>
-                </div>
-            </section>
+                </section>
 
-            <!-- Jummah Card -->
-            <section class="jummah-section" id="jummahSection" style="display: none;">
-                <div class="jummah-card">
-                    <div class="jummah-label">Jumu'ah Prayers</div>
-                    <div class="jummah-subcards" id="jummahSubcards"></div>
-                </div>
-            </section>
+                <!-- Jummah Card -->
+                <section class="jummah-section" id="jummahSection" style="display: none;">
+                    <div class="jummah-card">
+                        <div class="jummah-label">Jumu'ah Prayers</div>
+                        <div class="jummah-subcards" id="jummahSubcards"></div>
+                    </div>
+                </section>
 
-            <!-- Weather Widget -->
-            <section class="weather-section" id="weatherSection">
-                <div class="weather-cards" id="weatherCards"></div>
-            </section>
+                <!-- Weather Widget -->
+                <section class="weather-section" id="weatherSection">
+                    <div class="weather-cards" id="weatherCards"></div>
+                </section>
+            </div>
         </aside>
 
         <!-- RIGHT SIDE - Full Screen Slideshow -->
