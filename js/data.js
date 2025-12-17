@@ -258,6 +258,15 @@ export const EVENTS = [
     location: "Main Hall",
     description: "Congregational prayer",
   },
+
+    {
+    id: 22,
+    name: "Isha Prayer",
+    startTimestamp: new Date(2025, 11, 20, 20, 30).getTime(), // Dec 16, 2025 8:30 PM
+    endTimestamp: new Date(2025, 11, 20, 21, 0).getTime(), // Dec 16, 2025 9:00 PM
+    location: "Main Hall",
+    description: "Congregational prayer",
+  },
 ];
 
 // =====================================================

@@ -72,7 +72,6 @@ async function initApp() {
   initializeIslamicContent(appState.dailyContent);
   initializeScrollingMessage();
   renderJummahRows();
-  scaleSidebar();
 
   await fetchPrayerTimes();
 
@@ -111,8 +110,6 @@ async function initApp() {
   // Once initial API/data fetches are done, hide the loader
   setLoadingOverlay(false);
 
-  // Re-scale on resize
-  window.addEventListener("resize", debounce(scaleSidebar, 150));
 }
 
 /* =====================================================
@@ -739,34 +736,6 @@ function resetWeatherAutoScroll(container) {
   }
 }
 
-function scaleSidebar() {
-  const panel = document.querySelector(".left-panel");
-  const content = document.getElementById("sidebarContent");
-  if (!panel || !content) return;
-
-  // reset before measuring
-  content.style.transform = "scale(1)";
-  content.style.width = "100%";
-
-  const available = panel.clientHeight;
-  const contentHeight = content.scrollHeight;
-  const target = 1080;
-
-  const fitScale = contentHeight > 0 ? available / contentHeight : 1;
-  const targetScale = available / target;
-  const scale = Math.max(0.75, Math.min(Math.max(fitScale, targetScale), 1.1));
-
-  content.style.transform = `scale(${scale})`;
-  content.style.width = `${(1 / scale) * 100}%`;
-}
-
-function debounce(fn, delay) {
-  let t;
-  return (...args) => {
-    clearTimeout(t);
-    t = setTimeout(() => fn(...args), delay);
-  };
-}
 /* =====================================================
    Utilities
    ===================================================== */
