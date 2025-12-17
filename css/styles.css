@@ -103,19 +103,24 @@ body {
 
 .left-panel {
     background: linear-gradient(180deg, var(--bg-primary) 0%, var(--navy-dark) 100%);
-    padding: clamp(0.75rem, 1.5vw, 1.25rem);
+    padding: clamp(0.5rem, 1vw, 0.8rem);
     display: flex;
     flex-direction: column;
-    gap: clamp(0.6rem, 1.1vh, 1rem);
+    gap: clamp(0.4rem, 0.7vh, 0.6rem);
     border-right: 3px solid var(--accent);
     position: relative;
     overflow: hidden;
     overflow-y: hidden;
+    height: 100%;
 }
 
 .sidebar-content {
     transform-origin: top left;
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: clamp(0.55rem, 0.8vh, 0.85rem);
 }
 
 /* Sidebar redesign */
@@ -220,13 +225,13 @@ body {
 
 /* Prayer Times Section */
 .prayer-times-section {
-    flex: 0 1 auto;
+    flex: 1 1 auto;
     position: relative;
     z-index: 1;
     background: rgba(5, 29, 61, 0.9);
     border: 1px solid rgba(248, 225, 93, 0.2);
     border-radius: var(--radius-md);
-    padding: clamp(0.6rem, 0.8vh, 0.8rem) clamp(0.75rem, 1vw, 0.9rem);
+    padding: clamp(0.55rem, 0.8vh, 0.75rem) clamp(0.7rem, 1vw, 0.9rem);
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
     display: flex;
     flex-direction: column;
@@ -246,7 +251,7 @@ body {
     grid-template-columns: 1.2fr 1fr;
     align-items: center;
     gap: 0.3rem;
-    padding: clamp(0.65rem, 0.9vh, 0.85rem) clamp(0.8rem, 1vw, 1rem);
+    padding: clamp(0.55rem, 0.8vh, 0.7rem) clamp(0.7rem, 1vw, 0.9rem);
     background: linear-gradient(90deg, rgba(46, 83, 128, 0.45) 0%, rgba(8, 45, 93, 0.3) 100%);
     border-radius: var(--radius-sm);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -272,14 +277,14 @@ body {
 
 .prayer-name {
     font-family: var(--font-display);
-    font-size: clamp(1.9rem, 2.6vw, 2.4rem);
+    font-size: clamp(1.5rem, 2.2vw, 2rem);
     color: var(--text-primary);
     letter-spacing: 0.5px;
 }
 
 .prayer-time {
     font-family: var(--font-display);
-    font-size: clamp(2.1rem, 2.9vw, 2.6rem);
+    font-size: clamp(1.7rem, 2.4vw, 2.2rem);
     font-weight: 700;
     color: var(--accent);
     letter-spacing: 1px;
@@ -300,7 +305,7 @@ body {
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
-    gap: clamp(0.4rem, 0.9vh, 0.75rem);
+    gap: clamp(0.3rem, 0.6vh, 0.5rem);
     overflow: visible;
     position: relative;
     z-index: 1;
@@ -312,14 +317,14 @@ body {
 .hadith-of-day {
     background: linear-gradient(135deg, rgba(46, 83, 128, 0.22) 0%, rgba(8, 45, 93, 0.22) 100%);
     border-radius: var(--radius-md);
-    padding: clamp(0.4rem, 0.8vh, 0.6rem) clamp(0.5rem, 1vw, 0.65rem);
+    padding: clamp(0.3rem, 0.5vh, 0.4rem) clamp(0.4rem, 0.7vw, 0.5rem);
     border-left: 2px solid rgba(248, 225, 93, 0.5);
     flex: 0 0 auto;
     min-height: 0;
     overflow: visible;
     display: flex;
     flex-direction: column;
-    gap: clamp(0.2rem, 0.5vh, 0.4rem);
+    gap: clamp(0.15rem, 0.3vh, 0.25rem);
 }
 
 .content-title {
@@ -368,17 +373,17 @@ body {
 /* Jummah Section */
 .jummah-section {
     flex: 0 0 auto;
-    padding: clamp(0.65rem, 1vh, 0.9rem);
+    padding: clamp(0.4rem, 0.6vh, 0.6rem);
 }
 
 .jummah-card {
     background: linear-gradient(135deg, rgba(248, 225, 93, 0.12) 0%, rgba(248, 225, 93, 0.06) 100%);
     border: 2px solid rgba(248, 225, 93, 0.35);
     border-radius: var(--radius-md);
-    padding: clamp(0.75rem, 1vh, 0.9rem);
+    padding: clamp(0.5rem, 0.7vh, 0.6rem);
     display: flex;
     flex-direction: column;
-    gap: clamp(0.5rem, 0.8vh, 0.65rem);
+    gap: clamp(0.3rem, 0.5vh, 0.4rem);
 }
 
 .jummah-label {
@@ -402,10 +407,10 @@ body {
     background: rgba(8, 45, 93, 0.4);
     border: 1px solid rgba(248, 225, 93, 0.2);
     border-radius: var(--radius-sm);
-    padding: clamp(0.55rem, 0.8vh, 0.75rem);
+    padding: clamp(0.4rem, 0.6vh, 0.5rem);
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: 0.2rem;
     text-align: center;
 }
 
@@ -433,7 +438,8 @@ body {
     position: relative;
     z-index: 1;
     flex: 0 0 auto;
-    margin-top: auto;
+    margin-top: clamp(0.6rem, 1vh, 0.9rem);
+    width: 100%;
 }
 
 .weather-cards {
@@ -504,30 +510,30 @@ body {
 }
 
 .weather-card .weather-time {
-    font-size: clamp(0.75rem, 0.95vw, 0.9rem);
+    font-size: clamp(0.85rem, 1.1vw, 1rem);
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.6px;
 }
 
 .weather-card .weather-icon {
-    font-size: clamp(1.5rem, 1.9vw, 2.1rem);
+    font-size: clamp(1.8rem, 2.2vw, 2.4rem);
 }
 
 .weather-card.full .weather-icon {
-    font-size: clamp(2.6rem, 3.4vw, 3.4rem);
+    font-size: clamp(3rem, 3.8vw, 3.8rem);
 }
 
 .weather-card .weather-temps {
     display: flex;
     gap: 0.35rem;
-    font-size: clamp(0.95rem, 1.2vw, 1.1rem);
+    font-size: clamp(1.1rem, 1.4vw, 1.25rem);
     font-weight: 700;
     color: var(--text-primary);
 }
 
 .weather-card.full .weather-temps {
-    font-size: clamp(1.3rem, 1.8vw, 1.6rem);
+    font-size: clamp(1.45rem, 2vw, 1.8rem);
 }
 
 .weather-card .weather-temp-high {
@@ -539,7 +545,7 @@ body {
 }
 
 .weather-card .weather-desc {
-    font-size: clamp(0.72rem, 0.95vw, 0.9rem);
+    font-size: clamp(0.85rem, 1.1vw, 1rem);
     color: var(--text-muted);
     text-align: center;
     line-height: 1.2;
@@ -547,7 +553,7 @@ body {
 
 .weather-card.full .weather-desc {
     text-align: left;
-    font-size: clamp(1rem, 1.4vw, 1.2rem);
+    font-size: clamp(1.1rem, 1.5vw, 1.3rem);
     color: var(--text-primary);
 }
 
@@ -1153,17 +1159,18 @@ body {
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding: clamp(1.5rem, 3vh, 2.5rem);
+    padding: clamp(1.6rem, 2.4vh, 2.2rem);
     background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
-    overflow: hidden;
+    transform: scale(0.92);
+    transform-origin: top center;
 }
 
 .widget-title {
     font-family: var(--font-display);
-    font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+    font-size: clamp(1.5rem, 2.8vw, 2rem);
     font-weight: 600;
     color: var(--accent);
-    margin-bottom: clamp(1rem, 2vh, 1.5rem);
+    margin-bottom: clamp(0.7rem, 1.5vh, 1rem);
     text-transform: uppercase;
     letter-spacing: 2px;
 }
@@ -1171,10 +1178,12 @@ body {
 .week-grid {
     display: flex;
     flex-direction: column;
-    gap: 1.2rem;
-    padding: 1.5rem;
+    gap: 0.8rem;
+    padding: 0.9rem;
     height: 100%;
-    overflow-y: auto;
+    flex: 1 1 auto;
+    overflow: visible;
+    justify-content: space-between;
 }
 
 .week-grid::-webkit-scrollbar {
@@ -1199,20 +1208,20 @@ body {
 
 .day-row {
     display: grid;
-    grid-template-columns: 120px 1fr;
-    gap: 1rem;
-    padding: 1rem;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.02);
-    border-left: 3px solid rgba(255, 193, 7, 0.2);
+    grid-template-columns: 115px 1fr;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(8, 45, 93, 0.32));
+    border: 1px solid rgba(255, 255, 255, 0.08);
     transition: all 0.3s ease;
 }
 
 /* RULE A1: Today row - subtle highlight, reserve yellow for today indicator only */
 .day-row.today {
-    background: rgba(255, 193, 7, 0.08);
-    border-left: 3px solid var(--accent);
-    box-shadow: inset 0 0 30px rgba(255, 193, 7, 0.1);
+    background: rgba(248, 225, 93, 0.08);
+    border: 1px solid rgba(248, 225, 93, 0.45);
+    box-shadow: 0 0 22px rgba(248, 225, 93, 0.16);
 }
 
 .day-row.today .day-header {
@@ -1233,26 +1242,26 @@ body {
 .day-header {
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    gap: 0.3rem;
-    min-width: 100px;
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
-    padding-right: 0.8rem;
+    justify-content: center;
+    gap: 0.35rem;
+    min-width: 110px;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    padding-right: 1rem;
 }
 
 .day-name {
-    font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+    font-size: clamp(1rem, 2.3vw, 1.25rem);
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: rgba(255, 255, 255, 0.9);
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.92);
     font-family: var(--font-display);
 }
 
 .day-date {
-    font-size: clamp(0.95rem, 2vw, 1.2rem);
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.7);
+    font-size: clamp(0.9rem, 1.9vw, 1.1rem);
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.75);
 }
 
 .day-row.today .day-date {
@@ -1263,8 +1272,8 @@ body {
 /* Day content area */
 .day-content {
     display: flex;
-    align-items: flex-start;
-    min-height: 100px;
+    align-items: center;
+    min-height: 105px;
 }
 
 /* RULE B: Events container - clear visual structure */
@@ -1275,65 +1284,66 @@ body {
 
 .day-events-scroll-container {
     display: flex;
-    gap: 0.8rem;
+    gap: 0.7rem;
     width: 100%;
 }
 
 /* RULE C: Event hierarchy - primary vs secondary */
 .event-card {
     flex-shrink: 0;
-    padding: 0.8rem;
-    border-radius: 6px;
+    padding: 0.8rem 0.95rem;
+    border-radius: 10px;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    min-width: 200px;
+    min-width: 190px;
+    max-width: 240px;
     transition: all 0.3s ease;
 }
 
 /* Primary event - slightly larger, stronger contrast, yellow time only */
 .event-card.primary {
-    min-width: 220px;
+    min-width: 210px;
     background: rgba(255, 255, 255, 0.12);
     border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.28);
 }
 
 .event-card.primary .event-name {
-    font-size: clamp(1rem, 1.8vw, 1.15rem);
+    font-size: clamp(0.98rem, 1.6vw, 1.12rem);
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.95);
+    color: rgba(255, 255, 255, 0.96);
 }
 
 /* Secondary events - uniform, no special treatment */
 .event-card.secondary {
-    min-width: 200px;
+    min-width: 190px;
     opacity: 0.9;
 }
 
 .event-card.secondary .event-name {
-    font-size: clamp(0.95rem, 1.6vw, 1rem);
+    font-size: clamp(0.9rem, 1.5vw, 1.02rem);
     font-weight: 500;
     color: rgba(255, 255, 255, 0.85);
 }
 
 /* RULE A2: Time indicators - yellow accent (only place yellow is used) */
 .event-time {
-    font-size: clamp(0.85rem, 1.5vw, 0.95rem);
+    font-size: clamp(0.85rem, 1.35vw, 0.95rem);
     font-weight: 700;
     color: var(--accent);
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.3rem;
     letter-spacing: 0.02em;
 }
 
 .event-name {
-    margin-bottom: 0.3rem;
-    line-height: 1.3;
+    margin-bottom: 0.25rem;
+    line-height: 1.25;
 }
 
 .event-location {
-    font-size: clamp(0.75rem, 1.3vw, 0.85rem);
-    color: rgba(255, 255, 255, 0.6);
-    font-weight: 400;
+    font-size: clamp(0.72rem, 1.2vw, 0.82rem);
+    color: rgba(255, 255, 255, 0.65);
+    font-weight: 500;
 }
 
 /* Auto-scroll animation */

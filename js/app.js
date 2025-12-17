@@ -414,10 +414,10 @@ function renderJummahRows() {
 
   const prayers = appState.boardConfig.jummahPrayers || [];
 
-//   if (!isFriday || prayers.length === 0) {
-//     jummahSection.style.display = "none";
-//     return;
-//   }
+  if (!isFriday || prayers.length === 0) {
+    jummahSection.style.display = "none";
+    return;
+  }
 
   jummahSection.style.display = "block";
 
@@ -631,25 +631,8 @@ function buildWeatherOutlook(forecastData) {
 }
 
 function renderWeather() {
-  const modes = ["current", "daily", "hourly"];
-  const mode = modes[appState.weatherModeIndex % modes.length];
-  const container = document.getElementById("weatherCards");
-  if (container) {
-    container.classList.add("transitioning");
-    const track = container.querySelector(".weather-track");
-    if (track) {
-      track.classList.add("transitioning");
-      setTimeout(() => track.classList.remove("transitioning"), 400);
-    }
-    setTimeout(() => container.classList.remove("transitioning"), 400);
-  }
-  if (mode === "daily") {
-    renderWeatherDaily();
-  } else if (mode === "hourly") {
-    renderWeatherHourly();
-  } else {
-    renderWeatherCurrentInline();
-  }
+  // Only render current weather; disable cycling views
+  renderWeatherCurrentInline();
 }
 
 function renderWeatherCurrentInline() {
@@ -726,11 +709,7 @@ function buildWeatherCard({ label, icon, high, low, highlight = false }) {
 function startWeatherCycle() {
   if (appState.weatherCycleTimer) clearInterval(appState.weatherCycleTimer);
   appState.weatherModeIndex = 0;
-  renderWeather();
-  appState.weatherCycleTimer = setInterval(() => {
-    appState.weatherModeIndex = (appState.weatherModeIndex + 1) % 3;
-    renderWeather();
-  }, 12000);
+  renderWeatherCurrentInline();
 }
 
 function setLoadingOverlay(isLoading, message) {
