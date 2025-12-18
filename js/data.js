@@ -196,24 +196,24 @@ export const EVENTS = [
   {
     id: 15,
     name: "Morning Study Circle",
-    startTimestamp: new Date(2025, 11, 16, 7, 30).getTime(), // Dec 16, 2025 7:30 AM
-    endTimestamp: new Date(2025, 11, 16, 8, 30).getTime(), // Dec 16, 2025 8:30 AM
+    startTimestamp: new Date(2025, 11, 17, 7, 30).getTime(), // Dec 16, 2025 7:30 AM
+    endTimestamp: new Date(2025, 11, 17, 8, 30).getTime(), // Dec 16, 2025 8:30 AM
     location: "Musallah, Room 101",
     description: "Qur'an study session",
   },
   {
     id: 17,
     name: "Lunch & Learn: Hadith Discussion",
-    startTimestamp: new Date(2025, 11, 16, 13, 0).getTime(), // Dec 16, 2025 1:15 PM
-    endTimestamp: new Date(2025, 11, 16, 14, 0).getTime(), // Dec 16, 2025 2:00 PM
+    startTimestamp: new Date(2025, 11, 17, 22, 0).getTime(), // Dec 16, 2025 1:15 PM
+    endTimestamp: new Date(2025, 11, 17, 23, 0).getTime(), // Dec 16, 2025 2:00 PM
     location: "Student Centre, Room 205",
     description: "Discussion on contemporary hadith applications",
   },
   {
     id: 19,
     name: "Sisters' Halaqah",
-    startTimestamp: new Date(2025, 11, 16, 16, 30).getTime(), // Dec 16, 2025 4:30 PM
-    endTimestamp: new Date(2025, 11, 16, 17, 30).getTime(), // Dec 16, 2025 5:30 PM
+    startTimestamp: new Date(2025, 11, 17, 22, 30).getTime(), // Dec 16, 2025 4:30 PM
+    endTimestamp: new Date(2025, 11, 17, 23, 0).getTime(), // Dec 16, 2025 5:30 PM
     location: "Musallah, Women's Room",
     description: "Islamic knowledge circle for sisters",
   },
