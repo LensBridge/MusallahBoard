@@ -440,6 +440,8 @@ body {
     flex: 0 0 auto;
     margin-top: clamp(0.6rem, 1vh, 0.9rem);
     width: 100%;
+    display: flex;
+    justify-content: center;
 }
 
 .weather-cards {
@@ -451,6 +453,9 @@ body {
     border-radius: var(--radius-md);
     border: 1px solid rgba(248, 225, 93, 0.15);
     width: 100%;
+    max-width: 640px;
+    justify-content: center;
+    align-items: center;
     min-height: 120px;
     overflow: hidden;
     animation: fadeSlideIn 0.35s ease;
@@ -1224,7 +1229,8 @@ body {
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding: clamp(1.2rem, 2vh, 1.6rem);
+    gap: clamp(1rem, 1.8vh, 1.4rem);
+    padding: clamp(1.4rem, 2vh, 2rem);
     background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
     transform: none;
     transform-origin: top center;
@@ -1232,205 +1238,280 @@ body {
 
 .widget-title {
     font-family: var(--font-display);
-    font-size: clamp(1.5rem, 2.8vw, 2rem);
-    font-weight: 600;
+    font-size: clamp(1.4rem, 2.8vw, 2.1rem);
+    font-weight: 700;
     color: var(--accent);
-    margin-bottom: clamp(0.7rem, 1.5vh, 1rem);
     text-transform: uppercase;
-    letter-spacing: 2px;
+    letter-spacing: 2.8px;
+    margin: 0;
 }
 
 .week-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-    padding: 0.7rem;
-    height: 100%;
     flex: 1 1 auto;
-    overflow: hidden;
-    justify-content: space-between;
-}
-
-.week-grid::-webkit-scrollbar {
-    width: 6px;
-}
-
-.week-grid::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
-}
-
-.week-grid::-webkit-scrollbar-thumb {
-    background: rgba(248, 225, 93, 0.3);
-    border-radius: 10px;
-}
-
-.week-grid::-webkit-scrollbar-thumb:hover {
-    background: rgba(248, 225, 93, 0.5);
-}
-
-/* ===== DAY ROW - REFINED HIERARCHY ===== */
-
-.day-row {
     display: grid;
-    grid-template-columns: 115px 1fr;
-    gap: 0.65rem;
-    padding: 0.7rem 0.9rem;
-    border-radius: 12px;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(8, 45, 93, 0.32));
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: clamp(0.8rem, 1vw, 1.1rem);
+    padding: clamp(0.4rem, 0.8vh, 0.75rem);
+    overflow: hidden;
+}
+
+.day-card {
+    position: relative;
+    background: linear-gradient(145deg, rgba(8, 45, 93, 0.85), rgba(5, 29, 61, 0.92));
     border: 1px solid rgba(255, 255, 255, 0.08);
-    transition: all 0.3s ease;
-}
-
-/* RULE A1: Today row - subtle highlight, reserve yellow for today indicator only */
-.day-row.today {
-    background: rgba(248, 225, 93, 0.08);
-    border: 1px solid rgba(248, 225, 93, 0.45);
-    box-shadow: 0 0 22px rgba(248, 225, 93, 0.16);
-}
-
-.day-row.today .day-header {
-    color: var(--accent);
-    font-weight: 700;
-}
-
-/* Light days visually recede */
-.day-row:not(.today) {
-    opacity: 0.85;
-}
-
-.day-row:not(.today):hover {
-    opacity: 1;
-}
-
-/* Day header - strong contrast */
-.day-header {
+    border-radius: 16px;
+    padding: clamp(0.95rem, 1.1vw, 1.25rem);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    gap: 0.3rem;
-    min-width: 105px;
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
-    padding-right: 0.85rem;
+    gap: clamp(0.65rem, 1vh, 0.9rem);
+    min-height: 0;
+    overflow: hidden;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.day-card.wide {
+    /* No special styling - uniform calendar squares */
+}
+
+.day-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.42);
+}
+
+.day-card.today {
+    border: 1px solid rgba(248, 225, 93, 0.55);
+    box-shadow: 0 14px 34px rgba(248, 225, 93, 0.14), 0 0 0 1px rgba(248, 225, 93, 0.12) inset;
+}
+
+.day-card.empty {
+    background: linear-gradient(150deg, rgba(255, 255, 255, 0.03), rgba(8, 45, 93, 0.45));
+    border: 1px dashed rgba(248, 225, 93, 0.4);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.day-card.empty::after {
+    content: "";
+    position: absolute;
+    inset: 10px;
+    border-radius: 12px;
+    background: radial-gradient(circle at 18% 22%, rgba(248, 225, 93, 0.12), transparent 45%),
+                radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.06), transparent 40%);
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+.day-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    padding-bottom: 0.45rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .day-name {
+    font-family: var(--font-display);
     font-size: clamp(1rem, 2.3vw, 1.25rem);
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
     color: rgba(255, 255, 255, 0.92);
-    font-family: var(--font-display);
 }
 
-.day-date {
-    font-size: clamp(0.9rem, 1.9vw, 1.1rem);
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.75);
-}
-
-.day-row.today .day-date {
+.day-card.today .day-name {
     color: var(--accent);
-    font-weight: 600;
 }
 
-/* Day content area */
-.day-content {
-    display: flex;
-    align-items: center;
-    min-height: 95px;
-}
-
-/* RULE B: Events container - clear visual structure */
-.day-events {
-    width: 100%;
-    overflow: hidden;
-}
-
-.day-events-scroll-container {
-    display: flex;
-    gap: 0.6rem;
-    width: 100%;
-}
-
-/* RULE C: Event hierarchy - primary vs secondary */
-.event-card {
-    flex-shrink: 0;
-    padding: 0.75rem 0.9rem;
+.day-date-badge {
+    min-width: 38px;
+    height: 38px;
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.08);
+    background: linear-gradient(135deg, rgba(248, 225, 93, 0.18), rgba(248, 225, 93, 0.08));
+    border: 1px solid rgba(248, 225, 93, 0.4);
+    color: var(--accent);
+    font-weight: 800;
+    font-family: var(--font-display);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 14px rgba(248, 225, 93, 0.18);
+}
+
+.day-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(0.5rem, 0.8vh, 0.8rem);
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.glance-events {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(0.55rem, 0.8vw, 0.8rem);
+    align-content: flex-start;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 0.15rem;
+    position: relative;
+}
+
+.glance-events.auto-scroll {
+    overflow-y: hidden;
+}
+
+.glance-events-inner {
+    display: contents;
+}
+
+.glance-events.auto-scroll .glance-events-inner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(0.55rem, 0.8vw, 0.8rem);
+    animation: infinite-scroll var(--scroll-duration, 20s) linear infinite;
+}
+
+@keyframes infinite-scroll {
+    0% {
+        transform: translateY(0);
+    }
+    100% {
+        transform: translateY(-50%);
+    }
+}
+
+.glance-events.auto-scroll:hover .glance-events-inner {
+    animation-play-state: paused;
+}
+
+.day-card.wide .glance-events {
+    /* No special styling - same as regular cards */
+}
+
+.glance-events::-webkit-scrollbar {
+    width: 6px;
+}
+
+.glance-events::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+}
+
+.glance-events::-webkit-scrollbar-thumb {
+    background: rgba(248, 225, 93, 0.35);
+    border-radius: 8px;
+}
+
+.glance-events::-webkit-scrollbar-thumb:hover {
+    background: rgba(248, 225, 93, 0.5);
+}
+
+.glance-events.single .glance-event {
+    flex-basis: 100%;
+}
+
+.glance-event {
+    flex: 1 1 46%;
+    min-width: 150px;
+    background: rgba(255, 255, 255, 0.06);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    min-width: 180px;
-    max-width: 230px;
-    transition: all 0.3s ease;
+    border-radius: 14px;
+    padding: clamp(0.7rem, 0.9vw, 0.95rem);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
 }
 
-/* Primary event - slightly larger, stronger contrast, yellow time only */
-.event-card.primary {
-    min-width: 210px;
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.28);
+@media (max-width: 1100px) {
+    .week-grid {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: auto;
+    }
 }
 
-.event-card.primary .event-name {
-    font-size: clamp(0.98rem, 1.6vw, 1.12rem);
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.96);
+.glance-event.primary {
+    background: linear-gradient(145deg, rgba(248, 225, 93, 0.16), rgba(248, 225, 93, 0.08));
+    border-color: rgba(248, 225, 93, 0.6);
+    box-shadow: 0 10px 24px rgba(248, 225, 93, 0.16);
 }
 
-/* Secondary events - uniform, no special treatment */
-.event-card.secondary {
-    min-width: 190px;
-    opacity: 0.9;
+.glance-event.all-day {
+    background: linear-gradient(145deg, rgba(248, 225, 93, 0.12), rgba(248, 225, 93, 0.05));
+    border-color: rgba(248, 225, 93, 0.45);
 }
 
-.event-card.secondary .event-name {
-    font-size: clamp(0.9rem, 1.5vw, 1.02rem);
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.85);
-}
-
-/* RULE A2: Time indicators - yellow accent (only place yellow is used) */
-.event-time {
+.glance-event .event-time {
     font-size: clamp(0.85rem, 1.35vw, 0.95rem);
     font-weight: 700;
     color: var(--accent);
-    margin-bottom: 0.3rem;
     letter-spacing: 0.02em;
 }
 
-.event-name {
-    margin-bottom: 0.25rem;
+.glance-event .event-name {
+    margin-bottom: 0.1rem;
     line-height: 1.25;
+    font-size: clamp(0.95rem, 1.6vw, 1.1rem);
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
 }
 
-.event-location {
-    font-size: clamp(0.72rem, 1.2vw, 0.82rem);
-    color: rgba(255, 255, 255, 0.65);
+.glance-event .event-location {
+    font-size: clamp(0.78rem, 1.2vw, 0.9rem);
+    color: rgba(255, 255, 255, 0.7);
     font-weight: 500;
 }
 
-/* Auto-scroll animation */
-.day-events-scroll-container.auto-scroll {
-    animation: auto-scroll-events 30s linear infinite;
-}
-
-@keyframes auto-scroll-events {
-    0% {
-        transform: translateX(0);
-    }
-    100% {
-        transform: translateX(-50%);
-    }
-}
-
-/* No events placeholder - subtle, not emphasized */
+.day-placeholder,
 .no-events-placeholder {
-    font-size: clamp(0.9rem, 1.6vw, 1rem);
-    color: rgba(255, 255, 255, 0.5);
+    flex: 1;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: clamp(1rem, 1.4vw, 1.2rem);
+    border: 1px dashed rgba(248, 225, 93, 0.55);
+    border-radius: 14px;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: clamp(1rem, 1.6vw, 1.1rem);
     font-style: italic;
-    font-weight: 300;
+    background: linear-gradient(135deg, rgba(248, 225, 93, 0.05), rgba(255, 255, 255, 0.03));
+    text-align: center;
+    letter-spacing: 0.02em;
+    position: relative;
+    overflow: hidden;
+}
+
+.day-card.today .day-placeholder,
+.day-card.today .no-events-placeholder {
+    color: var(--accent);
+    border-color: rgba(248, 225, 93, 0.6);
+    background: rgba(248, 225, 93, 0.06);
+}
+
+.day-placeholder::before,
+.no-events-placeholder::before {
+    content: "😴";
+    font-size: 1.4rem;
+    color: var(--accent);
+    opacity: 0.8;
+    filter: drop-shadow(0 0 12px rgba(248, 225, 93, 0.35));
+}
+
+.day-placeholder::after,
+.no-events-placeholder::after {
+    content: "";
+    position: absolute;
+    inset: 6px;
+    border-radius: 12px;
+    border: 1px dashed rgba(255, 255, 255, 0.08);
+    pointer-events: none;
 }
 
 /* =====================================================

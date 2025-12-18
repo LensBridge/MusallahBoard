@@ -117,14 +117,6 @@ export const EVENTS = [
     description: "Brothers gaming tournament",
   },
   {
-    id: 3,
-    name: "Reviving Islamic Spirit",
-    startTimestamp: new Date(2025, 11, 13, 13, 0).getTime(), // Dec 13, 2025 1:00 PM
-    endTimestamp: new Date(2025, 11, 15, 21, 0).getTime(), // Dec 15, 2025 9:00 PM
-    location: "TBA",
-    description: "Annual RIS Conference",
-  },
-  {
     id: 4,
     name: "Winter Break Study Sessions",
     startTimestamp: new Date(2025, 11, 18, 0, 0).getTime(), // Dec 18, 2025 12:00 AM
@@ -133,23 +125,6 @@ export const EVENTS = [
     location: "Musallah",
     description: "Study sessions during winter break",
   },
-  {
-    id: 6,
-    name: "Study Break Social",
-    startTimestamp: new Date(2025, 11, 15, 22, 0).getTime(), // Dec 15, 2025 11:00 PM
-    endTimestamp: new Date(2025, 11, 15, 22, 45).getTime(), // Dec 15, 2025 11:59 PM
-    location: "Student Centre",
-    description: "Casual social to wrap up the conference",
-  },
-  {
-    id: 6,
-    name: "Study Break Social",
-    startTimestamp: new Date(2025, 11, 15, 22, 45).getTime(), // Dec 15, 2025 11:00 PM
-    endTimestamp: new Date(2025, 11, 15, 22, 59).getTime(), // Dec 15, 2025 11:59 PM
-    location: "Student Centre",
-    description: "Casual social to wrap up the conference",
-  },
-
   {
     id: 6,
     name: "Study Break Social",

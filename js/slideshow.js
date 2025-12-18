@@ -145,75 +145,106 @@ function buildWeekAtGlanceFrame(definition, context) {
     const weekStart = new Date(today);
     weekStart.setDate(today.getDate() - currentDay);
     const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const weekData = [];
+    let maxEvents = 0;
+    let maxEventIndex = -1;
 
     for (let i = 0; i < 7; i++) {
       const dayDate = new Date(weekStart);
       dayDate.setDate(weekStart.getDate() + i);
-      const dayEvents = getEventsForDay(context.events || [], dayDate);
+      const dayEvents = getEventsForDay(context.events || [], dayDate).sort(
+        (a, b) => a.startTimestamp - b.startTimestamp
+      );
       const isToday = dayDate.toDateString() === today.toDateString();
+      weekData.push({ dayDate, dayEvents, isToday });
+      if (dayEvents.length > maxEvents) {
+        maxEvents = dayEvents.length;
+        maxEventIndex = i;
+      }
+    }
 
-      const dayRow = document.createElement("div");
-      dayRow.className = "day-row" + (isToday ? " today" : "");
+    weekData.forEach(({ dayDate, dayEvents, isToday }, index) => {
+      const isWide = index === maxEventIndex && maxEvents > 0;
+      const dayCard = document.createElement("div");
+      dayCard.className = "day-card" + (isToday ? " today" : "") + (dayEvents.length === 0 ? " empty" : "") + (isWide ? " wide" : "");
 
       const dayHeader = document.createElement("div");
-      dayHeader.className = "day-header";
-      dayHeader.innerHTML = `<div class="day-name">${weekDays[i]}</div><div class="day-date">${dayDate.getDate()}</div>`;
-      dayRow.appendChild(dayHeader);
+      dayHeader.className = "day-card-header";
+      const dayName = document.createElement("div");
+      dayName.className = "day-name";
+      dayName.textContent = weekDays[index];
+      const dayDateBadge = document.createElement("div");
+      dayDateBadge.className = "day-date-badge";
+      dayDateBadge.textContent = dayDate.getDate();
+      dayHeader.appendChild(dayName);
+      dayHeader.appendChild(dayDateBadge);
+      dayCard.appendChild(dayHeader);
 
-      const dayContent = document.createElement("div");
-      dayContent.className = "day-content";
+      const dayBody = document.createElement("div");
+      dayBody.className = "day-card-body";
 
       if (dayEvents.length === 0) {
         const noEventsPlaceholder = document.createElement("div");
-        noEventsPlaceholder.className = "no-events-placeholder";
+        noEventsPlaceholder.className = "day-placeholder";
         noEventsPlaceholder.textContent = "Stay tuned";
-        dayContent.appendChild(noEventsPlaceholder);
+        dayBody.appendChild(noEventsPlaceholder);
       } else {
-        const eventsContainer = document.createElement("div");
-        eventsContainer.className = "day-events";
+        const eventsWrapper = document.createElement("div");
+        eventsWrapper.className = "glance-events";
+        if (dayEvents.length === 1) eventsWrapper.classList.add("single");
 
-        const scrollContainer = document.createElement("div");
-        scrollContainer.className = "day-events-scroll-container";
+        const eventsInner = document.createElement("div");
+        eventsInner.className = "glance-events-inner";
 
         const primaryEvent = getPrimaryEvent(dayEvents);
-        dayEvents.forEach((event) => {
-          const eventCard = document.createElement("div");
-          const isPrimary = event.id === primaryEvent?.id;
-          eventCard.className = `event-card ${isPrimary ? "primary" : "secondary"}`;
-          const displayTime = formatEventTimeDisplay(
-            event.startTimestamp,
-            event.endTimestamp,
-            event.allDay
-          );
-          eventCard.innerHTML = `
-            <div class="event-time">${displayTime}</div>
-            <div class="event-name">${event.name}</div>
-            <div class="event-location">${event.location || ""}</div>
-          `;
-          scrollContainer.appendChild(eventCard);
-        });
+        const createEventCards = () => {
+          const fragment = document.createDocumentFragment();
+          dayEvents.forEach((event) => {
+            const eventCard = document.createElement("div");
+            const isPrimary = event.id === primaryEvent?.id;
+            const isAllDay = !!event.allDay;
+            eventCard.className = "glance-event";
+            if (isPrimary) eventCard.classList.add("primary");
+            if (isAllDay) eventCard.classList.add("all-day");
 
-        eventsContainer.appendChild(scrollContainer);
+            const displayTime = formatEventTimeDisplay(
+              event.startTimestamp,
+              event.endTimestamp,
+              event.allDay
+            );
+            eventCard.innerHTML = `
+              <div class="event-time">${displayTime}</div>
+              <div class="event-name">${event.name}</div>
+              <div class="event-location">${event.location || ""}</div>
+            `;
+            fragment.appendChild(eventCard);
+          });
+          return fragment;
+        };
 
-        // Enable marquee effect if needed
-        setTimeout(() => {
-          if (scrollContainer.scrollWidth > eventsContainer.clientWidth) {
-            const originalCards = scrollContainer.innerHTML;
-            scrollContainer.innerHTML = originalCards + originalCards;
-            scrollContainer.classList.add("auto-scroll");
-          } else {
-            scrollContainer.classList.remove("auto-scroll");
+        eventsInner.appendChild(createEventCards());
+        eventsWrapper.appendChild(eventsInner);
+        dayBody.appendChild(eventsWrapper);
+
+        // Check for overflow after render and enable auto-scroll
+        requestAnimationFrame(() => {
+          if (eventsWrapper.scrollHeight > eventsWrapper.clientHeight) {
+            // Duplicate content for seamless loop
+            eventsInner.appendChild(createEventCards());
+            eventsWrapper.classList.add("auto-scroll");
+            
+            // Calculate animation duration based on content height (slower = more readable)
+            const scrollHeight = eventsInner.scrollHeight / 2;
+            const duration = Math.max(15, scrollHeight / 10); // ~10px per second
+            eventsWrapper.style.setProperty("--scroll-duration", `${duration}s`);
           }
-        }, 100);
-
-        dayContent.appendChild(eventsContainer);
+        });
       }
 
-      dayRow.appendChild(dayContent);
-      weekGrid.appendChild(dayRow);
+      dayCard.appendChild(dayBody);
+      weekGrid.appendChild(dayCard);
       frameState.eventCount += dayEvents.length;
-    }
-
+    });
     if (context.onWeekMetrics) {
       context.onWeekMetrics(frameState.eventCount);
     }
