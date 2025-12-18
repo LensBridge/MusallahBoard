@@ -62,37 +62,47 @@ export const POSTERS = [
   {
     id: 1,
     title: "A Prophetic Blueprint: Redefining Manhood",
-    date: "December 1st @ 5-7 PM",
     image: "images/mock/A_Prophetic_Blueprint_Redefining_Manhood_1.png",
     duration: 8000, // 8 seconds
+    startDate: "2025-11-15",
+    endDate: "2025-12-05",
+    audience: "brothers",
   },
   {
     id: 2,
     title: "Brothers Fifa Tournament",
-    date: "December 5th @ 6-8 PM",
     image: "images/mock/fifa_brothers_events_2025_6.jpg",
     duration: 10000, // 10 seconds
+    startDate: "2025-11-20",
+    endDate: "2025-12-10",
+    audience: "brothers",
   },
   {
     id: 3,
     title: "Reviving Islamic Spirit",
-    date: "December 15th @ 1-9 PM",
     image: "images/mock/RIS.png",
     duration: 12000, // 12 seconds
+    startDate: "2025-11-25",
+    endDate: "2025-12-20",
+    audience: "both",
   },
   {
     id: 4,
     title: "Alumni Event",
-    date: "TBA",
     image: "images/mock/Alumni_Post.png",
     duration: 8000, // 8 seconds
+    startDate: "2025-12-01",
+    endDate: "2025-12-18",
+    audience: "both",
   },
   {
     id: 5,
     title: "Navigating Stress & Overwhelming Pressure",
-    date: "TBA",
     image: "images/mock/Navigating_Stress__Overwhelming_Pressure.png",
     duration: 10000, // 10 seconds
+    startDate: "2025-12-05",
+    endDate: "2026-01-05",
+    audience: "sisters",
   },
 ];
 

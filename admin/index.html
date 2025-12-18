@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MusallahBoard Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Montserrat:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/admin.css" />
+  </head>
+  <body class="admin-body">
+    <div class="admin-layout">
+      <aside class="admin-sidebar">
+        <div class="brand-card">
+          <img src="../images/msa_logo_white.png" alt="MSA Logo" />
+          <div>
+            <p class="eyebrow">UTM MSA</p>
+            <h1>MusallahBoard</h1>
+            <p class="subtitle">Operations Console</p>
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <h2>Live Metrics</h2>
+          <div class="metric-grid">
+            <div class="metric-card">
+              <p>Active Events</p>
+              <span id="eventTotal">0</span>
+            </div>
+            <div class="metric-card">
+              <p>Poster Rotation</p>
+              <span id="posterTotal">0</span>
+            </div>
+            <div class="metric-card">
+              <p>Today on Board</p>
+              <span id="todayCount">0</span>
+            </div>
+            <div class="metric-card">
+              <p>Week Snapshot</p>
+              <span id="weekCount">0</span>
+            </div>
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <h2>Quick Links</h2>
+          <a class="sidebar-link" href="/">← View Musallah Display</a>
+          <a class="sidebar-link" href="/signin/">Switch Account</a>
+          <button class="sidebar-link ghost" id="mockSyncBtn">Simulate API Sync</button>
+        </div>
+      </aside>
+
+      <main class="admin-main">
+        <header class="admin-header">
+          <div>
+            <p class="eyebrow">Dashboard</p>
+            <h2>Events & Media Control</h2>
+            <p id="dashboardStatus" class="muted">
+              Connected to mock dataset. Ready for API wiring.
+            </p>
+          </div>
+          <div class="header-actions">
+            <button id="refreshDataBtn" class="ghost-btn">Refresh Data</button>
+            <button id="signOutBtn" class="primary-btn">Sign out</button>
+          </div>
+        </header>
+
+        <section class="panel" id="eventsPanel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Programming</p>
+              <h3>Events</h3>
+              <p class="muted">
+                Add new programming, update the board, and clear outdated items.
+              </p>
+            </div>
+            <div class="panel-meta">
+              <span id="nextEventLabel">Next event: --</span>
+            </div>
+          </div>
+          <div class="panel-grid">
+            <div class="form-card">
+              <div class="form-header">
+                <h4>Add / Edit Event</h4>
+                <p class="muted">
+                  Fields are designed to match the upcoming API contract.
+                </p>
+              </div>
+              <form id="eventForm" class="admin-form">
+                <label>
+                  Title
+                  <input type="text" name="title" placeholder="Event title" required />
+                </label>
+                <label class="inline">
+                  Location
+                  <input
+                    type="text"
+                    name="location"
+                    placeholder="Musallah, IB 110, ..."
+                    required
+                  />
+                </label>
+                <label>
+                  Audience
+                  <select name="audience">
+                    <option value="both" selected>Both</option>
+                    <option value="brothers">Brothers</option>
+                    <option value="sisters">Sisters</option>
+                  </select>
+                </label>
+                <div class="split">
+                  <label>
+                    Start date
+                    <input type="date" name="startDate" required />
+                  </label>
+                  <label>
+                    Start time
+                    <input type="time" name="startTime" class="time-picker" data-time-input />
+                  </label>
+                </div>
+                <div class="split">
+                  <label>
+                    End date
+                    <input type="date" name="endDate" />
+                  </label>
+                  <label>
+                    End time
+                    <input type="time" name="endTime" class="time-picker" data-time-input />
+                  </label>
+                </div>
+                <label class="checkbox">
+                  <input type="checkbox" name="allDay" id="allDayToggle" />
+                  Run all day
+                </label>
+                <div class="form-actions">
+                  <button type="submit" class="primary-btn">Save Event</button>
+                  <button type="button" class="ghost-btn hidden" id="eventCancelEditBtn">Cancel edit</button>
+                </div>
+                <p id="eventStatus" class="form-status"></p>
+              </form>
+            </div>
+
+            <div class="list-card">
+              <div class="list-header">
+                <h4>Scheduled Events</h4>
+                <div class="list-actions">
+                  <label class="checkbox small">
+                    <input type="checkbox" id="hidePastEvents" />
+                    Hide expired
+                  </label>
+                  <button id="clearPastBtn" class="ghost-btn small">Clear Past</button>
+                </div>
+              </div>
+              <div id="eventList" class="item-list">
+                <p class="muted">Loading events...</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="postersPanel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Media</p>
+              <h3>Digital Posters</h3>
+              <p class="muted">
+                Drop URLs for posters that the slideshow should rotate through.
+              </p>
+            </div>
+          </div>
+          <div class="panel-grid">
+            <div class="form-card">
+              <div class="form-header">
+                <h4>Poster Details</h4>
+              </div>
+              <form id="posterForm" class="admin-form">
+                <label>
+                  Title
+                  <input type="text" name="title" placeholder="Poster label" required />
+                </label>
+                <div class="split">
+                  <label>
+                    Start date
+                    <input type="date" name="startDate" required />
+                  </label>
+                  <label>
+                    End date
+                    <input type="date" name="endDate" required />
+                  </label>
+                </div>
+                <label>
+                  Audience
+                  <select name="audience">
+                    <option value="both" selected>Both</option>
+                    <option value="brothers">Brothers</option>
+                    <option value="sisters">Sisters</option>
+                  </select>
+                </label>
+                <label>
+                  Image URL
+                  <input type="url" name="image" placeholder="https://..." required />
+                </label>
+                <label>
+                  Duration (ms)
+                  <input type="number" name="duration" min="3000" step="500" value="8000" />
+                </label>
+                <div class="form-actions">
+                  <button type="submit" class="primary-btn">Add Poster</button>
+                  <button type="button" class="ghost-btn hidden" id="posterCancelEditBtn">Cancel edit</button>
+                </div>
+                <p id="posterStatus" class="form-status"></p>
+              </form>
+            </div>
+
+            <div class="list-card">
+              <div class="list-header">
+                <h4>Poster Rotation</h4>
+                <div class="list-actions">
+                  <label class="checkbox small">
+                    <input type="checkbox" id="hideExpiredPosters" />
+                    Hide expired
+                  </label>
+                </div>
+              </div>
+              <div id="posterList" class="poster-grid">
+                <p class="muted">Loading posters...</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      (function () {
+        const existing = window.__MB_ADMIN_CONFIG__ || {};
+        window.__MB_ADMIN_CONFIG__ = {
+          apiBase: existing.apiBase ?? "/api/admin",
+          useMock: existing.useMock ?? true,
+          auth: {
+            baseUrl: existing.auth?.baseUrl ?? "/api/auth",
+            useMock: existing.auth?.useMock ?? true,
+          },
+        };
+      })();
+    </script>
+    <script type="module" src="../js/admin.js"></script>
+  </body>
+</html>
