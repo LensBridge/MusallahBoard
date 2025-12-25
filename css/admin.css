@@ -145,6 +145,47 @@ body {
   background: radial-gradient(circle farthest-corner at 30% 20%, rgba(248, 225, 93, 0.08), transparent 55%);
 }
 
+.quad-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.25rem;
+}
+
+.quad-card {
+  background: rgba(5, 18, 31, 0.85);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.quad-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.quad-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.quad-body {
+  margin-top: 0.5rem;
+}
+
+.quad-meta {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
 .admin-header {
   display: flex;
   justify-content: space-between;
@@ -330,6 +371,73 @@ body {
   padding-right: 0.5rem;
 }
 
+.entity-list {
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.schedule-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-radius: 14px;
+  background: rgba(6, 20, 37, 0.85);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.schedule-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.schedule-title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.schedule-meta {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(248, 225, 93, 0.14);
+  color: var(--accent);
+  font-size: 0.82rem;
+  border: 1px solid rgba(248, 225, 93, 0.25);
+}
+
+.schedule-actions {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.chip-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.chip-checkbox input {
+  accent-color: var(--accent);
+}
+
 .event-card {
   border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 1rem;
@@ -421,6 +529,10 @@ body {
   color: var(--text-muted);
 }
 
+.small {
+  font-size: 0.85rem;
+}
+
 .form-status[data-variant="error"] {
   color: var(--danger);
 }
@@ -470,6 +582,112 @@ body {
   font-weight: 600;
 }
 
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 12, 23, 0.75);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+
+.modal.open {
+  display: flex;
+}
+
+.modal-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  border-radius: 20px;
+  width: min(760px, 96vw);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.icon-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 12px;
+  width: 36px;
+  height: 36px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.wizard-section {
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  margin-bottom: 1rem;
+}
+
+.wizard-step {
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.modal-actions {
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+  margin-top: 0.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+#prayerInputs .prayer-block {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+#prayerInputs h5 {
+  margin: 0 0 0.4rem;
+}
+
+#prayerInputs label {
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.prayer-meta {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+body.modal-open {
+  overflow: hidden;
+}
+
 @media (max-width: 1100px) {
   .admin-layout {
     grid-template-columns: 260px 1fr;
@@ -503,6 +721,10 @@ body {
   .sidebar-section {
     flex: 1;
     min-width: 240px;
+  }
+
+  .quad-grid {
+    grid-template-columns: 1fr;
   }
 }
 

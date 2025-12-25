@@ -4,6 +4,7 @@ export const FRAME_TYPES = {
   NEXT_PRAYER: "nextPrayer",
   POSTER: "poster",
   QUOTES: "quotes",
+  SOCIAL_MEDIA_PROMOTION: "socialMediaPromotion",
 };
 
 const frameBuilders = new Map();
@@ -432,14 +433,14 @@ function buildQuotesFrame(definition, context) {
   slide.innerHTML = `
     <div class="islamic-quotes-container">
       <div class="quote-section verse-section">
-        <div class="quote-header">Verse of the Day</div>
+        <div class="quote-header">Verse of the Week</div>
         <div class="quote-arabic" id="verseArabic">...</div>
         <div class="quote-translation" id="verseTranslation">...</div>
         <div class="quote-reference" id="verseReference">...</div>
       </div>
       <div class="quote-divider"></div>
       <div class="quote-section hadith-section">
-        <div class="quote-header">Hadith of the Day</div>
+        <div class="quote-header">Hadith of the Week</div>
         <div class="quote-text" id="hadithText">...</div>
         <div class="quote-reference" id="hadithReference">...</div>
       </div>
@@ -466,6 +467,40 @@ function buildQuotesFrame(definition, context) {
     element: slide,
     durationMs: typeof definition.duration === "number" ? definition.duration : 20000,
     refresh: render,
+  };
+}
+
+function buildSocialMediaFrame(definition) {
+  const handle = definition.instagramHandle || "@utmmsa";
+  const handleSlug = handle.startsWith("@") ? handle.slice(1) : handle;
+  const profileUrl = definition.instagramUrl || `https://www.instagram.com/${handleSlug}`;
+  const qrCodeUrl =
+    definition.qrCodeUrl ||
+    `https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=4&data=${encodeURIComponent(
+      profileUrl
+    )}`;
+
+  const slide = document.createElement("div");
+  slide.className = "slide social-media-slide";
+  slide.innerHTML = `
+    <div class="social-media-container">
+      <div class="social-media-body">
+        <div class="social-media-label">Stay Connected</div>
+        <div class="social-media-title">Follow us on Instagram</div>
+        <div class="social-media-handle">${handle}</div>
+        <div class="social-media-subtext">Scan the QR code to join the UTM MSA community</div>
+      </div>
+      <div class="social-media-qr-wrapper">
+        <img src="${qrCodeUrl}" class="social-media-qr" alt="Instagram QR for ${handle}" loading="lazy" />
+        <div class="social-media-qr-caption">${handleSlug}</div>
+      </div>
+    </div>
+  `;
+
+  return {
+    id: definition.id,
+    element: slide,
+    durationMs: typeof definition.duration === "number" ? definition.duration : 15000,
   };
 }
 
@@ -546,3 +581,4 @@ registerFrameBuilder(FRAME_TYPES.TODAY, buildTodayFrame);
 registerFrameBuilder(FRAME_TYPES.NEXT_PRAYER, buildNextPrayerFrame);
 registerFrameBuilder(FRAME_TYPES.POSTER, buildPosterFrame);
 registerFrameBuilder(FRAME_TYPES.QUOTES, buildQuotesFrame);
+registerFrameBuilder(FRAME_TYPES.SOCIAL_MEDIA_PROMOTION, buildSocialMediaFrame);

@@ -361,6 +361,12 @@ export function buildDefaultFrameDefinitions(posters = POSTERS) {
       posterId: p.id,
       duration: p.duration || BOARD_CONFIG.posterCycleInterval,
     })),
+    {
+      id: "social-media-promotion",
+      type: "socialMediaPromotion",
+      instagramHandle: "@utmmsa",
+      duration: 15000,
+    },
     { id: "quotes", type: "quotes", duration: 20000 },
   ];
 }

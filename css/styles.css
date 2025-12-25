@@ -313,8 +313,8 @@ body {
     opacity: 0.9;
 }
 
-.verse-of-day,
-.hadith-of-day {
+.verse-of-week,
+.hadith-of-week {
     background: linear-gradient(135deg, rgba(46, 83, 128, 0.22) 0%, rgba(8, 45, 93, 0.22) 100%);
     border-radius: var(--radius-md);
     padding: clamp(0.3rem, 0.5vh, 0.4rem) clamp(0.4rem, 0.7vw, 0.5rem);
@@ -1998,8 +1998,8 @@ body {
         gap: 1rem;
     }
 
-    .verse-of-day,
-    .hadith-of-day {
+    .verse-of-week,
+    .hadith-of-week {
         padding: 1rem 1.1rem;
         border-left-width: 3px;
         gap: 0.6rem;
@@ -2091,7 +2091,7 @@ body {
     }
 }
 
-/* Islamic Quotes Slide (Hadith & Verse of the Day) */
+/* Islamic Quotes Slide (Hadith & Verse of the Week) */
 .islamic-quotes-slide {
     background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
 }
@@ -2166,6 +2166,83 @@ body {
     height: 2px;
     background: linear-gradient(90deg, transparent, var(--accent), transparent);
     opacity: 0.3;
+}
+
+/* Social Media Promotion Slide */
+.social-media-slide {
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--accent) 90%);
+}
+
+.social-media-container {
+    width: 100%;
+    height: 100%;
+    padding: clamp(2rem, 3vh, 3.5rem) clamp(2.5rem, 4vw, 5rem);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: clamp(1.5rem, 2vh, 2.5rem);
+    align-items: center;
+    justify-items: center;
+}
+
+.social-media-body {
+    text-align: center;
+    color: var(--bg-primary);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-width: 320px;
+}
+
+.social-media-label {
+    font-family: var(--font-body);
+    font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0.85;
+}
+
+.social-media-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 3.5vw, 2.8rem);
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.social-media-handle {
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 3vw, 2.4rem);
+    font-weight: 600;
+    color: var(--accent-secondary, #ffd166);
+}
+
+.social-media-subtext {
+    font-family: var(--font-body);
+    font-size: clamp(1rem, 1.8vw, 1.3rem);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.social-media-qr-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.social-media-qr {
+    width: clamp(170px, 28vw, 280px);
+    height: clamp(170px, 28vw, 280px);
+    border-radius: 28px;
+    border: 8px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+    background: #fff;
+}
+
+.social-media-qr-caption {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.8);
 }
 
 /* Scrolling Message Bar */
