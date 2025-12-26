@@ -436,16 +436,26 @@ function renderJummahRows() {
 function initializeIslamicContent(dailyContent) {
   if (!dailyContent) return;
   const verseArabic = document.getElementById("verseArabic");
+  const verseTransliteration = document.getElementById("verseTransliteration");
   const verseTranslation = document.getElementById("verseTranslation");
   const verseReference = document.getElementById("verseReference");
-  const hadithText = document.getElementById("hadithText");
+  const hadithArabic = document.getElementById("hadithArabic");
+  const hadithTransliteration = document.getElementById("hadithTransliteration");
+  const hadithTranslation = document.getElementById("hadithTranslation");
   const hadithReference = document.getElementById("hadithReference");
 
-  if (verseArabic) verseArabic.textContent = dailyContent.verse.arabic;
-  if (verseTranslation) verseTranslation.textContent = dailyContent.verse.translation;
-  if (verseReference) verseReference.textContent = dailyContent.verse.reference;
-  if (hadithText) hadithText.textContent = dailyContent.hadith.text;
-  if (hadithReference) hadithReference.textContent = dailyContent.hadith.reference;
+  const verseContent = dailyContent.verse || {};
+  const hadithContent = dailyContent.hadith || {};
+
+  if (verseArabic) verseArabic.textContent = verseContent.arabic || "...";
+  if (verseTransliteration) verseTransliteration.textContent = verseContent.transliteration || "...";
+  if (verseTranslation) verseTranslation.textContent = verseContent.translation || "...";
+  if (verseReference) verseReference.textContent = verseContent.reference || "...";
+
+  if (hadithArabic) hadithArabic.textContent = hadithContent.arabic || "...";
+  if (hadithTransliteration) hadithTransliteration.textContent = hadithContent.transliteration || "...";
+  if (hadithTranslation) hadithTranslation.textContent = hadithContent.translation || "...";
+  if (hadithReference) hadithReference.textContent = hadithContent.reference || "...";
 }
 
 function fetchIslamicQuotes() {
@@ -454,16 +464,26 @@ function fetchIslamicQuotes() {
   }
   const { verse, hadith } = appState.dailyContent;
   const verseArabic = document.getElementById("verseArabic");
+  const verseTransliteration = document.getElementById("verseTransliteration");
   const verseTranslation = document.getElementById("verseTranslation");
   const verseReference = document.getElementById("verseReference");
-  const hadithText = document.getElementById("hadithText");
+  const hadithArabic = document.getElementById("hadithArabic");
+  const hadithTransliteration = document.getElementById("hadithTransliteration");
+  const hadithTranslation = document.getElementById("hadithTranslation");
   const hadithReference = document.getElementById("hadithReference");
 
-  if (verseArabic) verseArabic.textContent = verse?.arabic || "...";
-  if (verseTranslation) verseTranslation.textContent = verse?.translation || "...";
-  if (verseReference) verseReference.textContent = verse?.reference || "...";
-  if (hadithText) hadithText.textContent = hadith?.text || "...";
-  if (hadithReference) hadithReference.textContent = hadith?.reference || "...";
+  const verseContent = verse || {};
+  const hadithContent = hadith || {};
+
+  if (verseArabic) verseArabic.textContent = verseContent.arabic || "...";
+  if (verseTransliteration) verseTransliteration.textContent = verseContent.transliteration || "...";
+  if (verseTranslation) verseTranslation.textContent = verseContent.translation || "...";
+  if (verseReference) verseReference.textContent = verseContent.reference || "...";
+
+  if (hadithArabic) hadithArabic.textContent = hadithContent.arabic || "...";
+  if (hadithTransliteration) hadithTransliteration.textContent = hadithContent.transliteration || "...";
+  if (hadithTranslation) hadithTranslation.textContent = hadithContent.translation || "...";
+  if (hadithReference) hadithReference.textContent = hadithContent.reference || "...";
 }
 
 /* =====================================================

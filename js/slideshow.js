@@ -435,13 +435,16 @@ function buildQuotesFrame(definition, context) {
       <div class="quote-section verse-section">
         <div class="quote-header">Verse of the Week</div>
         <div class="quote-arabic" id="verseArabic">...</div>
+        <div class="quote-transliteration" id="verseTransliteration">...</div>
         <div class="quote-translation" id="verseTranslation">...</div>
         <div class="quote-reference" id="verseReference">...</div>
       </div>
       <div class="quote-divider"></div>
       <div class="quote-section hadith-section">
         <div class="quote-header">Hadith of the Week</div>
-        <div class="quote-text" id="hadithText">...</div>
+        <div class="quote-arabic" id="hadithArabic">...</div>
+        <div class="quote-transliteration" id="hadithTransliteration">...</div>
+        <div class="quote-translation" id="hadithTranslation">...</div>
         <div class="quote-reference" id="hadithReference">...</div>
       </div>
     </div>
@@ -454,9 +457,12 @@ function buildQuotesFrame(definition, context) {
 
     const { verse, hadith } = dailyContent;
     slide.querySelector("#verseArabic").textContent = verse?.arabic || "...";
+    slide.querySelector("#verseTransliteration").textContent = verse?.transliteration || "...";
     slide.querySelector("#verseTranslation").textContent = verse?.translation || "...";
     slide.querySelector("#verseReference").textContent = verse?.reference || "...";
-    slide.querySelector("#hadithText").textContent = hadith?.text || "...";
+    slide.querySelector("#hadithArabic").textContent = hadith?.arabic || "...";
+    slide.querySelector("#hadithTransliteration").textContent = hadith?.transliteration || "...";
+    slide.querySelector("#hadithTranslation").textContent = hadith?.translation || "...";
     slide.querySelector("#hadithReference").textContent = hadith?.reference || "...";
   };
 

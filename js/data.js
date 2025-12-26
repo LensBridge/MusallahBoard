@@ -260,74 +260,94 @@ export const EVENTS = [
 export const VERSES_OF_DAY = [
   {
     arabic: "إِنَّ مَعَ الْعُسْرِ يُسْرًا",
+    transliteration: "Inna maʿa al-ʿusri yusra.",
     translation: '"Indeed, with hardship comes ease."',
     reference: "Surah Ash-Sharh (94:6)",
   },
   {
     arabic: "وَمَن يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ",
+    transliteration: "Wa man yatawakkal ʿala Allahi fahuwa hasbuhu.",
     translation: '"And whoever relies upon Allah - then He is sufficient for him."',
     reference: "Surah At-Talaq (65:3)",
   },
   {
     arabic: "فَاذْكُرُونِي أَذْكُرْكُمْ",
+    transliteration: "Fadhkuruni adhkurkum.",
     translation: '"So remember Me; I will remember you."',
     reference: "Surah Al-Baqarah (2:152)",
   },
   {
     arabic: "وَقُل رَّبِّ زِدْنِي عِلْمًا",
+    transliteration: "Wa qul rabbi zidni ʿilman.",
     translation: "\"And say, 'My Lord, increase me in knowledge.'\"",
     reference: "Surah Ta-Ha (20:114)",
   },
   {
     arabic: "إِنَّ اللَّهَ مَعَ الصَّابِرِينَ",
+    transliteration: "Inna Allaha maʿa as-sabireen.",
     translation: '"Indeed, Allah is with the patient."',
     reference: "Surah Al-Baqarah (2:153)",
   },
   {
-    arabic: "رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الآخِرَةِ حَسَنَةً",
+    arabic: "رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً",
+    transliteration: "Rabbana atina fi d-dunya hasanatan wa fi l-akhirati hasanatan.",
     translation: '"Our Lord, give us good in this world and good in the Hereafter."',
     reference: "Surah Al-Baqarah (2:201)",
   },
   {
     arabic: "وَلَسَوْفَ يُعْطِيكَ رَبُّكَ فَتَرْضَى",
+    transliteration: "Wa lasawfa yuʿṭīka rabbuka fa-tarḍā.",
     translation: '"And your Lord is going to give you, and you will be satisfied."',
     reference: "Surah Ad-Duha (93:5)",
   },
 ];
 
+
 export const HADITHS_OF_DAY = [
   {
-    text: '"The best among you are those who have the best manners and character."',
+    arabic: "إِنَّ مِنْ خِيَارِكُمْ أَحَسَنَكُمْ أَخْلَاقًا",
+    transliteration: "Inna min khiyarikum ahsankum akhlaqan.",
+    translation: '"The best among you are those who have the best manners and character."',
     reference: "Sahih al-Bukhari",
   },
   {
-    text: '"Smiling in the face of your brother is charity."',
+    arabic: "وَبَشِّرُوا وَجْهَ أَخِيكَ الصَّالِحَ فَإِنَّهُ صَدَقَةٌ",
+    transliteration: "Wa bashshiru wajh akhika as-salih fa-innahu sadaqah.",
+    translation: '"Smiling in the face of your brother is charity."',
     reference: "Jami` at-Tirmidhi",
   },
   {
-    text:
-      '"The strong person is not the one who can wrestle someone else down. The strong person is the one who can control himself when he is angry."',
+    arabic: "لَيْسَ الشَّدِيدُ بِالصَّرْعَةِ، إِنَّمَا الشَّدِيدُ الَّذِي يَمْلِكُ نَفْسَهُ عِنْدَ الْغَضَبِ",
+    transliteration: "Laysa ash-shadidu bis-sir'ati, innama ash-shadidu alladhi yamsiku nafsahu ʿinda al-ghadabi.",
+    translation: '"The strong person is not the one who can wrestle someone else down. The strong person is the one who can control himself when he is angry."',
     reference: "Sahih al-Bukhari",
   },
   {
-    text:
-      '"Make things easy and do not make them difficult, cheer people up and do not drive them away."',
+    arabic: "يَسِّرُوا وَلاَ تُعَسِّرُوا وَبَشِّرُوا وَلاَ تُنَفِّرُوا",
+    transliteration: "Yassiru wa la tu'assiru wa bashshiru wa la tunaffiru.",
+    translation: '"Make things easy and do not make them difficult, cheer people up and do not drive them away."',
     reference: "Sahih al-Bukhari",
   },
   {
-    text: '"None of you truly believes until he loves for his brother what he loves for himself."',
+    arabic: "لاَ يُؤْمِنُ أَحَدُكُمْ حَتَّى يُحِبَّ لأَخِيهِ مَا يُحِبُّ لِنَفْسِهِ",
+    transliteration: "La yu'minu ahadukum hatta yuhibba li-akhihi ma yuhibbu linafsihi.",
+    translation: '"None of you truly believes until he loves for his brother what he loves for himself."',
     reference: "Sahih al-Bukhari",
   },
   {
-    text: '"Whoever believes in Allah and the Last Day, let him speak good or remain silent."',
+    arabic: "مَنْ كَانَ يُؤْمِنُ بِاللَّهِ وَالْيَوْمِ الْآخِرِ فَلْيَقُلْ خَيْرًا أَوْ لِيَصْمُتْ",
+    transliteration: "Man kana yu'minu billahi wal-yawmi al-akhiri falyakul khayran aw liyasmut.",
+    translation: '"Whoever believes in Allah and the Last Day, let him speak good or remain silent."',
     reference: "Sahih al-Bukhari",
   },
   {
-    text:
-      '"The most beloved of deeds to Allah are those that are most consistent, even if they are small."',
+    arabic: "أَحَبُّ الْأَعْمَالِ إِلَى اللَّهِ أَدْوَمُهَا وَإِنْ قَلَّ",
+    transliteration: "Ahabbu al-a'mali ila Allahi adwamuhā wa-in qalla.",
+    translation: '"The most beloved of deeds to Allah are those that are most consistent, even if they are small."',
     reference: "Sahih al-Bukhari",
   },
 ];
+
 
 // =====================================================
 // HELPER: Get content based on day of year
