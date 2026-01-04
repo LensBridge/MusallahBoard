@@ -405,6 +405,7 @@ function renderJummahRows() {
   const isFriday = today.getDay() === 5;
   const jummahSection = document.getElementById("jummahSection");
   const subcards = document.getElementById("jummahSubcards");
+  const sidebarContent = document.getElementById("sidebarContent");
 
   if (!jummahSection || !subcards) return;
   subcards.innerHTML = "";
@@ -413,10 +414,12 @@ function renderJummahRows() {
 
   if (!isFriday || prayers.length === 0) {
     jummahSection.style.display = "none";
+    if (sidebarContent) sidebarContent.classList.remove("jummah-visible");
     return;
   }
 
   jummahSection.style.display = "block";
+  if (sidebarContent) sidebarContent.classList.add("jummah-visible");
 
   prayers.forEach((prayer) => {
     const subcard = document.createElement("div");
@@ -664,15 +667,13 @@ function renderWeatherCurrentInline() {
     ? `${appState.boardConfig.location.city}, ${appState.boardConfig.location.country}`
     : desc;
   container.innerHTML = `
-    <div class="weather-track">
-      <div class="weather-card primary full">
-        <div class="weather-time">Now</div>
-        <div class="weather-icon">${icon}</div>
-        <div class="weather-temps">
-          <span class="weather-temp-high">${temp}&deg;C</span>
-        </div>
-        <div class="weather-desc">${locationLine} • ${condition}</div>
+    <div class="weather-card primary full">
+      <div class="weather-time">Now</div>
+      <div class="weather-icon">${icon}</div>
+      <div class="weather-temps">
+        <span class="weather-temp-high">${temp}&deg;C</span>
       </div>
+      <div class="weather-desc">${locationLine} • ${condition}</div>
     </div>
   `;
   resetWeatherAutoScroll(container);

@@ -113,24 +113,24 @@ export const EVENTS = [
   {
     id: 1,
     name: "A Prophetic Blueprint: Redefining Manhood",
-    startTimestamp: new Date(2025, 11, 1, 17, 0).getTime(), // Dec 1, 2025 5:00 PM
-    endTimestamp: new Date(2025, 11, 1, 19, 0).getTime(), // Dec 1, 2025 7:00 PM
+    startTimestamp: new Date(2025, 11, 28, 17, 0).getTime(), // Dec 28, 2025 5:00 PM
+    endTimestamp: new Date(2025, 11, 28, 19, 0).getTime(), // Dec 28, 2025 7:00 PM
     location: "TBA",
     description: "Islamic perspective on masculinity and character",
   },
   {
     id: 2,
     name: "Brothers Fifa Tournament",
-    startTimestamp: new Date(2025, 11, 5, 18, 0).getTime(), // Dec 5, 2025 6:00 PM
-    endTimestamp: new Date(2025, 11, 5, 20, 0).getTime(), // Dec 5, 2025 8:00 PM
+    startTimestamp: new Date(2025, 11, 29, 18, 0).getTime(), // Dec 29, 2025 6:00 PM
+    endTimestamp: new Date(2025, 11, 29, 20, 0).getTime(), // Dec 29, 2025 8:00 PM
     location: "TBA",
     description: "Brothers gaming tournament",
   },
   {
     id: 4,
     name: "Winter Break Study Sessions",
-    startTimestamp: new Date(2025, 11, 18, 0, 0).getTime(), // Dec 18, 2025 12:00 AM
-    endTimestamp: new Date(2025, 11, 22, 23, 59).getTime(), // Dec 22, 2025 11:59 PM
+    startTimestamp: new Date(2025, 11, 30, 0, 0).getTime(), // Dec 30, 2025 12:00 AM
+    endTimestamp: new Date(2026, 0, 2, 23, 59).getTime(), // Jan 2, 2026 11:59 PM
     allDay: true,
     location: "Musallah",
     description: "Study sessions during winter break",
@@ -138,24 +138,24 @@ export const EVENTS = [
   {
     id: 6,
     name: "Study Break Social",
-    startTimestamp: new Date(2025, 11, 15, 23, 0).getTime(), // Dec 15, 2025 11:00 PM
-    endTimestamp: new Date(2025, 11, 15, 23, 59).getTime(), // Dec 15, 2025 11:59 PM
+    startTimestamp: new Date(2025, 11, 31, 23, 0).getTime(), // Dec 31, 2025 11:00 PM
+    endTimestamp: new Date(2025, 11, 31, 23, 59).getTime(), // Dec 31, 2025 11:59 PM
     location: "Student Centre",
     description: "Casual social to wrap up the conference",
   },
   {
     id: 7,
     name: "Exam Review Session",
-    startTimestamp: new Date(2025, 11, 20, 10, 0).getTime(), // Dec 20, 2025 10:00 AM
-    endTimestamp: new Date(2025, 11, 20, 12, 0).getTime(), // Dec 20, 2025 12:00 PM
+    startTimestamp: new Date(2026, 0, 2, 10, 0).getTime(), // Jan 2, 2026 10:00 AM
+    endTimestamp: new Date(2026, 0, 2, 12, 0).getTime(), // Jan 2, 2026 12:00 PM
     location: "IB 110",
     description: "Review session for exams during winter break",
   },
   {
     id: 8,
     name: "RIS Bazaar (All Day)",
-    startTimestamp: new Date(2025, 11, 14, 0, 0).getTime(), // Dec 14, 2025 12:00 AM
-    endTimestamp: new Date(2025, 11, 14, 23, 59).getTime(), // Dec 14, 2025 11:59 PM
+    startTimestamp: new Date(2025, 11, 28, 0, 0).getTime(), // Dec 28, 2025 12:00 AM
+    endTimestamp: new Date(2025, 11, 28, 23, 59).getTime(), // Dec 28, 2025 11:59 PM
     allDay: true,
     location: "Hall A",
     description: "Vendors and booths during RIS day 2",
@@ -163,92 +163,92 @@ export const EVENTS = [
   {
     id: 9,
     name: "Relax & Reset (All Day)",
-    startTimestamp: new Date(2025, 11, 19, 0, 0).getTime(), // Dec 19, 2025 12:00 AM
-    endTimestamp: new Date(2025, 11, 19, 23, 59).getTime(), // Dec 19, 2025 11:59 PM
+    startTimestamp: new Date(2026, 0, 1, 0, 0).getTime(), // Jan 1, 2026 12:00 AM
+    endTimestamp: new Date(2026, 0, 1, 23, 59).getTime(), // Jan 1, 2026 11:59 PM
     allDay: true,
     location: "Musallah",
     description: "Quiet day in the musallah during break",
   },
-  // Events for December 15, 2025 (today)
+  // Events for Dec 30, 2025 (today)
   {
     id: 10,
     name: "Dhuhr Prayer",
-    startTimestamp: new Date(2025, 11, 15, 12, 30).getTime(), // Dec 15, 2025 12:30 PM
-    endTimestamp: new Date(2025, 11, 15, 13, 0).getTime(), // Dec 15, 2025 1:00 PM
+    startTimestamp: new Date(2025, 11, 30, 12, 30).getTime(), // Dec 30, 2025 12:30 PM
+    endTimestamp: new Date(2025, 11, 30, 13, 0).getTime(), // Dec 30, 2025 1:00 PM
     location: "Main Hall",
     description: "Congregational prayer",
   },
   {
     id: 11,
     name: "Lunch & Learn: Islamic History",
-    startTimestamp: new Date(2025, 11, 15, 13, 15).getTime(), // Dec 15, 2025 1:15 PM
-    endTimestamp: new Date(2025, 11, 15, 14, 0).getTime(), // Dec 15, 2025 2:00 PM
+    startTimestamp: new Date(2025, 11, 30, 13, 15).getTime(), // Dec 30, 2025 1:15 PM
+    endTimestamp: new Date(2025, 11, 30, 14, 0).getTime(), // Dec 30, 2025 2:00 PM
     location: "Student Centre, Room 205",
     description: "Learn about the Rashidun Caliphate",
   },
   {
     id: 12,
     name: "Study Break Social",
-    startTimestamp: new Date(2025, 11, 15, 16, 30).getTime(), // Dec 15, 2025 4:30 PM
-    endTimestamp: new Date(2025, 11, 15, 17, 15).getTime(), // Dec 15, 2025 5:15 PM
+    startTimestamp: new Date(2025, 11, 30, 16, 30).getTime(), // Dec 30, 2025 4:30 PM
+    endTimestamp: new Date(2025, 11, 30, 17, 15).getTime(), // Dec 30, 2025 5:15 PM
     location: "Student Centre",
     description: "Casual social to wrap up the conference",
   },
   {
     id: 13,
     name: "Maghrib Prayer & Iftar",
-    startTimestamp: new Date(2025, 11, 15, 18, 30).getTime(), // Dec 15, 2025 6:30 PM
-    endTimestamp: new Date(2025, 11, 15, 19, 30).getTime(), // Dec 15, 2025 7:30 PM
+    startTimestamp: new Date(2025, 11, 30, 18, 30).getTime(), // Dec 30, 2025 6:30 PM
+    endTimestamp: new Date(2025, 11, 30, 19, 30).getTime(), // Dec 30, 2025 7:30 PM
     location: "Main Hall",
     description: "Prayer followed by dinner",
   },
-  // Events for December 16, 2025
+  // Events for Dec 31, 2025
   {
     id: 15,
     name: "Morning Study Circle",
-    startTimestamp: new Date(2025, 11, 17, 7, 30).getTime(), // Dec 16, 2025 7:30 AM
-    endTimestamp: new Date(2025, 11, 17, 8, 30).getTime(), // Dec 16, 2025 8:30 AM
+    startTimestamp: new Date(2025, 11, 31, 7, 30).getTime(), // Dec 31, 2025 7:30 AM
+    endTimestamp: new Date(2025, 11, 31, 8, 30).getTime(), // Dec 31, 2025 8:30 AM
     location: "Musallah, Room 101",
     description: "Qur'an study session",
   },
   {
     id: 17,
     name: "Lunch & Learn: Hadith Discussion",
-    startTimestamp: new Date(2025, 11, 17, 22, 0).getTime(), // Dec 16, 2025 1:15 PM
-    endTimestamp: new Date(2025, 11, 17, 23, 0).getTime(), // Dec 16, 2025 2:00 PM
+    startTimestamp: new Date(2025, 11, 31, 13, 15).getTime(), // Dec 31, 2025 1:15 PM
+    endTimestamp: new Date(2025, 11, 31, 14, 0).getTime(), // Dec 31, 2025 2:00 PM
     location: "Student Centre, Room 205",
     description: "Discussion on contemporary hadith applications",
   },
   {
     id: 19,
     name: "Sisters' Halaqah",
-    startTimestamp: new Date(2025, 11, 17, 22, 30).getTime(), // Dec 16, 2025 4:30 PM
-    endTimestamp: new Date(2025, 11, 17, 23, 0).getTime(), // Dec 16, 2025 5:30 PM
+    startTimestamp: new Date(2025, 11, 31, 16, 30).getTime(), // Dec 31, 2025 4:30 PM
+    endTimestamp: new Date(2025, 11, 31, 17, 30).getTime(), // Dec 31, 2025 5:30 PM
     location: "Musallah, Women's Room",
     description: "Islamic knowledge circle for sisters",
   },
   {
     id: 21,
     name: "Dinner & Community",
-    startTimestamp: new Date(2025, 11, 16, 19, 0).getTime(), // Dec 16, 2025 7:00 PM
-    endTimestamp: new Date(2025, 11, 16, 20, 0).getTime(), // Dec 16, 2025 8:00 PM
+    startTimestamp: new Date(2025, 11, 31, 19, 0).getTime(), // Dec 31, 2025 7:00 PM
+    endTimestamp: new Date(2025, 11, 31, 20, 0).getTime(), // Dec 31, 2025 8:00 PM
     location: "Student Centre, Cafeteria",
     description: "Break fast together and socialize",
   },
   {
     id: 22,
     name: "Isha Prayer",
-    startTimestamp: new Date(2025, 11, 16, 20, 30).getTime(), // Dec 16, 2025 8:30 PM
-    endTimestamp: new Date(2025, 11, 16, 21, 0).getTime(), // Dec 16, 2025 9:00 PM
+    startTimestamp: new Date(2025, 11, 31, 20, 30).getTime(), // Dec 31, 2025 8:30 PM
+    endTimestamp: new Date(2025, 11, 31, 21, 0).getTime(), // Dec 31, 2025 9:00 PM
     location: "Main Hall",
     description: "Congregational prayer",
   },
 
     {
-    id: 22,
+    id: 23,
     name: "Isha Prayer",
-    startTimestamp: new Date(2025, 11, 20, 20, 30).getTime(), // Dec 16, 2025 8:30 PM
-    endTimestamp: new Date(2025, 11, 20, 21, 0).getTime(), // Dec 16, 2025 9:00 PM
+    startTimestamp: new Date(2026, 0, 3, 20, 30).getTime(), // Jan 3, 2026 8:30 PM
+    endTimestamp: new Date(2026, 0, 3, 21, 0).getTime(), // Jan 3, 2026 9:00 PM
     location: "Main Hall",
     description: "Congregational prayer",
   },
