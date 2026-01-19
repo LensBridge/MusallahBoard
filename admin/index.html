@@ -48,7 +48,6 @@
           <h2>Quick Links</h2>
           <a class="sidebar-link" href="/">← View Musallah Display</a>
           <a class="sidebar-link" href="/signin/">Switch Account</a>
-          <button class="sidebar-link ghost" id="mockSyncBtn">Simulate API Sync</button>
         </div>
       </aside>
 
@@ -58,7 +57,7 @@
             <p class="eyebrow">Dashboard</p>
             <h2>Events & Media Control</h2>
             <p id="dashboardStatus" class="muted">
-              Connected to mock dataset. Ready for API wiring.
+              Connecting to API...
             </p>
           </div>
           <div class="header-actions">
@@ -396,10 +395,8 @@
         const existing = window.__MB_ADMIN_CONFIG__ || {};
         window.__MB_ADMIN_CONFIG__ = {
           apiBase: existing.apiBase ?? "/api/admin",
-          useMock: existing.useMock ?? true,
           auth: {
             baseUrl: existing.auth?.baseUrl ?? "/api/auth",
-            useMock: existing.auth?.useMock ?? true,
           },
         };
       })();

@@ -2,10 +2,8 @@ import { requireAuth, clearSession } from "./auth.js";
 import { createAdminService } from "./services/adminService.js";
 
 const adminConfig = window.__MB_ADMIN_CONFIG__ || {};
-const useMockData = adminConfig.useMock ?? !adminConfig.apiBase;
 const dataService = createAdminService({
   apiBase: adminConfig.apiBase,
-  useMock: useMockData,
 });
 
 const DEFAULT_MONTH = formatMonthInputValue(new Date());
@@ -86,11 +84,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 async function refreshAll() {
-  const modeLabel = useMockData ? "mock dataset" : "live API";
-  setDashboardStatus(`Syncing ${modeLabel}...`);
+  setDashboardStatus(`Syncing with API...`);
   await Promise.all([loadEvents(), loadPosters()]);
   hydrateLocalSchedules();
-  setDashboardStatus(`${modeLabel} synced and ready.`);
+  setDashboardStatus(`API synced and ready.`);
 }
 
 async function loadEvents() {
@@ -378,22 +375,6 @@ function wireGlobalActions() {
   const refreshBtn = document.getElementById("refreshDataBtn");
   refreshBtn?.addEventListener("click", refreshAll);
 
-  const mockSyncBtn = document.getElementById("mockSyncBtn");
-  if (mockSyncBtn) {
-    if (useMockData) {
-      mockSyncBtn.addEventListener("click", async () => {
-        setDashboardStatus("Simulating sync...");
-        const payload = await dataService.simulateSync();
-        setDashboardStatus(
-          `Mock sync complete at ${new Date(payload.syncedAt).toLocaleTimeString()}. Events: ${payload.events}, Posters: ${payload.posters}.`
-        );
-      });
-    } else {
-      mockSyncBtn.disabled = true;
-      mockSyncBtn.textContent = "Live sync managed by API";
-    }
-  }
-
   const eventCreateBtn = document.getElementById("eventCreateBtn");
   eventCreateBtn?.addEventListener("click", () => {
     resetEventForm();
@@ -483,7 +464,7 @@ function wireForms() {
           setFormStatus("eventStatus", "Event updated.", "success");
         } else {
           await dataService.createEvent(parseEventPayload(formData));
-          setFormStatus("eventStatus", useMockData ? "Event saved locally. Ready to sync with API." : "Event saved.", "success");
+          setFormStatus("eventStatus", "Event saved.", "success");
         }
         await loadEvents();
         resetEventForm();

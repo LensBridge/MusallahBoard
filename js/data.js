@@ -9,7 +9,6 @@
  *   - js/models/index.js - Data types and constants
  *   - js/api/boardService.js - Board data fetching
  *   - js/api/prayerService.js - Prayer times
- *   - js/mocks/mockData.js - Mock data (if needed)
  * =====================================================
  */
 
@@ -33,19 +32,6 @@ export {
   FRAME_TYPES,
 } from './models/index.js';
 
-// Re-export mock data (for backward compatibility)
-export {
-  MOCK_BOARD_CONFIG as BOARD_CONFIG,
-  MOCK_EVENTS as EVENTS,
-  MOCK_POSTERS as POSTERS,
-  MOCK_JUMMAH_PRAYERS as JUMMAH_PRAYERS,
-  MOCK_VERSES as VERSES_OF_DAY,
-  MOCK_HADITHS as HADITHS_OF_DAY,
-  getDailyContent,
-  getMockBoardPayload as buildMockPayload,
-  buildDefaultFrameDefinitions,
-} from './mocks/mockData.js';
-
 // Re-export API services
 export {
   getBoardPayload,
@@ -54,7 +40,8 @@ export {
   getPosters,
   getJummahPrayers,
   getWeather,
-  getDailyContent as fetchDailyContent,
+  getDailyContent,
+  buildDefaultFrameDefinitions,
 } from './api/boardService.js';
 
 export {

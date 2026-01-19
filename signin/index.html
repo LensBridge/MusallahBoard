@@ -18,7 +18,7 @@
         <div class="signin-header">
           <p class="eyebrow">UTM MSA</p>
           <h1>MusallahBoard Console</h1>
-          <p class="muted">Mock login until SSO integration is ready.</p>
+          <p class="muted">Sign in to access the admin dashboard.</p>
         </div>
         <form id="signinForm" class="admin-form">
           <label>
@@ -47,10 +47,8 @@
         const existing = window.__MB_ADMIN_CONFIG__ || {};
         window.__MB_ADMIN_CONFIG__ = {
           apiBase: existing.apiBase ?? "/api/admin",
-          useMock: existing.useMock ?? true,
           auth: {
             baseUrl: existing.auth?.baseUrl ?? "/api/auth",
-            useMock: existing.auth?.useMock ?? true,
           },
         };
       })();

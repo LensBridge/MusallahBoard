@@ -4,13 +4,10 @@
  * =====================================================
  * Service layer for fetching board data (events, posters,
  * config, weather) from the backend API.
- * 
- * When the backend is not configured, falls back to mock data.
  * =====================================================
  */
 
 import { get, isApiConfigured } from './client.js';
-import { getMockBoardPayload, getMockWeather, MOCK_BOARD_CONFIG } from '../mocks/mockData.js';
 import { FRAME_TYPES } from '../models/index.js';
 
 /**
@@ -23,6 +20,40 @@ import { FRAME_TYPES } from '../models/index.js';
  * @typedef {import('../models/index.js').FrameDefinition} FrameDefinition
  */
 
+// =====================================================
+// Default configurations (used when API is unavailable)
+// =====================================================
+
+/**
+ * Get default board configuration
+ * @returns {BoardConfig}
+ */
+function getDefaultBoardConfig() {
+  return {
+    location: 'brothers',
+    darkModeAfterIsha: true,
+    enableScrollingMessage: false,
+    scrollingMessages: [],
+    instagramHandle: '@utmmsa',
+  };
+}
+
+/**
+ * Get empty payload structure
+ * @returns {BoardPayload}
+ */
+function getEmptyPayload() {
+  return {
+    boardConfig: getDefaultBoardConfig(),
+    events: [],
+    posters: [],
+    jummahPrayers: [],
+    frames: buildDefaultFrameDefinitions([]),
+    dailyContent: { verse: null, hadith: null },
+    weather: null,
+  };
+}
+
 /**
  * Fetch the complete board payload (config, events, posters, frames, content)
  * @param {string} boardLocation - Board location enum (BROTHERS_MUSALLAH or SISTERS_MUSALLAH)
@@ -30,16 +61,16 @@ import { FRAME_TYPES } from '../models/index.js';
  */
 export async function getBoardPayload(boardLocation = 'BROTHERS_MUSALLAH') {
   if (!isApiConfigured()) {
-    console.log('API not configured, using mock data');
-    return getMockBoardPayload();
+    console.warn('API not configured. Please configure the backend API.');
+    return getEmptyPayload();
   }
 
   try {
     const payload = await get(`/api/musallah/payload?board=${boardLocation}`);
     return normalizePayload(payload);
   } catch (error) {
-    console.error('Failed to fetch board payload, falling back to mock:', error);
-    return getMockBoardPayload();
+    console.error('Failed to fetch board payload:', error);
+    return getEmptyPayload();
   }
 }
 
@@ -49,16 +80,15 @@ export async function getBoardPayload(boardLocation = 'BROTHERS_MUSALLAH') {
  */
 export async function getBoardConfig() {
   if (!isApiConfigured()) {
-    const { boardConfig } = getMockBoardPayload();
-    return boardConfig;
+    console.warn('API not configured. Please configure the backend API.');
+    return getDefaultBoardConfig();
   }
 
   try {
     return await get('/api/board/config');
   } catch (error) {
     console.error('Failed to fetch board config:', error);
-    const { boardConfig } = getMockBoardPayload();
-    return boardConfig;
+    return getDefaultBoardConfig();
   }
 }
 
@@ -68,8 +98,8 @@ export async function getBoardConfig() {
  */
 export async function getEvents() {
   if (!isApiConfigured()) {
-    const { events } = getMockBoardPayload();
-    return events;
+    console.warn('API not configured. Please configure the backend API.');
+    return [];
   }
 
   try {
@@ -77,8 +107,7 @@ export async function getEvents() {
     return events.map(normalizeEvent);
   } catch (error) {
     console.error('Failed to fetch events:', error);
-    const { events } = getMockBoardPayload();
-    return events;
+    return [];
   }
 }
 
@@ -88,8 +117,8 @@ export async function getEvents() {
  */
 export async function getPosters() {
   if (!isApiConfigured()) {
-    const { posters } = getMockBoardPayload();
-    return posters;
+    console.warn('API not configured. Please configure the backend API.');
+    return [];
   }
 
   try {
@@ -97,8 +126,7 @@ export async function getPosters() {
     return posters.map(normalizePoster);
   } catch (error) {
     console.error('Failed to fetch posters:', error);
-    const { posters } = getMockBoardPayload();
-    return posters;
+    return [];
   }
 }
 
@@ -108,8 +136,8 @@ export async function getPosters() {
  */
 export async function getJummahPrayers() {
   if (!isApiConfigured()) {
-    const { jummahPrayers } = getMockBoardPayload();
-    return jummahPrayers;
+    console.warn('API not configured. Please configure the backend API.');
+    return [];
   }
 
   try {
@@ -117,8 +145,7 @@ export async function getJummahPrayers() {
     return jummahPrayers.map(normalizeJummahPrayer);
   } catch (error) {
     console.error('Failed to fetch Jummah prayers:', error);
-    const { jummahPrayers } = getMockBoardPayload();
-    return jummahPrayers;
+    return [];
   }
 }
 
@@ -128,7 +155,8 @@ export async function getJummahPrayers() {
  */
 export async function getWeather() {
   if (!isApiConfigured()) {
-    return getMockWeather();
+    console.warn('API not configured. Please configure the backend API.');
+    return null;
   }
 
   try {
@@ -136,7 +164,7 @@ export async function getWeather() {
     return normalizeWeather(weather);
   } catch (error) {
     console.error('Failed to fetch weather:', error);
-    return getMockWeather();
+    return null;
   }
 }
 
@@ -146,16 +174,15 @@ export async function getWeather() {
  */
 export async function getDailyContent() {
   if (!isApiConfigured()) {
-    const { dailyContent } = getMockBoardPayload();
-    return dailyContent;
+    console.warn('API not configured. Please configure the backend API.');
+    return { verse: null, hadith: null };
   }
 
   try {
     return await get('/api/content/daily');
   } catch (error) {
     console.error('Failed to fetch daily content:', error);
-    const { dailyContent } = getMockBoardPayload();
-    return dailyContent;
+    return { verse: null, hadith: null };
   }
 }
 
@@ -170,10 +197,10 @@ export async function getDailyContent() {
  */
 function normalizePayload(payload) {
   // Backend returns: { boardConfig, posterFrames, upcomingEvents, weeklyContent }
-  // If boardConfig is null or missing location, use mock config as fallback
+  // If boardConfig is null or missing location, use default config as fallback
   const config = payload.boardConfig && payload.boardConfig.location 
     ? payload.boardConfig 
-    : MOCK_BOARD_CONFIG;
+    : getDefaultBoardConfig();
   
   const posterFrames = payload.posterFrames || [];
   const events = payload.upcomingEvents || [];

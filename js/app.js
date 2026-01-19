@@ -17,7 +17,7 @@ import {
   formatCountdown,
   formatHijriDate,
 } from './api/prayerService.js';
-import { getDailyContent } from './mocks/mockData.js';
+import { getDailyContent } from './api/boardService.js';
 import {
   PRAYER_NAMES,
   PRAYER_DISPLAY_ORDER,
