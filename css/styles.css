@@ -2055,7 +2055,7 @@ body {
     background: linear-gradient(90deg, var(--accent) 0%, var(--accent-secondary, var(--accent)) 100%);
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     overflow: hidden;
     box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.3);
 }
@@ -2066,14 +2066,20 @@ body {
     font-weight: 600;
     color: var(--bg-primary);
     white-space: nowrap;
-    animation: scrollText 15s linear infinite;
+    position: absolute;
+    left: 0;
     padding: 0 2rem;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
+.scrolling-message-content.is-animating {
+    animation: scrollText var(--scroll-duration, 15s) linear forwards;
+    animation-iteration-count: 1;
+}
+
 @keyframes scrollText {
     0% {
-        transform: translateX(100%);
+        transform: translateX(calc(100vw));
     }
     100% {
         transform: translateX(-100%);
@@ -2139,5 +2145,365 @@ body {
 @keyframes spin {
     to {
         transform: rotate(360deg);
+    }
+}
+/* =====================================================
+   Setup Modal Styles
+   ===================================================== */
+
+.setup-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease;
+}
+
+.setup-modal.active {
+    display: flex;
+}
+
+.setup-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+}
+
+.setup-modal-content {
+    position: relative;
+    background: linear-gradient(135deg, var(--navy-blue) 0%, var(--chambray) 100%);
+    border: 2px solid rgba(248, 225, 93, 0.3);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.setup-modal-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid rgba(248, 225, 93, 0.2);
+}
+
+.setup-modal-title {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    color: var(--accent);
+    margin: 0 0 0.5rem 0;
+    letter-spacing: 1px;
+}
+
+.setup-modal-subtitle {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.setup-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.setup-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.setup-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.setup-required {
+    color: #ff6b6b;
+    font-size: 1.2rem;
+}
+
+.setup-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.setup-input {
+    padding: 0.875rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(248, 225, 93, 0.2);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    outline: none;
+    width: 100%;
+}
+
+.setup-input-with-icon {
+    padding-right: 3rem;
+}
+
+.setup-input:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(248, 225, 93, 0.1);
+}
+
+.setup-input::placeholder {
+    color: var(--text-muted);
+}
+
+.setup-input option {
+    background: var(--navy-blue);
+    color: var(--text-primary);
+}
+
+.setup-toggle-visibility {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+    outline: none;
+}
+
+.setup-toggle-visibility:hover {
+    color: var(--accent);
+}
+
+.setup-toggle-visibility:focus {
+    color: var(--accent);
+}
+
+.eye-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.setup-help-text {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    display: block;
+}
+
+.setup-help-text a {
+    color: var(--accent);
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+}
+
+.setup-help-text a:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+}
+
+.setup-form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.setup-btn {
+    flex: 1;
+    padding: 0.875rem 1.5rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.setup-btn-save {
+    background: var(--accent);
+    color: var(--navy-blue);
+}
+
+.setup-btn-save:hover {
+    background: var(--yellow-light);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(248, 225, 93, 0.3);
+}
+
+.setup-btn-save:active {
+    transform: translateY(0);
+}
+
+.setup-btn-cancel {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.setup-btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.setup-keyboard-hint {
+    text-align: center;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(248, 225, 93, 0.1);
+}
+
+.setup-keyboard-hint small {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.setup-keyboard-hint kbd {
+    display: inline-block;
+    padding: 0.15rem 0.4rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: var(--accent);
+    margin: 0 0.15rem;
+}
+
+/* Success Toast */
+.setup-toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 500;
+    z-index: 10001;
+    transform: translateY(150%);
+    transition: transform 0.3s ease;
+}
+
+.setup-toast.show {
+    transform: translateY(0);
+}
+
+/* Refresh Toast */
+.refresh-toast {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 500;
+    z-index: 10001;
+    transform: translateY(-150%);
+    transition: transform 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 300px;
+}
+
+.refresh-toast.show {
+    transform: translateY(0);
+}
+
+.refresh-toast-icon {
+    font-size: 1.5rem;
+    animation: rotate 2s linear infinite;
+}
+
+.refresh-toast-message {
+    flex: 1;
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .setup-modal-content {
+        padding: 1.5rem;
+        width: 95%;
+    }
+
+    .setup-modal-title {
+        font-size: 1.5rem;
+    }
+
+    .setup-form-actions {
+        flex-direction: column;
+    }
+
+    .setup-toast {
+        right: 1rem;
+        left: 1rem;
+        bottom: 1rem;
+    }
+    
+    .refresh-toast {
+        right: 1rem;
+        left: 1rem;
+        top: 1rem;
+        min-width: auto;
     }
 }
