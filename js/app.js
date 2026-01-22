@@ -378,7 +378,7 @@ function renderJummahRows() {
 
   const prayers = state.jummahPrayers || [];
 
-  if (isFriday || prayers.length === 0) {
+  if (!isFriday || prayers.length === 0) {
     jummahSection.style.display = 'none';
     if (sidebarContent) sidebarContent.classList.remove('jummah-visible');
     return;
