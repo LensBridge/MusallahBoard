@@ -88,7 +88,8 @@ function mapBoardLocationToApi(location) {
 // Configure API client with backend base URL
 // The backend serves endpoints under /api/musallah/*
 // So we configure baseUrl to point to the backend root
-configureApiClient({ baseUrl: 'http://localhost:8080' });
+// Can be overridden with VITE_API_BASE_URL environment variable
+configureApiClient({ baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://10.0.0.75:8080' });
 
 // =====================================================
 // Initialization
