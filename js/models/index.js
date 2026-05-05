@@ -19,7 +19,8 @@
  * @property {number} latitude - Latitude coordinate
  * @property {number} longitude - Longitude coordinate
  * @property {string} timezone - IANA timezone string (e.g., "America/Toronto")
- * @property {number} method - Prayer calculation method (ISNA = 2)
+ * @property {string} [calculationMethod] - Calculation method identifier from backend
+ * @property {number} [method] - Numeric Aladhan method (legacy / fallback)
  */
 
 /**
@@ -47,13 +48,69 @@ export function createJummahPrayer(data) {
 /**
  * @typedef {Object} BoardConfig
  * @property {Location} location - Location settings
- * @property {BoardLocation} boardLocation - Which musallah this board is located in
+ * @property {'BROTHERS_MUSALLAH' | 'SISTERS_MUSALLAH'} boardLocation - Which musallah this board is located in
  * @property {number} posterCycleInterval - Default poster display duration (ms)
- * @property {number} refreshAfterIshaMinutes - Minutes after Isha to refresh
+ * @property {number} refreshAfterIshaaMinutes - Minutes after Isha to refresh
  * @property {boolean} darkModeAfterIsha - Enable dark mode after Isha
  * @property {number} darkModeMinutesAfterIsha - Minutes after Isha to enable dark mode
  * @property {boolean} enableScrollingMessage - Show scrolling message bar
  * @property {string[]} scrollingMessages - Scrolling message texts
+ */
+
+// =====================================================
+// Server-side Frame Contract (GET /api/musallah/payload)
+// =====================================================
+//
+// These mirror the wire types emitted by the backend. The /payload handler
+// flattens these into the frontend's working shape (events, posters, etc.)
+// in api/boardService.js — UI code below should generally read the flattened
+// shape, not these.
+
+/**
+ * @typedef {'poster' | 'event_list' | 'daily_schedule' | 'next_prayer' | 'jummah' | 'islamic_quote'} ServerFrameType
+ */
+
+/**
+ * @typedef {'PRIMARY' | 'TICKER' | 'SIDEBAR' | 'OVERLAY'} FrameSlot
+ */
+
+/**
+ * @typedef {Object} EventView
+ * @property {string} name
+ * @property {string|null} description
+ * @property {string|null} location
+ * @property {number} startTimestamp - epoch ms
+ * @property {number} endTimestamp   - epoch ms
+ * @property {boolean|null} allDay
+ */
+
+/**
+ * @typedef {{ type: 'poster', posterUrl: string, title: string }} PosterFrameConfig
+ * @typedef {{ type: 'event_list', heading: string, events: EventView[] }} EventListFrameConfig
+ * @typedef {{ type: 'daily_schedule', heading: string, events: EventView[] }} DailyScheduleFrameConfig
+ * @typedef {{ type: 'next_prayer', locationCity: string, timezone: string, calculationMethod: string }} NextPrayerFrameConfig
+ * @typedef {{ prayerTime: string, khatib: string, location: string }} JummahSlot
+ * @typedef {{ type: 'jummah', prayers: JummahSlot[] }} JummahFrameConfig
+ * @typedef {{ type: 'islamic_quote', kind: 'VERSE'|'HADITH', arabic: string, transliteration: string|null, translation: string, reference: string }} IslamicQuoteFrameConfig
+ */
+
+/**
+ * @typedef {PosterFrameConfig | EventListFrameConfig | DailyScheduleFrameConfig | NextPrayerFrameConfig | JummahFrameConfig | IslamicQuoteFrameConfig} ServerFrameConfig
+ */
+
+/**
+ * @typedef {Object} ServerFrameDefinition
+ * @property {ServerFrameType} frameType
+ * @property {FrameSlot} slot
+ * @property {number|null} priority - higher first within a slot; null = neutral
+ * @property {number|null} durationInSeconds - null = use slot default
+ * @property {ServerFrameConfig} frameConfig
+ */
+
+/**
+ * @typedef {Object} MusallahBoardPayload
+ * @property {BoardConfig} boardConfig
+ * @property {ServerFrameDefinition[]} frames
  */
 
 // =====================================================

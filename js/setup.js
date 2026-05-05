@@ -6,7 +6,7 @@
  * =====================================================
  */
 
-import { isSetupComplete, saveSetupConfig, getSetupConfig } from './utils/cookies.js';
+import { isSetupComplete, saveSetupConfig, getSetupConfig, applyCursorPreference } from './utils/cookies.js';
 
 let setupModal = null;
 
@@ -44,9 +44,12 @@ export function showSetupModal() {
   if (config.weatherApiKey) {
     document.getElementById('setupWeatherApiKey').value = config.weatherApiKey;
   }
+  document.getElementById('setupHideCursor').checked = config.hideCursor;
 
   setupModal.classList.add('active');
   document.body.style.overflow = 'hidden';
+  // Force cursor visible while the settings modal is open so the user can interact
+  document.body.classList.remove('cursor-hidden');
 }
 
 /**
@@ -56,6 +59,7 @@ export function hideSetupModal() {
   if (setupModal) {
     setupModal.classList.remove('active');
     document.body.style.overflow = '';
+    applyCursorPreference();
   }
 }
 
@@ -116,6 +120,14 @@ function createSetupModal() {
           </small>
         </div>
 
+        <div class="setup-form-group setup-form-group-toggle">
+          <label class="setup-toggle-label" for="setupHideCursor">
+            <input type="checkbox" id="setupHideCursor" name="hideCursor" class="setup-toggle-input" />
+            <span class="setup-toggle-text">Hide mouse cursor on board</span>
+          </label>
+          <small class="setup-help-text">Disable to show the cursor — useful for touchscreen setups.</small>
+        </div>
+
         <div class="setup-form-actions">
           <button type="button" class="setup-btn setup-btn-cancel" id="setupCancelBtn">
             Cancel
@@ -158,7 +170,8 @@ function handleSetupSubmit(e) {
   const formData = new FormData(e.target);
   const config = {
     boardLocation: formData.get('boardLocation'),
-    weatherApiKey: formData.get('weatherApiKey')
+    weatherApiKey: formData.get('weatherApiKey'),
+    hideCursor: formData.get('hideCursor') === 'on'
   };
 
   // Validate

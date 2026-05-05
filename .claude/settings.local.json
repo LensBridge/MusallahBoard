@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(timeout 3 cat C:/Users/Cheha/AppData/Local/Temp/claude/C--Code-MusallahBoard/d6381a2b-dcea-4b0a-b473-810753110bf0/tasks/bmuts8uea.output)",
+      "Bash(Get-ChildItem -Path C:\\\\Code\\\\MusallahBoard -Exclude node_modules -Recurse -File)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(ssh *)"
+    ]
+  }
+}

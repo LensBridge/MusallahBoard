@@ -55,8 +55,13 @@ function getEmptyPayload() {
 }
 
 /**
- * Fetch the complete board payload (config, events, posters, frames, content)
- * @param {string} boardLocation - Board location enum (BROTHERS_MUSALLAH or SISTERS_MUSALLAH)
+ * Fetch the complete board payload (config + frames) and flatten it into the
+ * frontend's working shape.
+ *
+ * The `board` query param is case-insensitive on the backend and accepts:
+ * `brothers`, `sisters`, `brothers_musallah`, `sisters_musallah`.
+ *
+ * @param {string} boardLocation - e.g. "BROTHERS_MUSALLAH" or "sisters"
  * @returns {Promise<BoardPayload>}
  */
 export async function getBoardPayload(boardLocation = 'BROTHERS_MUSALLAH') {
@@ -66,7 +71,8 @@ export async function getBoardPayload(boardLocation = 'BROTHERS_MUSALLAH') {
   }
 
   try {
-    const payload = await get(`/api/musallah/payload?board=${boardLocation}`);
+    const board = encodeURIComponent(String(boardLocation));
+    const payload = await get(`/api/musallah/payload?board=${board}`);
     return normalizePayload(payload);
   } catch (error) {
     console.error('Failed to fetch board payload:', error);
@@ -191,95 +197,150 @@ export async function getDailyContent() {
 // =====================================================
 
 /**
- * Normalize the full payload from API
+ * Normalize the full payload from API.
+ *
+ * Implements the contract: GET /api/musallah/payload?board=...
+ *   { boardConfig, frames: FrameDefinition[] }
+ *
+ * Each FrameDefinition has { frameType, slot, priority, durationInSeconds,
+ * frameConfig } where frameConfig is a discriminated union keyed on
+ * frameConfig.type. Frames are absent (not empty) when their source data
+ * is missing — always check existence before reading.
+ *
  * @param {any} payload
  * @returns {BoardPayload}
  */
 function normalizePayload(payload) {
-  // Backend returns: { boardConfig, posterFrames, upcomingEvents, weeklyContent }
-  // If boardConfig is null or missing location, use default config as fallback
-  const config = payload.boardConfig && payload.boardConfig.location 
-    ? payload.boardConfig 
+  const config = payload?.boardConfig && payload.boardConfig.location
+    ? payload.boardConfig
     : getDefaultBoardConfig();
-  
-  const posterFrames = payload.posterFrames || [];
-  const events = payload.upcomingEvents || [];
-  const weeklyContent = payload.weeklyContent || {};
-  
-  // Convert posterFrames to posters array
+
+  const serverFrames = Array.isArray(payload?.frames) ? payload.frames : [];
+
+  const getFrameType = (frame) => {
+    const type = frame?.frameType;
+    return typeof type === 'string' ? type.toLowerCase() : '';
+  };
+
+  const posterFrames = serverFrames.filter((f) => getFrameType(f) === 'poster');
+  const eventListFrame = serverFrames.find((f) => getFrameType(f) === 'event_list');
+  const dailyScheduleFrame = serverFrames.find((f) => getFrameType(f) === 'daily_schedule');
+  const jummahFrame = serverFrames.find((f) => getFrameType(f) === 'jummah');
+  const verseFrame = serverFrames.find(
+    (f) => getFrameType(f) === 'islamic_quote' && f?.frameConfig?.kind === 'VERSE'
+  );
+  const hadithFrame = serverFrames.find(
+    (f) => getFrameType(f) === 'islamic_quote' && f?.frameConfig?.kind === 'HADITH'
+  );
+
   const posters = posterFrames.map((frame, index) => ({
     id: index + 1,
     title: frame.frameConfig?.title || `Poster ${index + 1}`,
     image: frame.frameConfig?.posterUrl || '',
-    duration: (frame.durationInSeconds || 10) * 1000, // Convert seconds to ms
+    duration: (frame.durationInSeconds ?? 10) * 1000,
     startDate: null,
     endDate: null,
     audience: 'both',
   }));
-  
-  // Extract Jummah prayers from weeklyContent (supports array or single object)
-  let jummahPrayers = [];
-  if (weeklyContent.jummahPrayer) {
-    const prayers = Array.isArray(weeklyContent.jummahPrayer) 
-      ? weeklyContent.jummahPrayer 
-      : [weeklyContent.jummahPrayer];
-    
-    jummahPrayers = prayers.map((prayer, index) => {
-      // Get time and format it to 12-hour AM/PM without seconds
-      let timeStr = prayer.prayerTime || prayer.time || '';
-      
-      // Remove seconds if present (e.g., "12:30:00" -> "12:30")
-      if (timeStr.includes(':')) {
-        const parts = timeStr.split(':');
-        if (parts.length === 3) {
-          timeStr = `${parts[0]}:${parts[1]}`; // Remove seconds
-        }
-        
-        // Convert to 12-hour format with AM/PM
-        const [hours, minutes] = timeStr.split(':').map(Number);
-        const period = hours >= 12 ? 'PM' : 'AM';
-        const displayHours = hours % 12 || 12;
-        timeStr = `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
-      }
-      
-      return {
-        id: index + 1,
-        time: timeStr,
-        khatib: prayer.khatib || '',
-        location: prayer.location || '',
-        audience: 'both',
-      };
-    });
-  }
-  
-  // Extract verse and hadith
+
+  // Merge events from event_list (week) and daily_schedule (today) into a
+  // single pool — the slideshow filters by date client-side, so duplicates
+  // across the two frames don't matter as long as ids are stable.
+  const rawEvents = [
+    ...(eventListFrame?.frameConfig?.events ?? []),
+    ...(dailyScheduleFrame?.frameConfig?.events ?? []),
+  ];
+  const events = rawEvents.map(normalizeEvent);
+
+  const jummahPrayers = (jummahFrame?.frameConfig?.prayers ?? []).map(
+    normalizeJummahSlot
+  );
+
   const dailyContent = {
-    verse: weeklyContent.verse || null,
-    hadith: weeklyContent.hadith || null,
+    verse: verseFrame ? normalizeIslamicQuote(verseFrame.frameConfig) : null,
+    hadith: hadithFrame ? normalizeIslamicQuote(hadithFrame.frameConfig) : null,
   };
-  
+
   return {
     boardConfig: config,
-    events: events.map(normalizeEvent),
-    posters: posters,
-    jummahPrayers: jummahPrayers,
+    events,
+    posters,
+    jummahPrayers,
     frames: buildDefaultFrameDefinitions(posters),
-    dailyContent: dailyContent,
-    weather: null, // Weather fetched separately
+    dailyContent,
+    weather: null,
   };
 }
 
 /**
- * Normalize an event from API
+ * Normalize a JummahSlot (ISO LocalTime) into the frontend's display shape
+ * with a 12-hour AM/PM `time` string.
+ * @param {{ prayerTime?: string, khatib?: string, location?: string }} prayer
+ * @param {number} index
+ */
+function normalizeJummahSlot(prayer, index) {
+  let timeStr = prayer?.prayerTime || '';
+
+  if (timeStr.includes(':')) {
+    const [h, m] = timeStr.split(':').map(Number);
+    const period = h >= 12 ? 'PM' : 'AM';
+    const displayHours = h % 12 || 12;
+    timeStr = `${displayHours}:${m.toString().padStart(2, '0')} ${period}`;
+  }
+
+  return {
+    id: index + 1,
+    time: timeStr,
+    khatib: prayer?.khatib || '',
+    location: prayer?.location || '',
+    audience: 'both',
+  };
+}
+
+/**
+ * Normalize an IslamicQuoteFrameConfig into the frontend's IslamicQuote.
+ * @param {{ arabic?: string, transliteration?: string|null, translation?: string, reference?: string }} cfg
+ */
+function normalizeIslamicQuote(cfg) {
+  return {
+    arabic: cfg?.arabic ?? '',
+    transliteration: cfg?.transliteration ?? '',
+    translation: cfg?.translation ?? '',
+    reference: cfg?.reference ?? '',
+  };
+}
+
+/**
+ * Normalize an event from API. Accepts both the new EventView shape and
+ * legacy variants from the standalone /api/events endpoint.
  * @param {any} event
  * @returns {Event}
  */
 function normalizeEvent(event) {
+  const start = event.startTimestamp ?? new Date(event.startTime || event.start).getTime();
+  const end = event.endTimestamp ?? new Date(event.endTime || event.end).getTime();
+
+  let startTimestamp = Number.isFinite(start) ? start : null;
+  let endTimestamp = Number.isFinite(end) ? end : null;
+
+  // Defensive normalization: some payloads arrive with the window reversed.
+  // Swap those so day/week filters still see the event.
+  if (
+    startTimestamp !== null &&
+    endTimestamp !== null &&
+    endTimestamp < startTimestamp
+  ) {
+    [startTimestamp, endTimestamp] = [endTimestamp, startTimestamp];
+  }
+
+  const safeStart = startTimestamp ?? endTimestamp ?? Date.now();
+  const safeEnd = endTimestamp ?? startTimestamp ?? safeStart;
+
   return {
-    id: event.id,
+    id: event.id ?? `${event.name || 'event'}-${safeStart}`,
     name: event.name || event.title || '',
-    startTimestamp: event.startTimestamp || new Date(event.startTime || event.start).getTime(),
-    endTimestamp: event.endTimestamp || new Date(event.endTime || event.end).getTime(),
+    startTimestamp: safeStart,
+    endTimestamp: safeEnd,
     location: event.location || '',
     description: event.description || '',
     allDay: Boolean(event.allDay),

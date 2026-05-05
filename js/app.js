@@ -26,7 +26,7 @@ import {
   parseTimeString,
 } from './models/index.js';
 import { initSetupScreen } from './setup.js';
-import { getSetupConfig } from './utils/cookies.js';
+import { getSetupConfig, applyCursorPreference } from './utils/cookies.js';
 
 // =====================================================
 // Application State
@@ -96,9 +96,12 @@ configureApiClient({ baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://10.0.
 // =====================================================
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Apply cursor preference first so it's hidden before any paint reveals it
+  applyCursorPreference();
+
   // Initialize setup screen first
   initSetupScreen();
-  
+
   // Then initialize the app
   initApp();
 });

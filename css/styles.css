@@ -85,6 +85,11 @@ body {
     font-size: clamp(12px, 1.2vw, 18px);
 }
 
+body.cursor-hidden,
+body.cursor-hidden * {
+    cursor: none !important;
+}
+
 /* =====================================================
    Main Layout
    ===================================================== */
@@ -2045,31 +2050,126 @@ body {
     color: rgba(255, 255, 255, 0.8);
 }
 
-/* Scrolling Message Bar */
+/* Scrolling Message Bar — The Inscription Band */
 .scrolling-message-bar {
     position: absolute;
     bottom: 0;
     left: 0;
     width: 100%;
-    height: clamp(2rem, 4vh, 3rem);
-    background: linear-gradient(90deg, var(--accent) 0%, var(--accent-secondary, var(--accent)) 100%);
+    height: clamp(2.8rem, 5vh, 4rem);
+    background: var(--navy-dark);
     display: flex;
     align-items: center;
-    justify-content: flex-start;
     overflow: hidden;
-    box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.6);
+}
+
+/* Gold separator line across the top edge */
+.scrolling-message-bar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1.5px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(248, 225, 93, 0.15) 4%,
+        var(--accent) 18%,
+        var(--accent) 82%,
+        rgba(248, 225, 93, 0.15) 96%,
+        transparent 100%
+    );
+    box-shadow: 0 0 8px rgba(248, 225, 93, 0.35);
+    pointer-events: none;
+    z-index: 4;
+}
+
+/* Ornamental diamond clusters */
+.smb-ornament {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0 1rem;
+    z-index: 3;
+    position: relative;
+}
+
+/* Thin vertical divider between ornament and text track */
+.smb-ornament--left::after,
+.smb-ornament--right::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 55%;
+    background: linear-gradient(180deg, transparent, rgba(248, 225, 93, 0.35), transparent);
+}
+
+.smb-ornament--left::after { right: 0; }
+.smb-ornament--right::before { left: 0; }
+
+.smb-gem {
+    color: var(--accent);
+    font-size: 0.55rem;
+    line-height: 1;
+    display: block;
+    opacity: 0.85;
+    filter: drop-shadow(0 0 4px rgba(248, 225, 93, 0.6));
+}
+
+.smb-gem--sm {
+    font-size: 0.3rem;
+    opacity: 0.5;
+}
+
+/* Scrollable text track with fade edges */
+.scrolling-message-track {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.scrolling-message-track::before,
+.scrolling-message-track::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 3.5rem;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.scrolling-message-track::before {
+    left: 0;
+    background: linear-gradient(90deg, var(--navy-dark) 0%, transparent 100%);
+}
+
+.scrolling-message-track::after {
+    right: 0;
+    background: linear-gradient(270deg, var(--navy-dark) 0%, transparent 100%);
 }
 
 .scrolling-message-content {
-    font-family: var(--font-body);
-    font-size: clamp(1rem, 2vw, 1.5rem);
-    font-weight: 600;
-    color: var(--bg-primary);
+    font-family: var(--font-display);
+    font-size: clamp(0.85rem, 1.6vw, 1.2rem);
+    font-weight: 500;
+    color: var(--accent);
     white-space: nowrap;
     position: absolute;
     left: 0;
-    padding: 0 2rem;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    padding: 0;
+    letter-spacing: 0.1em;
+    text-shadow:
+        0 0 18px rgba(248, 225, 93, 0.5),
+        0 0 36px rgba(248, 225, 93, 0.18),
+        0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
 .scrolling-message-content.is-animating {
@@ -2088,7 +2188,7 @@ body {
 
 /* Adjust right panel to account for scrolling message */
 .right-panel {
-    padding-bottom: clamp(2rem, 4vh, 3rem);
+    padding-bottom: clamp(2.8rem, 5vh, 4rem);
 }
 
 .loading-overlay {
@@ -2331,6 +2431,27 @@ body {
     font-size: 0.85rem;
     color: var(--text-muted);
     display: block;
+}
+
+.setup-form-group-toggle .setup-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    margin-bottom: 0.4rem;
+}
+
+.setup-toggle-input {
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.setup-toggle-text {
+    user-select: none;
 }
 
 .setup-help-text a {

@@ -53,20 +53,35 @@ export function isSetupComplete() {
 
 /**
  * Get all setup configuration
- * @returns {{boardLocation: string | null, weatherApiKey: string | null}}
+ * @returns {{boardLocation: string | null, weatherApiKey: string | null, hideCursor: boolean}}
  */
 export function getSetupConfig() {
+  const hideCursorRaw = getCookie('hideCursor');
   return {
     boardLocation: getCookie('boardLocation'),
-    weatherApiKey: getCookie('weatherApiKey')
+    weatherApiKey: getCookie('weatherApiKey'),
+    // Default to true (cursor hidden) when unset — kiosks are the common case
+    hideCursor: hideCursorRaw === null ? true : hideCursorRaw === 'true'
   };
 }
 
 /**
  * Save setup configuration
- * @param {{boardLocation: string, weatherApiKey: string}} config
+ * @param {{boardLocation: string, weatherApiKey: string, hideCursor?: boolean}} config
  */
 export function saveSetupConfig(config) {
   setCookie('boardLocation', config.boardLocation);
   setCookie('weatherApiKey', config.weatherApiKey);
+  if (typeof config.hideCursor === 'boolean') {
+    setCookie('hideCursor', String(config.hideCursor));
+  }
+}
+
+/**
+ * Apply the saved cursor-visibility preference to <body>.
+ * Called on boot and after the setup modal closes.
+ */
+export function applyCursorPreference() {
+  const { hideCursor } = getSetupConfig();
+  document.body.classList.toggle('cursor-hidden', hideCursor);
 }
