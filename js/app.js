@@ -371,7 +371,8 @@ function updateHijriDateUI() {
 // =====================================================
 
 function renderJummahRows() {
-  const isFriday = new Date().getDay() === 5;
+  const day = new Date().getDay();
+  const isJummahWindow = day >= 3 && day <= 5;
   const jummahSection = document.getElementById('jummahSection');
   const subcards = document.getElementById('jummahSubcards');
   const sidebarContent = document.getElementById('sidebarContent');
@@ -381,7 +382,7 @@ function renderJummahRows() {
 
   const prayers = state.jummahPrayers || [];
 
-  if (!isFriday || prayers.length === 0) {
+  if (!isJummahWindow || prayers.length === 0) {
     jummahSection.style.display = 'none';
     if (sidebarContent) sidebarContent.classList.remove('jummah-visible');
     return;
