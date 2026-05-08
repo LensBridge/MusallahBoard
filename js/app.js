@@ -106,65 +106,107 @@ document.addEventListener('DOMContentLoaded', () => {
   initApp();
 });
 
+// Cooldown between full payload-retry batches when the inner retries are
+// exhausted. The board sits on the loading overlay during this window.
+const PAYLOAD_RECOVERY_DELAY_MS = 45000;
+const PAYLOAD_RECOVERY_JITTER_MS = 30000;
+
 async function initApp() {
-  try {
-    setLoadingOverlay(true, 'Initializing MusallahBoard v1.0b...');
+  setLoadingOverlay(true, 'Initializing MusallahBoard v1.0b...');
 
-    // Get setup configuration from cookies
-    // This contains: boardLocation ('sisters' | 'brothers') and weatherApiKey
-    const setupConfig = getSetupConfig();
-    console.log('Setup Config:', setupConfig);
-    
-    // Map board location to API format and store in state
-    const boardLocationParam = mapBoardLocationToApi(setupConfig.boardLocation);
-    console.log('Board Location (API format):', boardLocationParam);
-    
-    // Store weather API key in state for later use
-    state.weatherApiKey = setupConfig.weatherApiKey;
+  // Get setup configuration from cookies
+  // This contains: boardLocation ('sisters' | 'brothers') and weatherApiKey
+  const setupConfig = getSetupConfig();
+  console.log('Setup Config:', setupConfig);
 
-    // Fetch board payload (config, events, posters, frames)
-    const payload = await getBoardPayload(boardLocationParam);
-    state.boardConfig = payload.boardConfig;
-    state.events = payload.events;
-    state.posters = payload.posters;
-    state.jummahPrayers = payload.jummahPrayers;
-    state.dailyContent = payload.dailyContent;
+  // Map board location to API format and store in state
+  const boardLocationParam = mapBoardLocationToApi(setupConfig.boardLocation);
+  console.log('Board Location (API format):', boardLocationParam);
 
-    // Initialize UI components
-    initializeClock();
-    initializeDateDisplay();
-    initializeIslamicContent();
-    initializeScrollingMessage();
-    renderJummahRows();
+  // Store weather API key in state for later use
+  state.weatherApiKey = setupConfig.weatherApiKey;
 
-    // Fetch external data
-    await fetchPrayerTimes();
-    await initializeWeather();
+  // Connect WS up-front — it has its own reconnect/backoff and is the
+  // recovery channel that triggers a reload once the backend is healthy.
+  initRefreshWebSocket();
 
-    // Initialize slideshow
-    initSlideshow({
-      frameDefinitions: payload.frames,
-      context: {
-        events: state.events,
-        posters: state.posters,
-        dailyContent: () => state.dailyContent,
-      },
-    });
+  await loadBoardUntilSuccess(boardLocationParam);
+}
 
-    // Slideshow rebuilds the DOM; refresh next prayer display afterward
-    highlightNextPrayer();
-
-    // Start timers and intervals
-    startTimers();
-
-    // Connect to refresh WebSocket
-    initRefreshWebSocket();
-
-    setLoadingOverlay(false);
-  } catch (error) {
-    console.error('Failed to initialize app:', error);
-    setLoadingOverlay(false);
+/**
+ * Fetch the board payload, applying it and starting the rest of the app on
+ * success. If the payload retries are exhausted (backend is down or rate-
+ * limiting us hard), keep the loading overlay up and try again after a
+ * jittered cooldown rather than rendering with broken/undefined data.
+ */
+async function loadBoardUntilSuccess(boardLocationParam) {
+  while (true) {
+    try {
+      const payload = await getBoardPayload(boardLocationParam);
+      if (!hasUsableLocation(payload?.boardConfig)) {
+        // Payload came back but lacks geo — prayer/weather would all 400.
+        // Treat as a transient failure so we retry instead of half-rendering.
+        throw new Error('Board payload missing location coordinates');
+      }
+      await applyPayloadAndStart(payload);
+      setLoadingOverlay(false);
+      return;
+    } catch (error) {
+      console.error('Failed to initialize app, will retry:', error);
+      setLoadingOverlay(true, 'Reconnecting to backend…');
+      const delay =
+        PAYLOAD_RECOVERY_DELAY_MS + Math.random() * PAYLOAD_RECOVERY_JITTER_MS;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
   }
+}
+
+/**
+ * @param {import('./models/index.js').BoardConfig | null | undefined} boardConfig
+ */
+function hasUsableLocation(boardConfig) {
+  const loc = boardConfig?.location;
+  return (
+    loc &&
+    typeof loc === 'object' &&
+    Number.isFinite(loc.latitude) &&
+    Number.isFinite(loc.longitude)
+  );
+}
+
+async function applyPayloadAndStart(payload) {
+  state.boardConfig = payload.boardConfig;
+  state.events = payload.events;
+  state.posters = payload.posters;
+  state.jummahPrayers = payload.jummahPrayers;
+  state.dailyContent = payload.dailyContent;
+
+  // Initialize UI components
+  initializeClock();
+  initializeDateDisplay();
+  initializeIslamicContent();
+  initializeScrollingMessage();
+  renderJummahRows();
+
+  // Fetch external data
+  await fetchPrayerTimes();
+  await initializeWeather();
+
+  // Initialize slideshow
+  initSlideshow({
+    frameDefinitions: payload.frames,
+    context: {
+      events: state.events,
+      posters: state.posters,
+      dailyContent: () => state.dailyContent,
+    },
+  });
+
+  // Slideshow rebuilds the DOM; refresh next prayer display afterward
+  highlightNextPrayer();
+
+  // Start timers and intervals
+  startTimers();
 }
 
 function startTimers() {
@@ -174,9 +216,14 @@ function startTimers() {
   // Update countdown every second
   setInterval(updateCountdown, 1000);
 
-  // Check dark mode and refresh every minute
+  // Check dark mode every minute
   setInterval(checkDarkModeAndRefresh, 60000);
   checkDarkModeAndRefresh();
+
+  // Reload at midnight via a self-chaining timeout. setInterval drift and
+  // background-tab throttling can skip the 00:00 minute; a one-shot timer
+  // sized to the actual delta-to-midnight is robust to both.
+  scheduleMidnightReload();
 
   // Refresh weather every hour
   setInterval(initializeWeather, 3600000);
@@ -193,7 +240,7 @@ function startTimers() {
 // =====================================================
 
 async function fetchPrayerTimes() {
-  if (!state.boardConfig?.location) return;
+  if (!hasUsableLocation(state.boardConfig)) return;
 
   try {
     const { timings, hijriDate } = await getPrayerTimes(state.boardConfig.location);
@@ -536,10 +583,21 @@ function checkDarkModeAndRefresh() {
     }
   }
 
-  // Refresh at midnight
-  if (currentMinutes === 0) {
+}
+
+function scheduleMidnightReload() {
+  const now = new Date();
+  const nextMidnight = new Date(now);
+  nextMidnight.setHours(24, 0, 5, 0); // 5s past midnight to clear the boundary
+
+  const delay = nextMidnight.getTime() - now.getTime();
+
+  setTimeout(() => {
+    // If the tab was throttled and we're now well past the target, the
+    // browser already coalesced the timer — just reload. Otherwise, reload
+    // anyway: we're at the intended boundary.
     location.reload();
-  }
+  }, delay);
 }
 
 function enableDarkMode() {
@@ -578,10 +636,9 @@ async function initializeWeather() {
  * @returns {Promise<import('./models/index.js').Weather | null>}
  */
 async function fetchWeatherDirect() {
-  const location = state.boardConfig?.location;
-  if (!location || !state.weatherApiKey) return null;
+  if (!hasUsableLocation(state.boardConfig) || !state.weatherApiKey) return null;
 
-  const { latitude, longitude } = location;
+  const { latitude, longitude } = state.boardConfig.location;
   const apiKey = state.weatherApiKey;
 
   try {
@@ -657,49 +714,92 @@ function renderWeatherError() {
 
 let refreshWebSocket = null;
 let refreshTimeout = null;
+let wsReconnectAttempts = 0;
+let wsReconnectTimer = null;
+
+const WS_RECONNECT_BASE_MS = 1000;
+const WS_RECONNECT_MAX_MS = 60000;
 
 /**
- * Initialize WebSocket connection for live refresh notifications
+ * Initialize WebSocket connection for live refresh notifications.
+ * Uses exponential backoff with jitter on reconnect so a fleet of boards
+ * doesn't synchronously hammer the backend during a 429 storm.
  */
 function initRefreshWebSocket() {
+  // If a reconnect is already scheduled, don't stack another one.
+  if (wsReconnectTimer) {
+    clearTimeout(wsReconnectTimer);
+    wsReconnectTimer = null;
+  }
+
   try {
     // Get base URL from API config
     const apiConfig = getApiConfig();
     const baseUrl = apiConfig.baseUrl || window.location.origin;
-    
+
     // Convert http/https to ws/wss
     const wsUrl = baseUrl.replace(/^http/, 'ws') + '/api/refresh-musallahboard';
-    
+
     console.log('Connecting to refresh WebSocket:', wsUrl);
     refreshWebSocket = new WebSocket(wsUrl);
-    
+
     refreshWebSocket.onopen = () => {
       console.log('✅ Refresh WebSocket connected');
+      wsReconnectAttempts = 0;
     };
-    
+
     refreshWebSocket.onmessage = (event) => {
       console.log('WebSocket message received:', event.data);
-      
+
       if (event.data === 'REFRESH' || event.data.toUpperCase().includes('REFRESH')) {
         handleRefreshCommand();
       }
     };
-    
+
     refreshWebSocket.onerror = (error) => {
       console.error('WebSocket error:', error);
     };
-    
+
     refreshWebSocket.onclose = () => {
-      console.log('WebSocket connection closed. Reconnecting in 5 seconds...');
-      setTimeout(() => {
-        if (document.visibilityState === 'visible') {
-          initRefreshWebSocket();
-        }
-      }, 5000);
+      scheduleWebSocketReconnect();
     };
   } catch (error) {
     console.error('Failed to initialize refresh WebSocket:', error);
+    scheduleWebSocketReconnect();
   }
+}
+
+function scheduleWebSocketReconnect() {
+  if (wsReconnectTimer) return;
+
+  // Exponential backoff: 1s, 2s, 4s, … capped at 60s. Full jitter prevents
+  // synchronized reconnects across boards.
+  const exp = Math.min(
+    WS_RECONNECT_MAX_MS,
+    WS_RECONNECT_BASE_MS * 2 ** wsReconnectAttempts
+  );
+  const delay = Math.floor(Math.random() * exp);
+  wsReconnectAttempts += 1;
+
+  console.log(
+    `WebSocket connection closed. Reconnecting in ${delay}ms (attempt ${wsReconnectAttempts}).`
+  );
+
+  wsReconnectTimer = setTimeout(() => {
+    wsReconnectTimer = null;
+    if (document.visibilityState === 'visible') {
+      initRefreshWebSocket();
+    } else {
+      // Tab hidden — try again when it's foregrounded.
+      const onVisible = () => {
+        if (document.visibilityState === 'visible') {
+          document.removeEventListener('visibilitychange', onVisible);
+          initRefreshWebSocket();
+        }
+      };
+      document.addEventListener('visibilitychange', onVisible);
+    }
+  }, delay);
 }
 
 /**

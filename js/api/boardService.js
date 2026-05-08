@@ -7,8 +7,25 @@
  * =====================================================
  */
 
-import { get, isApiConfigured } from './client.js';
+import { get, isApiConfigured, ApiError } from './client.js';
 import { FRAME_TYPES } from '../models/index.js';
+
+// Retry schedule for the board payload (ms). Spreads load when the backend
+// rate-limits a fleet of boards so they don't all reconnect at the same beat.
+const PAYLOAD_RETRY_DELAYS_MS = [2000, 5000, 12000, 30000];
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Should this error trigger a retry? 429 (rate limit), 5xx, and network
+ * errors (status 0) are transient. 4xx other than 429 means we asked for
+ * something the server won't give us — no point retrying.
+ */
+function isTransient(error) {
+  if (!(error instanceof ApiError)) return false;
+  const { status } = error;
+  return status === 429 || status === 0 || status >= 500;
+}
 
 /**
  * @typedef {import('../models/index.js').BoardPayload} BoardPayload
@@ -70,14 +87,32 @@ export async function getBoardPayload(boardLocation = 'BROTHERS_MUSALLAH') {
     return getEmptyPayload();
   }
 
-  try {
-    const board = encodeURIComponent(String(boardLocation));
-    const payload = await get(`/api/musallah/payload?board=${board}`);
-    return normalizePayload(payload);
-  } catch (error) {
-    console.error('Failed to fetch board payload:', error);
-    return getEmptyPayload();
+  const board = encodeURIComponent(String(boardLocation));
+  const path = `/api/musallah/payload?board=${board}`;
+
+  let lastError = null;
+  for (let attempt = 0; attempt <= PAYLOAD_RETRY_DELAYS_MS.length; attempt++) {
+    try {
+      const payload = await get(path);
+      return normalizePayload(payload);
+    } catch (error) {
+      lastError = error;
+      if (!isTransient(error) || attempt === PAYLOAD_RETRY_DELAYS_MS.length) {
+        break;
+      }
+      const base = PAYLOAD_RETRY_DELAYS_MS[attempt];
+      // Full jitter: pick uniformly in [0, base) so synchronized clients
+      // diverge instead of retrying in lockstep.
+      const delay = Math.floor(Math.random() * base);
+      console.warn(
+        `Board payload fetch failed (status ${error?.status ?? 'n/a'}), retrying in ${delay}ms (attempt ${attempt + 1}/${PAYLOAD_RETRY_DELAYS_MS.length})`
+      );
+      await sleep(delay);
+    }
   }
+
+  console.error('Failed to fetch board payload after retries:', lastError);
+  throw lastError ?? new Error('Failed to fetch board payload');
 }
 
 /**

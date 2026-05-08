@@ -104,14 +104,19 @@ export async function request(path, options = {}) {
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      let errorData = null;
-      try {
-        errorData = await response.json();
-      } catch {
-        errorData = await response.text();
+      // Read body once — the stream can only be consumed a single time.
+      const rawBody = await response.text().catch(() => '');
+      let errorData = rawBody;
+      if (rawBody) {
+        try {
+          errorData = JSON.parse(rawBody);
+        } catch {
+          // Not JSON — keep the raw text.
+        }
       }
       throw new ApiError(
-        errorData?.message || `Request failed with status ${response.status}`,
+        (errorData && typeof errorData === 'object' && errorData.message) ||
+          `Request failed with status ${response.status}`,
         response.status,
         errorData
       );
