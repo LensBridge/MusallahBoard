@@ -36,6 +36,135 @@ function formatDateForAladhan(date) {
 }
 
 /**
+ * Build a Date at today's date from a prayer time string.
+ * @param {string} timeStr
+ * @param {Date} baseDate
+ * @returns {Date | null}
+ */
+function buildPrayerDate(timeStr, baseDate) {
+  if (!timeStr) return null;
+  const parsed = parseTimeString(timeStr);
+  if (!Number.isFinite(parsed.hours) || !Number.isFinite(parsed.minutes)) {
+    return null;
+  }
+  const date = new Date(baseDate);
+  date.setHours(parsed.hours, parsed.minutes, 0, 0);
+  return date;
+}
+
+/**
+ * Compute current/next prayer and countdown in a resilient way.
+ * @param {PrayerTimes} prayerTimes
+ * @param {Date} [now]
+ * @param {import('../models/index.js').ParsedTime | null} [tomorrowFajr]
+ * @returns {{
+ *   current: string | null,
+ *   next: string | null,
+ *   nextTime: Date | null,
+ *   countdown: { hours: number, minutes: number, seconds: number, totalMs: number } | null,
+ *   isAfterIsha: boolean
+ * }}
+ */
+export function getPrayerState(prayerTimes, now = new Date(), tomorrowFajr = null) {
+  if (!prayerTimes) {
+    return {
+      current: null,
+      next: null,
+      nextTime: null,
+      countdown: null,
+      isAfterIsha: false,
+    };
+  }
+
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+
+  const prayersInOrder = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+  const schedule = prayersInOrder
+    .map((name) => ({ name, time: buildPrayerDate(prayerTimes[name], today) }))
+    .filter((entry) => entry.time instanceof Date);
+
+  const sunriseTime = buildPrayerDate(prayerTimes.Sunrise, today);
+  const dhuhrTime = buildPrayerDate(prayerTimes.Dhuhr, today);
+  const isBetweenSunriseAndDhuhr =
+    sunriseTime && dhuhrTime && now > sunriseTime && now < dhuhrTime;
+
+  let current = null;
+  let next = null;
+
+  for (const entry of schedule) {
+    if (entry.time <= now) {
+      current = entry.name;
+    } else if (!next) {
+      next = entry.name;
+    }
+  }
+
+  const fajrEntry = schedule.find((entry) => entry.name === 'Fajr');
+  const isBeforeFajr = fajrEntry ? now < fajrEntry.time : false;
+
+  if (isBeforeFajr) {
+    current = 'Isha';
+  }
+
+  if (isBetweenSunriseAndDhuhr) {
+    current = null;
+  }
+
+  const isAfterIsha = !next;
+  if (!next) {
+    next = 'Fajr';
+  }
+
+  let nextTime = null;
+  if (next === 'Fajr') {
+    if (tomorrowFajr) {
+      nextTime = new Date(now);
+      nextTime.setHours(tomorrowFajr.hours, tomorrowFajr.minutes, 0, 0);
+      if (nextTime <= now) {
+        nextTime.setDate(nextTime.getDate() + 1);
+      }
+    } else if (fajrEntry?.time) {
+      nextTime = new Date(fajrEntry.time);
+      if (nextTime <= now) {
+        nextTime.setDate(nextTime.getDate() + 1);
+      }
+    }
+  } else {
+    nextTime = schedule.find((entry) => entry.name === next)?.time ?? null;
+  }
+
+  const countdown = nextTime
+    ? calculateCountdownTo(nextTime, now)
+    : null;
+
+  return {
+    current,
+    next,
+    nextTime,
+    countdown,
+    isAfterIsha,
+  };
+}
+
+/**
+ * Calculate countdown to a target Date.
+ * @param {Date} targetTime
+ * @param {Date} [now]
+ * @returns {{ hours: number, minutes: number, seconds: number, totalMs: number }}
+ */
+function calculateCountdownTo(targetTime, now = new Date()) {
+  const diff = Math.max(0, targetTime - now);
+
+  return {
+    hours: Math.floor(diff / (1000 * 60 * 60)),
+    minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+    seconds: Math.floor((diff % (1000 * 60)) / 1000),
+    totalMs: diff,
+  };
+}
+
+/**
  * Fetch prayer times for a specific date
  * @param {Location} location - Location settings
  * @param {Date} [date] - Date to fetch (defaults to today)
@@ -105,53 +234,12 @@ export async function getTomorrowFajr(location) {
  * @param {Date} [now]
  * @returns {{ current: string | null, next: string, isAfterIsha: boolean }}
  */
-export function calculateNextPrayer(prayerTimes, now = new Date()) {
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
-  // Prayers to check (excluding Sunrise which is not a prayer)
-  const prayersToCheck = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
-
-  // Check if we're between Sunrise and Dhuhr (Fajr time has passed but it's not Dhuhr yet)
-  const sunriseTime = parseTimeString(prayerTimes.Sunrise);
-  const dhuhrTime = parseTimeString(prayerTimes.Dhuhr);
-  const sunriseMinutes = sunriseTime.hours * 60 + sunriseTime.minutes;
-  const dhuhrMinutes = dhuhrTime.hours * 60 + dhuhrTime.minutes;
-  const isBetweenSunriseAndDhuhr = currentMinutes > sunriseMinutes && currentMinutes < dhuhrMinutes;
-
-  let currentPrayer = null;
-  let currentPrayerMinutes = -Infinity;
-  let nextPrayer = null;
-  let nextPrayerMinutes = Infinity;
-
-  for (const prayer of prayersToCheck) {
-    const time = parseTimeString(prayerTimes[prayer]);
-    const prayerMinutes = time.hours * 60 + time.minutes;
-
-    // Determine current prayer
-    if (prayerMinutes <= currentMinutes && prayerMinutes > currentPrayerMinutes) {
-      // Don't count Fajr as current if we're between Sunrise and Dhuhr
-      if (!(isBetweenSunriseAndDhuhr && prayer === 'Fajr')) {
-        currentPrayer = prayer;
-        currentPrayerMinutes = prayerMinutes;
-      }
-    }
-
-    // Determine next prayer
-    if (prayerMinutes > currentMinutes && prayerMinutes < nextPrayerMinutes) {
-      nextPrayer = prayer;
-      nextPrayerMinutes = prayerMinutes;
-    }
-  }
-
-  // If no next prayer found, it's Fajr tomorrow
-  const isAfterIsha = !nextPrayer;
-  if (!nextPrayer) {
-    nextPrayer = 'Fajr';
-  }
+export function calculateNextPrayer(prayerTimes, now = new Date(), tomorrowFajr = null) {
+  const { current, next, isAfterIsha } = getPrayerState(prayerTimes, now, tomorrowFajr);
 
   return {
-    current: isBetweenSunriseAndDhuhr ? null : currentPrayer,
-    next: nextPrayer,
+    current,
+    next,
     isAfterIsha,
   };
 }
@@ -165,35 +253,14 @@ export function calculateNextPrayer(prayerTimes, now = new Date()) {
  * @returns {{ hours: number, minutes: number, seconds: number, totalMs: number }}
  */
 export function calculateCountdown(nextPrayer, prayerTimes, tomorrowFajr = null, now = new Date()) {
-  let targetTime;
+  const state = getPrayerState(prayerTimes, now, tomorrowFajr);
+  const targetTime = state.nextTime;
 
-  if (nextPrayer === 'Fajr' && tomorrowFajr) {
-    targetTime = new Date();
-    targetTime.setHours(tomorrowFajr.hours, tomorrowFajr.minutes, 0, 0);
-    
-    // If target is in the past, it means we need tomorrow
-    if (targetTime <= now) {
-      targetTime.setDate(targetTime.getDate() + 1);
-    }
-  } else {
-    const time = parseTimeString(prayerTimes[nextPrayer]);
-    targetTime = new Date();
-    targetTime.setHours(time.hours, time.minutes, 0, 0);
-
-    // Handle case where next prayer is Fajr but we don't have tomorrow's time
-    if (nextPrayer === 'Fajr' && targetTime <= now) {
-      targetTime.setDate(targetTime.getDate() + 1);
-    }
+  if (!targetTime) {
+    return { hours: 0, minutes: 0, seconds: 0, totalMs: 0 };
   }
 
-  const diff = Math.max(0, targetTime - now);
-
-  return {
-    hours: Math.floor(diff / (1000 * 60 * 60)),
-    minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
-    seconds: Math.floor((diff % (1000 * 60)) / 1000),
-    totalMs: diff,
-  };
+  return calculateCountdownTo(targetTime, now);
 }
 
 /**

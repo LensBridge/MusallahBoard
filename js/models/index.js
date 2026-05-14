@@ -265,10 +265,24 @@ export function createIslamicQuote(data) {
  * @returns {ParsedTime}
  */
 export function parseTimeString(timeStr) {
-  const [time, period] = timeStr.split(' ');
-  let [hours, minutes] = time.split(':').map(Number);
+  if (!timeStr) {
+    return { hours: Number.NaN, minutes: Number.NaN };
+  }
 
-  if (period) {
+  const normalized = String(timeStr).trim();
+  const timeMatch = normalized.match(/(\d{1,2})\s*:\s*(\d{2})/);
+
+  if (!timeMatch) {
+    return { hours: Number.NaN, minutes: Number.NaN };
+  }
+
+  let hours = Number(timeMatch[1]);
+  const minutes = Number(timeMatch[2]);
+  const periodMatch =
+    normalized.match(/\b(AM|PM)\b/i) || normalized.match(/([ap]m)$/i);
+
+  if (periodMatch) {
+    const period = periodMatch[1].toUpperCase();
     if (period === 'PM' && hours !== 12) hours += 12;
     if (period === 'AM' && hours === 12) hours = 0;
   }
@@ -282,7 +296,13 @@ export function parseTimeString(timeStr) {
  * @returns {string} Time in 12h format (e.g., "2:30 PM")
  */
 export function formatTo12Hour(time24) {
-  let [hours, minutes] = time24.split(':').map(Number);
+  if (!time24) return '--:--';
+
+  const match = String(time24).trim().match(/(\d{1,2})\s*:\s*(\d{2})/);
+  if (!match) return '--:--';
+
+  let hours = Number(match[1]);
+  const minutes = Number(match[2]);
   const period = hours >= 12 ? 'PM' : 'AM';
   hours = hours % 12 || 12;
   return `${hours}:${minutes.toString().padStart(2, '0')} ${period}`;

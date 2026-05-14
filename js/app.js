@@ -12,8 +12,7 @@ import { getBoardPayload, getWeather } from './api/boardService.js';
 import {
   getPrayerTimes,
   getTomorrowFajr,
-  calculateNextPrayer,
-  calculateCountdown,
+  getPrayerState,
   formatCountdown,
   formatHijriDate,
 } from './api/prayerService.js';
@@ -69,6 +68,21 @@ const state = {
   weather: null,
   weatherApiKey: null,
 };
+
+let prayerSyncTimer = null;
+let isFetchingTomorrowFajr = false;
+
+/**
+ * @param {string} timeStr
+ * @returns {import('./models/index.js').ParsedTime | null}
+ */
+function parseTimeStringSafe(timeStr) {
+  const parsed = parseTimeString(timeStr);
+  if (!Number.isFinite(parsed.hours) || !Number.isFinite(parsed.minutes)) {
+    return null;
+  }
+  return parsed;
+}
 
 // =====================================================
 // Configuration
@@ -213,8 +227,9 @@ function startTimers() {
   // Update clock every second
   setInterval(updateClock, 1000);
 
-  // Update countdown every second
-  setInterval(updateCountdown, 1000);
+  // Keep prayer state aligned with the live clock using a self-correcting
+  // one-shot timer so tab throttling does not leave stale highlights behind.
+  schedulePrayerStateRefresh();
 
   // Check dark mode every minute
   setInterval(checkDarkModeAndRefresh, 60000);
@@ -235,6 +250,98 @@ function startTimers() {
   }, 86400000);
 }
 
+function schedulePrayerStateRefresh() {
+  if (prayerSyncTimer) {
+    clearTimeout(prayerSyncTimer);
+    prayerSyncTimer = null;
+  }
+
+  const now = new Date();
+  const delay = Math.max(250, 1000 - now.getMilliseconds());
+
+  prayerSyncTimer = setTimeout(() => {
+    prayerSyncTimer = null;
+    try {
+      syncPrayerState();
+    } catch (error) {
+      console.error('Failed to sync prayer state:', error);
+    }
+    schedulePrayerStateRefresh();
+  }, delay);
+}
+
+function syncPrayerState() {
+  if (!state.prayerTimes) return;
+
+  const now = new Date();
+  const { current, next, countdown } = getPrayerState(
+    state.prayerTimes,
+    now,
+    state.tomorrowFajr
+  );
+
+  ensureTomorrowFajr(now);
+
+  state.currentPrayer = current;
+  state.nextPrayer = next;
+
+  document.querySelectorAll('.prayer-card, .prayer-row').forEach((el) => {
+    el.classList.remove('active', 'next');
+  });
+
+  if (current) {
+    const currentRow = document.querySelector(
+      `.prayer-row[data-prayer="${PRAYER_NAMES[current]}"], .prayer-card[data-prayer="${PRAYER_NAMES[current]}"]`
+    );
+    if (currentRow) {
+      currentRow.classList.add('active');
+    }
+  }
+
+  if (next) {
+    const nextRow = document.querySelector(
+      `.prayer-row[data-prayer="${PRAYER_NAMES[next]}"], .prayer-card[data-prayer="${PRAYER_NAMES[next]}"]`
+    );
+    if (nextRow) {
+      nextRow.classList.add('next');
+    }
+  }
+
+  const nextPrayerDisplayName = document.getElementById('nextPrayerDisplayName');
+  if (nextPrayerDisplayName) {
+    nextPrayerDisplayName.textContent = next || '--';
+  }
+
+  const countdownTimerLarge = document.getElementById('countdownTimerLarge');
+  if (countdownTimerLarge) {
+    countdownTimerLarge.textContent = countdown
+      ? formatCountdown(countdown)
+      : '--:--:--';
+  }
+}
+
+function ensureTomorrowFajr(now = new Date()) {
+  if (state.tomorrowFajr || isFetchingTomorrowFajr) return;
+  if (!state.ishaTime || !state.boardConfig?.location) return;
+
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const ishaMinutes = state.ishaTime.hours * 60 + state.ishaTime.minutes;
+
+  if (currentMinutes < ishaMinutes) return;
+
+  isFetchingTomorrowFajr = true;
+  getTomorrowFajr(state.boardConfig.location)
+    .then((fajrTime) => {
+      state.tomorrowFajr = parseTimeStringSafe(fajrTime);
+    })
+    .catch((error) => {
+      console.error('Error fetching tomorrow Fajr:', error);
+    })
+    .finally(() => {
+      isFetchingTomorrowFajr = false;
+    });
+}
+
 // =====================================================
 // Prayer Times
 // =====================================================
@@ -248,8 +355,8 @@ async function fetchPrayerTimes() {
     state.hijriDate = hijriDate;
 
     // Cache parsed times for dark mode calculations
-    state.maghribTime = parseTimeString(timings.Maghrib);
-    state.ishaTime = parseTimeString(timings.Isha);
+    state.maghribTime = parseTimeStringSafe(timings.Maghrib);
+    state.ishaTime = parseTimeStringSafe(timings.Isha);
 
     updatePrayerTimesUI();
     updateHijriDateUI();
@@ -272,7 +379,7 @@ async function checkAndFetchTomorrowFajr() {
   if (currentMinutes >= ishaMinutes) {
     try {
       const fajrTime = await getTomorrowFajr(state.boardConfig.location);
-      state.tomorrowFajr = parseTimeString(fajrTime);
+      state.tomorrowFajr = parseTimeStringSafe(fajrTime);
     } catch (error) {
       console.error('Error fetching tomorrow Fajr:', error);
     }
@@ -313,56 +420,11 @@ function showPrayerTimesError() {
 }
 
 function highlightNextPrayer() {
-  if (!state.prayerTimes) return;
-
-  // Remove existing highlights
-  document.querySelectorAll('.prayer-card, .prayer-row').forEach((el) => {
-    el.classList.remove('active', 'next');
-  });
-
-  // Calculate next prayer
-  const { current, next } = calculateNextPrayer(state.prayerTimes);
-  state.currentPrayer = current;
-  state.nextPrayer = next;
-
-  // Highlight current prayer
-  if (current) {
-    const currentRow = document.querySelector(
-      `.prayer-row[data-prayer="${PRAYER_NAMES[current]}"], .prayer-card[data-prayer="${PRAYER_NAMES[current]}"]`
-    );
-    if (currentRow) {
-      currentRow.classList.add('active');
-    }
-  }
-
-  // Update next prayer display
-  const nextPrayerDisplayName = document.getElementById('nextPrayerDisplayName');
-  if (nextPrayerDisplayName) {
-    nextPrayerDisplayName.textContent = next;
-  }
+  syncPrayerState();
 }
 
 function updateCountdown() {
-  if (!state.prayerTimes || !state.nextPrayer) return;
-
-  const countdown = calculateCountdown(
-    state.nextPrayer,
-    state.prayerTimes,
-    state.tomorrowFajr
-  );
-
-  // Check if we've reached the prayer time
-  if (countdown.totalMs <= 0) {
-    highlightNextPrayer();
-    return;
-  }
-
-  const countdownStr = formatCountdown(countdown);
-
-  const countdownTimerLarge = document.getElementById('countdownTimerLarge');
-  if (countdownTimerLarge) {
-    countdownTimerLarge.textContent = countdownStr;
-  }
+  syncPrayerState();
 }
 
 // =====================================================
@@ -573,7 +635,9 @@ function checkDarkModeAndRefresh() {
   const maghribMinutes = state.maghribTime.hours * 60 + state.maghribTime.minutes;
 
   if (state.boardConfig.darkModeAfterIsha) {
-    const fajrTime = parseTimeString(state.prayerTimes.Fajr);
+    const fajrTime = parseTimeStringSafe(state.prayerTimes.Fajr);
+    if (!fajrTime) return;
+
     const fajrMinutes = fajrTime.hours * 60 + fajrTime.minutes;
 
     if (currentMinutes >= maghribMinutes || currentMinutes < fajrMinutes) {
