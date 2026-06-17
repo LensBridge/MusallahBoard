@@ -112,7 +112,7 @@ const PAYLOAD_RECOVERY_DELAY_MS = 45000;
 const PAYLOAD_RECOVERY_JITTER_MS = 30000;
 
 async function initApp() {
-  setLoadingOverlay(true, 'Initializing MusallahBoard v1.0b...');
+  setLoadingOverlay(true, 'Initializing MusallahBoard 2027...');
 
   // Get setup configuration from cookies
   // This contains: boardLocation ('sisters' | 'brothers') and weatherApiKey
