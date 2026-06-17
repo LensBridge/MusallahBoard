@@ -21,20 +21,18 @@ export function getCookie(name) {
   return null;
 }
 
-/** @returns {{deviceId:string|null, weatherApiKey:string|null, hideCursor:boolean}} */
+/** @returns {{deviceId:string|null, hideCursor:boolean}} */
 export function getSetupConfig() {
   const hideRaw = getCookie('hideCursor');
   return {
     deviceId: getCookie('deviceId'),
-    weatherApiKey: getCookie('weatherApiKey'),
     // Kiosks are the common case → default to a hidden cursor.
     hideCursor: hideRaw === null ? true : hideRaw === 'true',
   };
 }
 
-export function saveSetupConfig({ deviceId, weatherApiKey, hideCursor }) {
+export function saveSetupConfig({ deviceId, hideCursor }) {
   if (deviceId) setCookie('deviceId', deviceId);
-  if (weatherApiKey != null) setCookie('weatherApiKey', weatherApiKey);
   if (typeof hideCursor === 'boolean') setCookie('hideCursor', String(hideCursor));
 }
 

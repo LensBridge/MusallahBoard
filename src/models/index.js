@@ -177,6 +177,24 @@ function normalizeQuote(cfg) {
   };
 }
 
+/**
+ * Normalize a raw OpenWeatherMap "current weather" response (now shipped
+ * inside the board payload as `payload.weather`) into the chip shape the
+ * TopBar consumes. Returns null when the field is absent so the chip hides.
+ * The backend requests metric units, so `main.temp` is already °C.
+ *
+ * @param {any} raw   raw OWM response, or null/undefined
+ * @param {string} [cityFallback]  deviceConfig location city
+ */
+function normalizeWeather(raw, cityFallback) {
+  if (!raw || typeof raw !== 'object' || raw.main?.temp == null) return null;
+  return {
+    temp: Math.round(raw.main.temp),
+    condition: raw.weather?.[0]?.main || raw.weather?.[0]?.description || 'Clear',
+    city: cityFallback || raw.name || '',
+  };
+}
+
 function normalizeJummah(slot) {
   return {
     time: slot?.prayerTime ? formatTo12(slot.prayerTime) : '',
@@ -202,12 +220,14 @@ export function emptyDeviceConfig() {
 /**
  * Flatten MusallahBoardPayload into the shape the design components consume.
  * Prayer times + Hijri date are NOT in the payload — they are layered on
- * later in App from the prayer service. Weather is layered similarly.
+ * later in App from the prayer service. Weather, however, now rides along
+ * in the payload (`payload.weather`, raw OpenWeatherMap response).
  *
  * @param {any} payload  raw MusallahBoardPayload
  * @returns {{
  *   deviceConfig: object,
  *   frames: any[],
+ *   weather: {temp:number,condition:string,city:string}|null,
  *   posters: {title:string,image:string,durationMs:number}[],
  *   weekEvents: object[],
  *   todayEvents: object[],
@@ -312,6 +332,7 @@ export function normalizePayload(payload) {
   return {
     deviceConfig,
     frames,
+    weather: normalizeWeather(payload?.weather, deviceConfig.location?.city),
     posters,
     weekEvents,
     todayEvents,

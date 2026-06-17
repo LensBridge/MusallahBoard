@@ -1,8 +1,8 @@
 // MusallahBoard — root orchestrator.
-// Setup gate → fetch payload + prayer + weather → compose the design data
-// shape → drive the slideshow built from the frame-builder registry.
+// Setup gate → fetch payload (weather rides along) + prayer → compose the
+// design data shape → drive the slideshow built from the frame-builder registry.
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { getBoardPayload, getPrayerData, getWeather } from './api/index.js';
+import { getBoardPayload, getPrayerData } from './api/index.js';
 import { buildWeekColumns, buildHijri } from './models/index.js';
 import { classifyPrayers } from './utils/prayers.js';
 import { buildSlideshow } from './frames/registry.js';
@@ -18,7 +18,6 @@ import Ticker from './components/Ticker.jsx';
 
 const INSTAGRAM = { handle: '@utmmsa', url: 'https://instagram.com/utmmsa' };
 const PAYLOAD_REFRESH_MS = 10 * 60 * 1000;
-const WEATHER_REFRESH_MS = 15 * 60 * 1000;
 
 // Scale the fixed 1920×1080 stage to fit any viewport, letterboxed black.
 function ScaledStage({ children }) {
@@ -62,7 +61,6 @@ export default function App() {
   const [needsSetup, setNeedsSetup] = useState(!isSetupComplete());
   const [payload, setPayload] = useState(null);
   const [prayerInfo, setPrayerInfo] = useState(null); // { prayers, hijri }
-  const [weather, setWeather] = useState(null);
   const [error, setError] = useState(null);
   const [now, setNow] = useState(new Date());
   const [slideIdx, setSlideIdx] = useState(0);
@@ -157,19 +155,6 @@ export default function App() {
     return () => clearInterval(id);
   }, [loadPayload]);
 
-  // Weather (best-effort, hidden on failure).
-  useEffect(() => {
-    if (needsSetup || !payload) return;
-    let cancelled = false;
-    const fetchW = () =>
-      getWeather(payload.deviceConfig.location, setup.weatherApiKey).then((w) => {
-        if (!cancelled) setWeather(w);
-      });
-    fetchW();
-    const id = setInterval(fetchW, WEATHER_REFRESH_MS);
-    return () => { cancelled = true; clearInterval(id); };
-  }, [needsSetup, payload, setup.weatherApiKey]);
-
   const tz = payload?.deviceConfig?.location?.timezone;
 
   // Compose the design data shape.
@@ -180,7 +165,7 @@ export default function App() {
         gregorian: gregorian(now, tz),
         hijri: buildHijri(prayerInfo.hijri),
       },
-      weather,
+      weather: payload.weather,
       prayers: prayerInfo.prayers,
       jummahPrayers: payload.jummahPrayers,
       todayEvents: payload.todayEvents,
@@ -193,7 +178,7 @@ export default function App() {
     // now intentionally excluded — gregorian only needs day granularity and
     // recomputing every second would thrash useMemo.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [payload, prayerInfo, weather, tz, now.toDateString()]);
+  }, [payload, prayerInfo, tz, now.toDateString()]);
 
   // Build the slideshow from the registry whenever the payload changes.
   const slides = useMemo(() => {
