@@ -406,22 +406,6 @@ export default function App() {
                 {active.render({ data, now })}
               </div>
             </div>
-
-            <div className="slide-indicators">
-              {slides.map((s, i) => {
-                let cls = 'slide-indicator';
-                if (i === slideIdx) cls += ' is-active';
-                else if (i < slideIdx) cls += ' is-passed';
-                return (
-                  <div
-                    key={s.key + i}
-                    className={cls}
-                    onClick={() => setSlideIdx(i)}
-                    style={i === slideIdx ? { '--slide-dur': s.durationMs / 1000 + 's' } : undefined}
-                  />
-                );
-              })}
-            </div>
           </main>
 
           {showTicker ? (

@@ -114,7 +114,6 @@ export function TodaySlide({ data, now }) {
     <div className="today-slide" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div className="slide-eyebrow">
         <span className="pip" />
-        <span>Today on Campus</span>
         <span className="rule" />
         <span>{events.length} events</span>
       </div>
@@ -291,9 +290,8 @@ export function QuoteSlide({ kind, quote }) {
     <div className="quote-slide" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div className="slide-eyebrow">
         <span className="pip" />
-        <span>{label}</span>
         <span className="rule" />
-        <span>{(quote.reference || '').split('·')[0]}</span>
+        <span>{label}</span>
       </div>
       <div className="quote-body">
         <div className="quote-arabic">{quote.arabic}</div>
@@ -311,9 +309,8 @@ export function IGSlide({ data }) {
     <>
       <div className="slide-eyebrow">
         <span className="pip" />
-        <span>Stay Connected</span>
         <span className="rule" />
-        <span>UTM MSA · Online</span>
+        <span>Stay Connected</span>
       </div>
       <div className="ig-body">
         <div className="ig-text">

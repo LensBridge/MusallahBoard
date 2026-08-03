@@ -1088,7 +1088,9 @@ img { display: block; max-width: 100%; }
 /* =========================================================================
    Slide: Quote (verse / hadith)
    ========================================================================= */
-.quote-slide { padding: var(--pad-stage, 48px); }
+/* No padding here — .slide already applies --pad-stage. Adding it again
+   double-padded this frame and dropped its eyebrow below the other frames'. */
+.quote-slide { display: flex; flex-direction: column; }
 .quote-body {
   flex: 1;
   display: flex;
