@@ -4,7 +4,7 @@
  */
 import { registerFrameBuilder } from './registry.js';
 import {
-  NextPrayerSlide, TodaySlide, WeekSlide,
+  NextPrayerSlide, AgendaSlide,
   PosterSlide, QuoteSlide, IGSlide,
 } from '../components/slides.jsx';
 
@@ -17,18 +17,16 @@ registerFrameBuilder('next_prayer', (def) => ({
   render: ({ data, now }) => <NextPrayerSlide data={data} now={now} />,
 }));
 
-// Frontend-managed Today view (synthetic frame type 'today'). Not driven by
-// any backend frame — it reads the payload-derived todayEvents off `data`.
-registerFrameBuilder('today', (def) => ({
-  key: 'today',
-  durationMs: secs(def, 16),
-  render: ({ data, now }) => <TodaySlide data={data} now={now} />,
-}));
-
-registerFrameBuilder('event_list', (def) => ({
-  key: 'week',
-  durationMs: secs(def, 16),
-  render: ({ data }) => <WeekSlide data={data} />,
+// Frontend-managed agenda view (synthetic frame type 'agenda'). Replaces the
+// former 'today' and 'event_list' slides, which asked overlapping questions
+// half a rotation apart. Not driven by any backend frame — it reads the
+// payload-derived todayEvents + agenda off `data`, so the backend's event_list
+// frame is now a data source only and never becomes a slide of its own
+// (see buildSlideshow). Longer than either slide it replaces, shorter than both.
+registerFrameBuilder('agenda', (def) => ({
+  key: 'agenda',
+  durationMs: secs(def, 20),
+  render: ({ data, now }) => <AgendaSlide data={data} now={now} />,
 }));
 
 registerFrameBuilder('poster', (def, ctx) => {

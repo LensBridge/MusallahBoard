@@ -3,7 +3,7 @@
 // design data shape → drive the slideshow built from the frame-builder registry.
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { getBoardPayload, getPrayerData, connectRefreshSocket } from './api/index.js';
-import { buildWeekColumns, buildHijri, zonedClock } from './models/index.js';
+import { buildAgendaDays, buildHijri, zonedClock, isoDateKey } from './models/index.js';
 import { classifyPrayers } from './utils/prayers.js';
 import { buildSlideshow } from './frames/registry.js';
 import './frames/builders.jsx'; // registers default builders
@@ -191,7 +191,7 @@ export default function App() {
       prayers: prayerInfo.prayers,
       jummahPrayers: payload.jummahPrayers,
       todayEvents: payload.todayEvents,
-      week: buildWeekColumns(payload.weekEvents, tz),
+      agenda: buildAgendaDays(payload.weekEvents, now, tz),
       verse: payload.verse,
       hadith: payload.hadith,
       instagram: {
@@ -200,10 +200,13 @@ export default function App() {
       },
       scrollingMessages: payload.scrollingMessages,
     };
-    // now intentionally excluded — gregorian only needs day granularity and
-    // recomputing every second would thrash useMemo.
+    // now intentionally excluded — gregorian and the agenda window only need
+    // day granularity, and recomputing every second would thrash useMemo.
+    // Keyed on the date *in the board's zone*, not the Pi's: a box left on UTC
+    // would otherwise roll the agenda over at the wrong midnight, which is the
+    // same class of bug zonedClock() exists to prevent for prayer times.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [payload, prayerInfo, tz, now.toDateString()]);
+  }, [payload, prayerInfo, tz, isoDateKey(now, tz)]);
 
   // Build the slideshow from the registry whenever the payload changes.
   const slides = useMemo(() => {

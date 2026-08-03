@@ -177,21 +177,6 @@ export function zonedSeconds(instant, timezone) {
   return hours * 3600 + minutes * 60 + seconds;
 }
 
-/** Day-of-week + numeric day for an ISO instant in a timezone. */
-function isoDayParts(iso, timezone) {
-  const d = new Date(iso);
-  const fmt = new Intl.DateTimeFormat('en-US', {
-    weekday: 'short', day: 'numeric', month: 'short',
-    timeZone: timezone || undefined,
-  }).formatToParts(d);
-  return {
-    weekday: fmt.find((p) => p.type === 'weekday')?.value ?? '',
-    day: fmt.find((p) => p.type === 'day')?.value ?? '',
-    month: fmt.find((p) => p.type === 'month')?.value ?? '',
-    epoch: d.getTime(),
-  };
-}
-
 /**
  * Calendar date ("YYYY-MM-DD") for an instant in a given timezone. Accepts a
  * Date or an ISO string. Used to bucket events onto the right day regardless
@@ -217,13 +202,8 @@ export function isoDateKey(input, timezone) {
 /** Indexed to match Date#getDay() — 0 = Sunday. Used for weekday arithmetic. */
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-/**
- * Column order for the week slide. Monday-first, matching the backend: the
- * payload's event_list frame is scoped to an ISO week (Mon 00:00 → Sun 23:59)
- * in the device's timezone, and WeeklyContent is keyed the same way. A
- * Sunday-first grid would put Sunday at the head of a week it actually closes.
- */
-const WEEK_COLUMNS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+/** Days in the agenda frame's rolling window: today plus the next six. */
+export const AGENDA_DAYS = 7;
 
 function normalizeQuote(cfg) {
   if (!cfg) return null;
@@ -360,15 +340,21 @@ export function normalizePayload(payload) {
     (f) => ft(f) === 'islamic_quote' && f.frameConfig?.kind === 'HADITH'
   );
 
-  const weekEvents = eventPool.map((e) => ({
-    name: e.name || '',
-    room: e.location || '',
-    startTime: e.startTime,
-    endTime: e.endTime,
-    allDay: Boolean(e.allDay),
-    ...isoDayParts(e.startTime, tz),
-    hm: isoToHM(e.startTime, tz),
-  }));
+  // The agenda frame buckets these by calendar day, so the day key is resolved
+  // here — once, in the board's zone — rather than re-derived per render.
+  const weekEvents = eventPool.map((e) => {
+    const epoch = e.startTime ? new Date(e.startTime).getTime() : NaN;
+    return {
+      name: e.name || '',
+      room: e.location || '',
+      startTime: e.startTime,
+      endTime: e.endTime,
+      allDay: Boolean(e.allDay),
+      dateKey: isoDateKey(e.startTime, tz),
+      epoch: Number.isFinite(epoch) ? epoch : 0,
+      hm: isoToHM(e.startTime, tz),
+    };
+  });
 
   // Today's events. The backend scopes its daily_schedule frame to the device's
   // own day, so prefer it; fall back to filtering the pool ourselves when the
@@ -410,41 +396,68 @@ export function normalizePayload(payload) {
 }
 
 /**
- * Bucket week events into 7 day-columns (Mon→Sun) for the Week slide.
+ * Seven consecutive day buckets starting at `now`, read in the board's zone.
  *
- * Bucketing is by weekday name, which is only sound because the backend scopes
- * the event_list frame to a single ISO week — within one week each weekday
- * appears at most once, so a column's date number is unambiguous. Events are
- * ordered by start time within a column.
+ * Days are generated from the calendar rather than from the events, so an empty
+ * day still knows its own date. The previous buildWeekColumns() derived each
+ * column's date number from that column's first event, which left quiet days
+ * with a blank number — tolerable on a Mon–Sun grid where most days had
+ * something, unacceptable on a rolling window where most days often don't.
  *
- * @param {object[]} weekEvents normalized week events (have weekday/day/epoch)
- * @param {string} [timezone]
+ * Dates advance through Date.UTC(y, m, d + i) instead of adding 86_400_000ms:
+ * across a DST transition the millisecond arithmetic skips or repeats a local
+ * calendar date, and these boards run in America/Toronto. Building each day at
+ * UTC midnight also makes `toISOString().slice(0, 10)` an exact day key.
+ *
+ * @param {object[]} weekEvents normalized events (carry dateKey/epoch/hm)
+ * @param {Date} now            the board's clock (honours the debug offset)
+ * @param {string} [timezone]   IANA zone; falls back to the runtime's own
+ * @returns {{key:string, weekday:string, date:string, month:string,
+ *            offset:number, isToday:boolean, isTomorrow:boolean,
+ *            events:{t:string,n:string,r:string,allDay:boolean}[]}[]}
  */
-export function buildWeekColumns(weekEvents, timezone) {
-  const todayParts = new Intl.DateTimeFormat('en-US', {
-    weekday: 'short', day: 'numeric',
-    timeZone: timezone || undefined,
-  }).formatToParts(new Date());
-  const todayWk = todayParts.find((p) => p.type === 'weekday')?.value;
+export function buildAgendaDays(weekEvents, now, timezone) {
+  const [y, m, d] = isoDateKey(now, timezone).split('-').map(Number);
 
-  const byWeekday = new Map(WEEK_COLUMNS.map((d) => [d, []]));
-  const dayNum = new Map();
-  for (const ev of [...weekEvents].sort((a, b) => a.epoch - b.epoch)) {
-    if (!byWeekday.has(ev.weekday)) continue;
-    byWeekday.get(ev.weekday).push({
-      t: formatTo12(ev.hm),
+  // All-day entries sort ahead of timed ones: they frame the whole day rather
+  // than occupying a slot in it, so a 9am talk listed above "Eid Weekend" reads
+  // as though the weekend starts at 9.
+  const buckets = new Map();
+  for (const ev of [...(weekEvents || [])].sort(
+    (a, b) => (b.allDay ? 1 : 0) - (a.allDay ? 1 : 0) || a.epoch - b.epoch
+  )) {
+    if (!ev?.dateKey) continue;
+    if (!buckets.has(ev.dateKey)) buckets.set(ev.dateKey, []);
+    buckets.get(ev.dateKey).push({
+      t: ev.allDay ? 'All Day' : formatTo12(ev.hm),
       n: ev.name,
       r: ev.room,
+      allDay: ev.allDay,
     });
-    if (!dayNum.has(ev.weekday)) dayNum.set(ev.weekday, ev.day);
   }
 
-  return WEEK_COLUMNS.map((d) => ({
-    day: d,
-    date: dayNum.get(d) ?? '',
-    events: byWeekday.get(d),
-    today: d === todayWk,
-  }));
+  const label = new Intl.DateTimeFormat('en-US', {
+    weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC',
+  });
+
+  const out = [];
+  for (let i = 0; i < AGENDA_DAYS; i++) {
+    const at = new Date(Date.UTC(y, m - 1, d + i));
+    const parts = label.formatToParts(at);
+    const part = (t) => parts.find((p) => p.type === t)?.value ?? '';
+    const key = at.toISOString().slice(0, 10);
+    out.push({
+      key,
+      weekday: part('weekday'),
+      date: part('day'),
+      month: part('month'),
+      offset: i,
+      isToday: i === 0,
+      isTomorrow: i === 1,
+      events: buckets.get(key) ?? [],
+    });
+  }
+  return out;
 }
 
 /** Build the design's hijri date block from an Aladhan hijri object. */

@@ -785,30 +785,48 @@ img { display: block; max-width: 100%; }
 .np-foot-cell.active .time { color: var(--accent); }
 
 /* =========================================================================
-   Slide: Today (Happening now + Up next)
+   Slide: Agenda — today in focus, the next six days beneath
+
+   `.slide` already applies --pad-stage, so the frame root sets layout only.
+   Vertical budget inside .stage-main (1400×920, less 48px cozy padding):
+   eyebrow ~56 · hero (flexes, lands ~460) · ribbon label 26 · ribbon 254.
    ========================================================================= */
-.today-slide { display: flex; flex-direction: column; }
-.today-grid {
+/* flex:1 rather than height:100% — .slide is the flex column, and a percentage
+   height on a flex child is the thing that leaves the ribbon floating half a
+   frame above the bottom edge. No padding here: .slide already applied it. */
+.agenda-slide { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.agenda-hero {
   flex: 1;
   display: grid;
   grid-template-columns: 1.2fr 1fr;
   gap: 28px;
   min-height: 0;
+  margin-bottom: 28px;
 }
+
+/* The hero card is one recipe with a swappable hue: --state carries the
+   meaning (sage = running, accent = coming up, muted = today is done) so the
+   border, wash, dot and progress bar all recolour from a single declaration. */
 .now-card {
-  border: 1px solid var(--line);
+  --state: var(--sage);
+  border: 1px solid color-mix(in oklch, var(--state) 30%, var(--line));
   border-radius: var(--r-card);
-  padding: 32px;
-  background: linear-gradient(160deg, color-mix(in oklch, var(--sage) 10%, var(--bg-soft)), var(--bg-card));
+  padding: 30px 36px;
+  background: linear-gradient(160deg, color-mix(in oklch, var(--state) 10%, var(--bg-soft)), var(--bg-card));
   display: flex; flex-direction: column;
   position: relative;
   overflow: hidden;
 }
+.now-card.is-next,
+.now-card.is-allday { --state: var(--accent); }
+.now-card.is-clear  { --state: var(--fg-3); }
+
+/* Width 0 unless the frame set --progress, so only a live event draws a bar. */
 .now-card::after {
   content: "";
   position: absolute; top: 0; left: 0; height: 4px;
-  width: var(--progress, 35%);
-  background: var(--sage);
+  width: var(--progress, 0%);
+  background: var(--state);
   transition: width 0.6s ease;
 }
 .now-tag {
@@ -817,27 +835,34 @@ img { display: block; max-width: 100%; }
   font-size: 11px;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: var(--sage);
-  margin-bottom: 20px;
+  color: var(--state);
+  margin-bottom: 18px;
 }
 .now-tag .dot {
   width: 8px; height: 8px; border-radius: 50%;
-  background: var(--sage);
-  box-shadow: 0 0 0 4px color-mix(in oklch, var(--sage) 25%, transparent);
-  animation: pulse 2s ease-in-out infinite;
+  background: var(--state);
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--state) 25%, transparent);
 }
+/* Only the live state pulses — a heartbeat on a static listing reads as an
+   error rather than as liveness. */
+.now-card.is-live .now-tag .dot { animation: pulse 2s ease-in-out infinite; }
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
 }
 .now-title {
   font-family: var(--f-display);
-  font-size: 56px;
-  line-height: 1.05;
+  font-size: 52px;
+  line-height: 1.06;
   font-weight: 500;
   color: var(--hero);
   letter-spacing: 0.01em;
   text-wrap: balance;
+  /* No scrollbars on a kiosk: a runaway event title truncates instead. */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .now-meta {
   margin-top: 22px;
@@ -880,7 +905,7 @@ img { display: block; max-width: 100%; }
   font-family: var(--f-display);
   font-size: 32px;
   font-weight: 500;
-  color: var(--sage);
+  color: var(--state);
   font-variant-numeric: tabular-nums;
 }
 
@@ -916,7 +941,7 @@ img { display: block; max-width: 100%; }
   grid-template-columns: 92px 1fr auto;
   gap: 18px;
   align-items: start;
-  padding: 16px 0;
+  padding: 14px 0;
   border-top: 1px solid var(--line);
 }
 .upnext-time { padding-top: 4px; }
@@ -935,8 +960,14 @@ img { display: block; max-width: 100%; }
   font-size: 20px;
   font-weight: 500;
   color: var(--fg);
-  line-height: 1.3;
+  line-height: 1.25;
   text-wrap: balance;
+  /* Four rows of a three-line title overran the column. Two lines each keeps a
+     full queue inside 442px; the ribbon's "+N more" reports what's cut. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .upnext-room {
   font-family: var(--f-mono);
@@ -953,98 +984,153 @@ img { display: block; max-width: 100%; }
   color: var(--accent);
   text-align: right;
 }
-
-/* =========================================================================
-   Slide: Week at a glance
-   ========================================================================= */
-.week-grid {
-  flex: 1;
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 14px;
-  min-height: 0;
-}
-.day-col {
-  display: flex; flex-direction: column;
-  border: 1px solid var(--line);
-  border-radius: var(--r-card);
-  background: var(--bg-card);
-  padding: 22px 18px 18px;
-  min-height: 0;
-  min-width: 0;
-}
-.day-col.today {
-  background: linear-gradient(180deg, color-mix(in oklch, var(--accent) 16%, var(--bg-card)), var(--bg-card));
-  border-color: color-mix(in oklch, var(--accent) 55%, var(--line));
-  padding: 24px 22px 22px;
-}
-.day-head {
-  display: flex; align-items: baseline; justify-content: space-between;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--line);
-  margin-bottom: 16px;
-}
-.day-name {
-  font-family: var(--f-display);
-  font-size: 16px;
+/* Was an inline style block on the empty case. */
+.upnext-empty {
+  padding-top: 24px;
+  font-family: var(--f-mono);
+  font-size: 12px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--fg-3);
 }
-.day-col.today .day-name { color: var(--accent); font-size: 18px; }
-.day-num {
-  font-family: var(--f-display);
-  font-size: 32px;
-  font-weight: 500;
-  color: var(--fg);
-}
-.day-col.today .day-num { color: var(--accent); font-size: 40px; }
-.day-events {
-  display: flex; flex-direction: column;
-  gap: 14px;
-  min-height: 0;
-  overflow: hidden;
-  flex: 1;
-}
-.day-event {
-  padding: 10px 0;
-  border-top: 1px dashed var(--line);
-}
-.day-event:first-child { border-top: none; padding-top: 0; }
-.day-event .t {
+/* The list caps at four rows; this is what stops the cap being silent. */
+.upnext-more {
+  padding-top: 14px;
   font-family: var(--f-mono);
-  font-size: 13px;
-  letter-spacing: 0.18em;
-  color: var(--accent);
-  text-transform: uppercase;
-  margin-bottom: 6px;
-  font-weight: 500;
-}
-.day-event .n {
-  font-family: var(--f-serif);
-  font-size: 17px;
-  line-height: 1.3;
-  color: var(--fg);
-  text-wrap: balance;
-  font-weight: 500;
-}
-.day-col.today .day-event .n { font-size: 20px; }
-.day-event .r {
-  font-family: var(--f-mono);
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--fg-3);
-  margin-top: 4px;
-}
-.day-empty {
-  font-family: var(--f-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* ---- Agenda ribbon: the six days after today ---------------------------- */
+.agenda-ribbon-label {
+  display: flex; align-items: center; gap: 14px;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
   color: var(--fg-3);
-  opacity: 0.5;
-  margin-top: 12px;
+  margin-bottom: 14px;
+}
+.agenda-ribbon-label .rule {
+  flex: 1; height: 1px;
+  background: var(--line);
+}
+.agenda-ribbon {
+  flex: none;
+  height: 254px;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 14px;
+}
+.agenda-day {
+  display: flex; flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: var(--bg-card);
+  padding: 16px 14px 14px;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+/* A day with nothing on recedes rather than holding the same weight as a busy
+   one. This is what makes the shape of the week readable from across the room
+   without reading a word of it — the old grid gave every column equal presence. */
+.agenda-day.is-quiet {
+  background: none;
+  border-color: color-mix(in oklch, var(--line) 55%, transparent);
+}
+.agenda-day.is-quiet .agenda-day-name,
+.agenda-day.is-quiet .agenda-day-num { color: var(--fg-3); opacity: 0.65; }
+
+.agenda-day.is-tomorrow {
+  background: linear-gradient(180deg, color-mix(in oklch, var(--accent) 12%, var(--bg-card)), var(--bg-card));
+  border-color: color-mix(in oklch, var(--accent) 45%, var(--line));
+}
+.agenda-day.is-tomorrow .agenda-day-name { color: var(--accent); }
+
+.agenda-day-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 12px;
+}
+.agenda-day-name {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.agenda-day-num {
+  font-family: var(--f-display);
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 500;
+  color: var(--fg);
+}
+.agenda-day-jummah {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: -4px 0 10px;
+}
+/* Two events plus a "+N more" line has to fit 152px without the last name
+   getting sliced mid-glyph, and a 206px column wraps long titles to the full
+   two-line clamp. The gap/padding/leading below are sized against that worst
+   case with ~15px to spare; loosening any of them re-opens the clipping. */
+.agenda-day-events {
+  display: flex; flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.agenda-day-event {
+  padding-top: 6px;
+  border-top: 1px dashed var(--line);
+}
+.agenda-day-event:first-child { border-top: none; padding-top: 0; }
+.agenda-day-event .t {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.agenda-day-event .n {
+  font-family: var(--f-serif);
+  font-size: 14px;
+  line-height: 1.2;
+  font-weight: 500;
+  color: var(--fg);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.agenda-day-more {
+  padding-top: 2px;
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+.agenda-day-empty {
+  font-family: var(--f-display);
+  font-size: 22px;
+  color: var(--fg-3);
+  opacity: 0.4;
 }
 
 /* =========================================================================

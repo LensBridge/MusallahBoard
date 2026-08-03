@@ -53,7 +53,8 @@ export function buildSlideshow(normalized, ctx) {
   normalized.frames.forEach((def, i) => {
     const type = String(def.frameType || '').toLowerCase();
     if (type === 'jummah') return; // consumed by the rail, not a slide
-    if (type === 'daily_schedule') return;
+    if (type === 'daily_schedule') return; // folded into the agenda frame
+    if (type === 'event_list') return;     // ditto — the agenda frame's week data
     const frame = buildFrame(def, { ...ctx, frameIndex: i });
     if (frame) {
       out.push(frame);
@@ -68,17 +69,16 @@ export function buildSlideshow(normalized, ctx) {
     if (f) out.unshift(f);
   }
 
-  const today = buildFrame({ frameType: 'today', durationInSeconds: 16 }, ctx);
-  if (today) {
+  const agenda = buildFrame({ frameType: 'agenda', durationInSeconds: 20 }, ctx);
+  if (agenda) {
     const npIdx = out.findIndex((f) => f.key === 'next-prayer');
-    out.splice(npIdx === -1 ? 0 : npIdx + 1, 0, today);
+    out.splice(npIdx === -1 ? 0 : npIdx + 1, 0, agenda);
   }
 
   const posters = out.filter((f) => f.key.startsWith('poster'));
   if (posters.length) {
     const rest = out.filter((f) => !f.key.startsWith('poster'));
-    let anchor = rest.findIndex((f) => f.key === 'week');
-    if (anchor === -1) anchor = rest.findIndex((f) => f.key === 'today');
+    const anchor = rest.findIndex((f) => f.key === 'agenda');
     out.length = 0;
     if (anchor === -1) {
       out.push(...rest, ...posters);
