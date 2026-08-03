@@ -9,7 +9,7 @@
  * =====================================================
  */
 
-import { get, ApiError } from './client.js';
+import { getClient, unwrap, ApiError } from './client.js';
 import { normalizePayload } from '../models/index.js';
 
 const RETRY_DELAYS_MS = [2000, 5000, 12000, 30000];
@@ -30,12 +30,15 @@ function isTransient(error) {
 export async function getBoardPayload(deviceId) {
   if (!deviceId) throw new ApiError('Missing deviceId', 400);
 
-  const path = `/api/musallah/payload?deviceId=${encodeURIComponent(deviceId)}`;
   let lastError = null;
 
   for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
     try {
-      const payload = await get(path);
+      const payload = unwrap(
+        await getClient().GET('/api/musallah/payload', {
+          params: { query: { deviceId } },
+        })
+      );
       return normalizePayload(payload);
     } catch (error) {
       lastError = error;

@@ -31,14 +31,15 @@ registerFrameBuilder('event_list', (def) => ({
   render: ({ data }) => <WeekSlide data={data} />,
 }));
 
-let posterSeq = 0;
-registerFrameBuilder('poster', (def) => {
+registerFrameBuilder('poster', (def, ctx) => {
   const poster = {
     image: def?.frameConfig?.posterUrl || '',
     title: def?.frameConfig?.title || '',
+    // Optional; its presence switches PosterSlide to the poster-plus-QR layout.
+    signupUrl: def?.frameConfig?.signupUrl || '',
   };
   return {
-    key: `poster-${posterSeq++}`,
+    key: `poster-${ctx?.frameIndex ?? 0}`,
     durationMs: secs(def, 12),
     render: () => <PosterSlide poster={poster} />,
   };

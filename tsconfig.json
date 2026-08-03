@@ -1,0 +1,25 @@
+{
+  // Scoped to src/api: this is the layer that must stay in step with the
+  // backend contract. The rest of the kiosk stays plain .jsx and is not
+  // type-checked, so `npm run typecheck` fails only on real API drift.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["vite/client"],
+
+    "noEmit": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+
+    "allowJs": true,
+    "checkJs": true,
+    // These files predate type checking; the goal is contract errors, not a
+    // null-safety audit of working kiosk code.
+    "strict": false,
+    "strictNullChecks": false,
+    "noImplicitAny": false
+  },
+  "include": ["src/api/**/*.js", "src/api/**/*.ts", "src/api/**/*.d.ts"]
+}

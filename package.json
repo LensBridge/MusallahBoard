@@ -4,15 +4,22 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
-    "build": "vite build",
-    "preview": "vite preview --host"
+    "build": "npm run typecheck && vite build",
+    "preview": "vite preview --host",
+    "api:generate": "node scripts/generate-api.mjs",
+    "typecheck": "tsc --noEmit",
+    "api:check": "node scripts/generate-api.mjs --check"
   },
   "dependencies": {
+    "openapi-fetch": "^0.17.0",
+    "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
+    "openapi-typescript": "^7.13.0",
+    "typescript": "^5.9.3",
     "vite": "^5.4.11"
   }
 }

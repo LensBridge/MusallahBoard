@@ -17,10 +17,8 @@
 //   { deviceConfig: DeviceConfig, frames: FrameDefinition[] }
 //
 // DeviceConfig {
-//   id: uuid, location: Location, posterCycleIntervalMs: int,
-//   refreshAfterIshaMinutes: int, darkModeAfterIsha: bool,
-//   darkModeAfterMaghribMinutes: int, enableScrollingMessage: bool,
-//   scrollingMessages: string[]
+//   id: uuid, location: Location, darkModeAfterIsha: bool,
+//   enableScrollingMessage: bool, scrollingMessages: string[]
 // }
 // Location { city, country, latitude, longitude, timezone, method }
 //   method ∈ KARACHI|ISNA|MWL|MAKKAH|EGYPT|TEHRAN|GULF|KUWAIT|QATAR|
@@ -33,7 +31,6 @@
 //   PosterFrameConfig        { type, posterUrl, title }
 //   EventListFrameConfig     { type, heading, events: EventView[] }
 //   DailyScheduleFrameConfig { type, heading, events: EventView[] }
-//   NextPrayerFrameConfig    { type, locationCity, timezone, calculationMethod }
 //   JummahFrameConfig        { type, prayers: JummahSlot[] }
 //   IslamicQuoteFrameConfig  { type, kind: VERSE|HADITH, arabic,
 //                              transliteration, translation, reference }
@@ -128,6 +125,58 @@ export function isoToHM(iso, timezone) {
   }
 }
 
+/**
+ * Wall-clock parts at `instant` as read in `timezone`.
+ *
+ * The board's clock, its prayer times and its event times must all be read in
+ * the *board's* zone, not the browser's. Aladhan returns timings for the
+ * configured lat/long, so comparing them against `Date#getHours()` is only
+ * correct while the Pi's OS timezone happens to match `location.timezone` —
+ * and it is exactly the "happens to" cases (a reimaged box, a VM left on UTC)
+ * where the board then highlights the wrong prayer.
+ *
+ * @param {Date} instant
+ * @param {string} [timezone] IANA zone; falls back to the runtime's own
+ * @returns {{hours:number, minutes:number, seconds:number, weekday:number}}
+ *   weekday is 0=Sunday … 6=Saturday
+ */
+export function zonedClock(instant, timezone) {
+  const d = instant instanceof Date ? instant : new Date(instant);
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      hour12: false, weekday: 'short',
+      timeZone: timezone || undefined,
+    }).formatToParts(d);
+    const num = (t) => Number(parts.find((p) => p.type === t)?.value ?? 0);
+    const wk = WEEKDAYS.indexOf(parts.find((p) => p.type === 'weekday')?.value);
+    // hour12:false still yields "24" for midnight in some ICU versions.
+    return {
+      hours: num('hour') % 24,
+      minutes: num('minute'),
+      seconds: num('second'),
+      weekday: wk === -1 ? d.getDay() : wk,
+    };
+  } catch {
+    return {
+      hours: d.getHours(), minutes: d.getMinutes(),
+      seconds: d.getSeconds(), weekday: d.getDay(),
+    };
+  }
+}
+
+/** Minutes since midnight at `instant`, read in `timezone`. */
+export function zonedMinutes(instant, timezone) {
+  const { hours, minutes } = zonedClock(instant, timezone);
+  return hours * 60 + minutes;
+}
+
+/** Seconds since midnight at `instant`, read in `timezone`. */
+export function zonedSeconds(instant, timezone) {
+  const { hours, minutes, seconds } = zonedClock(instant, timezone);
+  return hours * 3600 + minutes * 60 + seconds;
+}
+
 /** Day-of-week + numeric day for an ISO instant in a timezone. */
 function isoDayParts(iso, timezone) {
   const d = new Date(iso);
@@ -165,7 +214,16 @@ export function isoDateKey(input, timezone) {
 // Payload normalization → design data shape
 // ---------------------------------------------------------------------------
 
+/** Indexed to match Date#getDay() — 0 = Sunday. Used for weekday arithmetic. */
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+/**
+ * Column order for the week slide. Monday-first, matching the backend: the
+ * payload's event_list frame is scoped to an ISO week (Mon 00:00 → Sun 23:59)
+ * in the device's timezone, and WeeklyContent is keyed the same way. A
+ * Sunday-first grid would put Sunday at the head of a week it actually closes.
+ */
+const WEEK_COLUMNS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 function normalizeQuote(cfg) {
   if (!cfg) return null;
@@ -208,12 +266,12 @@ export function emptyDeviceConfig() {
   return {
     id: null,
     location: { city: '', country: '', latitude: 43.5489, longitude: -79.6624, timezone: 'America/Toronto', method: 'ISNA' },
-    posterCycleIntervalMs: 10000,
-    refreshAfterIshaMinutes: 30,
     darkModeAfterIsha: true,
-    darkModeAfterMaghribMinutes: 30,
     enableScrollingMessage: false,
     scrollingMessages: [],
+    // Optional per-device destination for the closing slide's QR code. Empty
+    // means the board falls back to the app-level Instagram URL.
+    socialUrl: '',
   };
 }
 
@@ -228,7 +286,7 @@ export function emptyDeviceConfig() {
  *   deviceConfig: object,
  *   frames: any[],
  *   weather: {temp:number,condition:string,city:string}|null,
- *   posters: {title:string,image:string,durationMs:number}[],
+ *   posters: {title:string,image:string,signupUrl:string,durationMs:number}[],
  *   weekEvents: object[],
  *   todayEvents: object[],
  *   jummahPrayers: object[],
@@ -272,6 +330,9 @@ export function normalizePayload(payload) {
     .map((f) => ({
       title: f.frameConfig?.title || '',
       image: f.frameConfig?.posterUrl || '',
+      // Optional. When set, PosterSlide renders the poster beside a QR code
+      // instead of full-bleed.
+      signupUrl: f.frameConfig?.signupUrl || '',
       durationMs: (f.durationInSeconds ?? 10) * 1000,
     }));
 
@@ -279,10 +340,9 @@ export function normalizePayload(payload) {
   const dailyFrame = frames.find((f) => ft(f) === 'daily_schedule');
   const jummahFrame = frames.find((f) => ft(f) === 'jummah');
 
-  // Unified event pool drawn ONLY from the /payload frames (event_list is the
-  // general events feed; daily_schedule is folded in when present but is not
-  // required). The Today view is derived from this pool on the frontend, so
-  // it renders whether or not the backend ships a daily_schedule frame.
+  // Unified event pool drawn ONLY from the /payload frames. event_list is the
+  // week feed; daily_schedule is today's, and is folded in so an all-day event
+  // that the week frame happens to miss still reaches the pool.
   const eventSeen = new Set();
   const eventPool = [
     ...(eventListFrame?.frameConfig?.events ?? []),
@@ -310,12 +370,16 @@ export function normalizePayload(payload) {
     hm: isoToHM(e.startTime, tz),
   }));
 
-  // Frontend-managed Today view: filter the payload event pool to events that
-  // start today (in the board's timezone), ordered by start time.
+  // Today's events. The backend scopes its daily_schedule frame to the device's
+  // own day, so prefer it; fall back to filtering the pool ourselves when the
+  // frame is absent (it is omitted entirely on a day with nothing on).
   const todayKey = isoDateKey(new Date(), tz);
-  const todayEvents = eventPool
-    .filter((e) => e.startTime && isoDateKey(e.startTime, tz) === todayKey)
-    .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
+  const todaySource = dailyFrame
+    ? (dailyFrame.frameConfig?.events ?? [])
+    : eventPool.filter((e) => e.startTime && isoDateKey(e.startTime, tz) === todayKey);
+  const todayEvents = todaySource
+    .slice()
+    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
     .map((e, i) => ({
       id: i + 1,
       name: e.name || '',
@@ -346,7 +410,13 @@ export function normalizePayload(payload) {
 }
 
 /**
- * Bucket week events into 7 day-columns (Sun→Sat) for the Week slide.
+ * Bucket week events into 7 day-columns (Mon→Sun) for the Week slide.
+ *
+ * Bucketing is by weekday name, which is only sound because the backend scopes
+ * the event_list frame to a single ISO week — within one week each weekday
+ * appears at most once, so a column's date number is unambiguous. Events are
+ * ordered by start time within a column.
+ *
  * @param {object[]} weekEvents normalized week events (have weekday/day/epoch)
  * @param {string} [timezone]
  */
@@ -357,19 +427,19 @@ export function buildWeekColumns(weekEvents, timezone) {
   }).formatToParts(new Date());
   const todayWk = todayParts.find((p) => p.type === 'weekday')?.value;
 
-  const byWeekday = new Map(WEEKDAYS.map((d) => [d, []]));
+  const byWeekday = new Map(WEEK_COLUMNS.map((d) => [d, []]));
   const dayNum = new Map();
-  for (const ev of weekEvents) {
+  for (const ev of [...weekEvents].sort((a, b) => a.epoch - b.epoch)) {
     if (!byWeekday.has(ev.weekday)) continue;
     byWeekday.get(ev.weekday).push({
       t: formatTo12(ev.hm),
       n: ev.name,
       r: ev.room,
     });
-    dayNum.set(ev.weekday, ev.day);
+    if (!dayNum.has(ev.weekday)) dayNum.set(ev.weekday, ev.day);
   }
 
-  return WEEKDAYS.map((d) => ({
+  return WEEK_COLUMNS.map((d) => ({
     day: d,
     date: dayNum.get(d) ?? '',
     events: byWeekday.get(d),

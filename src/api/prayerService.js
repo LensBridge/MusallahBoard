@@ -9,12 +9,18 @@
  * =====================================================
  */
 
-import { ALADHAN_METHOD, PRAYER_LABELS } from '../models/index.js';
+import { ALADHAN_METHOD, PRAYER_LABELS, isoDateKey } from '../models/index.js';
 
 const ALADHAN_BASE = 'https://api.aladhan.com/v1';
 
-function fmtDate(date) {
-  return `${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}`;
+/**
+ * Aladhan's DD-MM-YYYY path segment, for the calendar date in `timezone`.
+ * Reading the board's own date matters either side of midnight: a Pi left on
+ * UTC would otherwise ask for tomorrow's timings all evening.
+ */
+function fmtDate(date, timezone) {
+  const [y, m, d] = isoDateKey(date, timezone).split('-');
+  return `${Number(d)}-${Number(m)}-${y}`;
 }
 
 function methodId(method) {
@@ -28,15 +34,15 @@ function clean(t) {
 
 /**
  * Fetch today's prayer schedule + Hijri date for a Location.
- * @param {{latitude:number,longitude:number,method:string}} location
+ * @param {{latitude:number,longitude:number,method:string,timezone?:string}} location
  * @param {Date} [date]
  * @returns {Promise<{ prayers: object, hijri: object|null }>}
  */
 export async function getPrayerData(location, date = new Date()) {
-  const { latitude, longitude, method } = location;
+  const { latitude, longitude, method, timezone } = location;
   const m = methodId(method);
   const url =
-    `${ALADHAN_BASE}/timings/${fmtDate(date)}` +
+    `${ALADHAN_BASE}/timings/${fmtDate(date, timezone)}` +
     `?latitude=${latitude}&longitude=${longitude}&method=${m}`;
 
   const [stdRes, hanafiRes] = await Promise.all([

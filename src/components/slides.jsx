@@ -1,16 +1,29 @@
 // Slideshow frames — Next Prayer, Today, Week, Poster, Verse, Hadith, Instagram
-import { formatTo12, toMinutes } from '../models/index.js';
+import { formatTo12, toMinutes, zonedMinutes, zonedSeconds } from '../models/index.js';
 import { classifyPrayers } from '../utils/prayers.js';
-import { QRPlaceholder } from './icons.jsx';
+import QRCode, { hasQR } from './QRCode.jsx';
+import Digits from './Digits.jsx';
 
 // ---------- Next Prayer ----------
 export function NextPrayerSlide({ data, now }) {
-  const { prayers } = data;
-  const { ordered, next, current } = classifyPrayers(prayers, now);
+  const { prayers, timezone } = data;
+  const { ordered, next, current } = classifyPrayers(prayers, now, timezone);
   const nextP = prayers[next];
 
+  // Aladhan can hand back blank timings (polar latitudes, a bad method id, a
+  // partial response). Rendering an empty schedule beats a white screen: this
+  // used to dereference prayers[undefined] and take the whole board down.
+  if (!nextP) {
+    return (
+      <div className="slide-eyebrow">
+        <span className="pip" />
+        <span>Prayer times unavailable</span>
+      </div>
+    );
+  }
+
   const targetMin = toMinutes(nextP.adhan);
-  const nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+  const nowSec = zonedSeconds(now, timezone);
   let diff = targetMin * 60 - nowSec;
   if (diff < 0) diff += 24 * 3600;
   const hh = Math.floor(diff / 3600);
@@ -22,7 +35,7 @@ export function NextPrayerSlide({ data, now }) {
     <>
       <div className="slide-eyebrow">
         <span className="pip" />
-        <span>Up Next</span>
+        {/* <span>Up Next</span> */}
         <span className="rule" />
         <span>Prayer Countdown</span>
       </div>
@@ -31,7 +44,6 @@ export function NextPrayerSlide({ data, now }) {
         <div className="np-head">
           {current && (
             <div className="np-current">
-              Currently · {prayers[current].english} · Adhān {formatTo12(prayers[current].adhan)}
             </div>
           )}
         </div>
@@ -41,7 +53,6 @@ export function NextPrayerSlide({ data, now }) {
             <div className="np-arabic">{nextP.arabic}</div>
             <div className="np-english">{nextP.english}</div>
             <div className="np-meta">
-              <span>Adhān · {formatTo12(nextP.adhan)}</span>
               {next === 'asr' && nextP.hanafiAdhan && (
                 <>
                   <span className="dot">◆</span>
@@ -54,27 +65,22 @@ export function NextPrayerSlide({ data, now }) {
           <div className="np-right">
             <div className="np-right-label">Time Remaining</div>
             <div className="np-countdown">
-              <span>{pad(hh)}</span>
+              <div className="np-unit">
+                <Digits className="np-num">{pad(hh)}</Digits>
+                <span className="np-unit-label">Hours</span>
+              </div>
               <span className="sep">:</span>
-              <span>{pad(mm)}</span>
+              <div className="np-unit">
+                <Digits className="np-num">{pad(mm)}</Digits>
+                <span className="np-unit-label">Minutes</span>
+              </div>
               <span className="sep">:</span>
-              <span>{pad(ss)}</span>
-            </div>
-            <div className="np-countdown-units">
-              <span>Hours</span>
-              <span>Minutes</span>
-              <span>Seconds</span>
+              <div className="np-unit">
+                <Digits className="np-num">{pad(ss)}</Digits>
+                <span className="np-unit-label">Seconds</span>
+              </div>
             </div>
           </div>
-        </div>
-
-        <div className="np-foot">
-          {ordered.map((k) => (
-            <div key={k} className={'np-foot-cell' + (k === next ? ' active' : '')}>
-              <div className="name">{prayers[k].english}</div>
-              <div className="time">{formatTo12(prayers[k].adhan)}</div>
-            </div>
-          ))}
         </div>
       </div>
     </>
@@ -84,7 +90,7 @@ export function NextPrayerSlide({ data, now }) {
 // ---------- Today (Happening Now + Up Next) ----------
 export function TodaySlide({ data, now }) {
   const events = data.todayEvents;
-  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const nowMin = zonedMinutes(now, data.timezone);
 
   const happening = events.filter((e) => {
     const s = toMinutes(e.start);
@@ -234,8 +240,28 @@ export function WeekSlide({ data }) {
   );
 }
 
-// ---------- Poster (full bleed) ----------
+// ---------- Poster ----------
+// Full-bleed by default. When the poster carries a signup link it becomes a
+// two-column layout instead — poster on the left, QR on the right — so someone
+// walking past can register without typing a URL off a wall.
 export function PosterSlide({ poster }) {
+  const signupUrl = poster?.signupUrl;
+
+  if (poster?.image && hasQR(signupUrl)) {
+    return (
+      <div className="poster-frame poster-frame--with-qr">
+        <div className="poster-image">
+          <img src={poster.image} alt={poster.title || 'Poster'} />
+        </div>
+        <div className="poster-qr">
+          <div className="poster-qr-eyebrow">Sign Up</div>
+          {poster.title && <div className="poster-qr-title">{poster.title}</div>}
+          <QRCode value={signupUrl} size={320} caption="Scan to register" />
+        </div>
+      </div>
+    );
+  }
+
   if (poster?.image) {
     return (
       <div className="poster-frame">
@@ -301,8 +327,15 @@ export function IGSlide({ data }) {
           </div>
         </div>
         <div className="ig-qr-wrap">
-          <div className="ig-qr"><QRPlaceholder seed={data.instagram.handle} /></div>
-          <div className="ig-qr-cap">Scan with your camera</div>
+          {/* Encodes the board's own socialUrl, so two boards can point at
+              different destinations. Falls back to the app-level Instagram URL
+              when a device has no socialUrl configured. */}
+          <QRCode
+            value={data.instagram.url}
+            size={300}
+            caption="Scan with your camera"
+            className="qr-panel--ig"
+          />
         </div>
       </div>
     </>

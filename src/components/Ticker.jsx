@@ -4,8 +4,6 @@ export default function Ticker({ messages, now }) {
   return (
     <footer className="ticker">
       <div className="ticker-label">
-        <span className="pip" />
-        <span>Happening Now</span>
       </div>
       <div className="ticker-track">
         <div className="ticker-content">

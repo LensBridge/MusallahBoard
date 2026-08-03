@@ -62,46 +62,11 @@ export function weatherIcon(condition) {
   return <Icon.Cloud />;
 }
 
-// Real MSA brand mark (navy on light themes, white on dark). Served from
-// /public/images by Vite.
 export function BrandGlyph() {
   return (
     <>
-      <img src="/images/msa_logo_white.png" alt="UTM MSA" className="brand-img brand-img-light" />
+      <img src="/images/msa_logo.png" alt="UTM MSA" className="brand-img brand-img-dark" />
+      <img src="/images/msa_logo_white.png" alt="" aria-hidden="true" className="brand-img brand-img-light" />
     </>
-  );
-}
-
-// Deterministic decorative QR-like SVG (not a scannable code) for the IG slide.
-export function QRPlaceholder({ seed = '@utmmsa' }) {
-  const size = 21;
-  const cells = [];
-  let h = 2166136261;
-  for (let i = 0; i < seed.length; i++) h = (h ^ seed.charCodeAt(i)) * 16777619 >>> 0;
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      h = (h * 1664525 + 1013904223) >>> 0;
-      const on = (h & 0xff) > 128;
-      const corner =
-        (x < 7 && y < 7) || (x >= size - 7 && y < 7) || (x < 7 && y >= size - 7);
-      if (corner) {
-        const cx = x < 7 ? 3 : x >= size - 7 ? size - 4 : 0;
-        const cy = y < 7 ? 3 : y >= size - 7 ? size - 4 : 0;
-        const inFinder = Math.abs(x - cx) <= 3 && Math.abs(y - cy) <= 3;
-        const ring = Math.abs(x - cx) === 3 || Math.abs(y - cy) === 3;
-        const center = Math.abs(x - cx) <= 1 && Math.abs(y - cy) <= 1;
-        if (inFinder && (ring || center)) cells.push([x, y]);
-        continue;
-      }
-      if (on) cells.push([x, y]);
-    }
-  }
-  return (
-    <svg viewBox={`0 0 ${size} ${size}`} shapeRendering="crispEdges">
-      <rect width={size} height={size} fill="white" />
-      {cells.map(([x, y], i) => (
-        <rect key={i} x={x} y={y} width="1" height="1" fill="#0a1b3a" />
-      ))}
-    </svg>
   );
 }

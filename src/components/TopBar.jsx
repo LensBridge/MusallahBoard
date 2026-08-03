@@ -1,11 +1,11 @@
-// Top bar — date strip, clock, weather chip. Brand mark lives in the rail.
+// Top bar: date strip, clock, weather chip. Brand mark lives in the rail.
+import { zonedClock } from '../models/index.js';
 import { weatherIcon } from './icons.jsx';
+import Digits from './Digits.jsx';
 
 export default function TopBar({ data, now }) {
-  const { date, weather } = data;
-  const hours = now.getHours();
-  const minutes = now.getMinutes();
-  const seconds = now.getSeconds();
+  const { date, weather, timezone } = data;
+  const { hours, minutes, seconds } = zonedClock(now, timezone);
   const displayHours = hours % 12 || 12;
   const period = hours >= 12 ? 'PM' : 'AM';
   const timeStr = `${displayHours}:${minutes.toString().padStart(2, '0')}`;
@@ -31,11 +31,9 @@ export default function TopBar({ data, now }) {
       <div className="topbar-right">
         <div className="clock">
           <div className="clock-time">
-            {timeStr}
+            <Digits>{timeStr}</Digits>
             <span style={{ opacity: seconds % 2 ? 0.3 : 1, transition: 'opacity 0.3s' }}>:</span>
-            <span style={{ fontVariantNumeric: 'tabular-nums' }}>
-              {seconds.toString().padStart(2, '0')}
-            </span>
+            <Digits>{seconds.toString().padStart(2, '0')}</Digits>
           </div>
           <div className="clock-period">{period}</div>
         </div>

@@ -1,46 +1,61 @@
-// First-boot setup — captures the enrolled device id. Weather is now resolved
-// server-side per device, so there is no weather key to enter here.
-// Also opened on demand by the operator hotkey (Alt+Shift+F); in that case
-// it is `dismissable` (Esc / Cancel) so an already-running board isn't forced
-// to re-provision.
+// Operator diagnostics panel. Opened by Alt+Shift+F or `window.MusallahBoard.openSetup()`. Sibling to DebugMenu.jsx (Alt+Shift+D)
 import { useState, useEffect } from 'react';
-import { saveSetupConfig, getSetupConfig } from '../utils/cookies.js';
+import { saveSetupConfig, getSetupConfig, isValidDeviceId } from '../utils/cookies.js';
+import { getApiConfig } from '../api/index.js';
 
-export default function SetupModal({ onComplete, onCancel, dismissable = false }) {
+function Row({ label, value }) {
+  return (
+    <div className="setup-diag-row">
+      <span className="setup-diag-label">{label}</span>
+      <span className="setup-diag-value">{value ?? '—'}</span>
+    </div>
+  );
+}
+
+export default function SetupModal({ onComplete, onCancel, status }) {
   const existing = getSetupConfig();
   const [deviceId, setDeviceId] = useState(existing.deviceId || '');
   const [hideCursor, setHideCursor] = useState(existing.hideCursor);
 
-  const valid = deviceId.trim().length > 0;
+  const trimmed = deviceId.trim();
+  const valid = isValidDeviceId(trimmed);
+  const idDirty = trimmed !== (existing.deviceId || '');
+  const cursorDirty = hideCursor !== existing.hideCursor;
+  const canApply = (idDirty ? valid : true) && (idDirty || cursorDirty);
 
-  // Esc closes the modal when it was opened on a provisioned board.
   useEffect(() => {
-    if (!dismissable) return;
     const onKey = (e) => {
       if (e.key === 'Escape') { e.preventDefault(); onCancel?.(); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [dismissable, onCancel]);
+  }, [onCancel]);
 
   function submit(e) {
     e.preventDefault();
-    if (!valid) return;
-    saveSetupConfig({
-      deviceId: deviceId.trim(),
-      hideCursor,
-    });
-    onComplete();
+    if (!canApply) return;
+    saveSetupConfig({ deviceId: idDirty && valid ? trimmed : null, hideCursor });
+    onComplete?.(idDirty && valid ? trimmed : existing.deviceId);
   }
+
+  const backend = getApiConfig().baseUrl || `${window.location.origin} (same-origin)`;
 
   return (
     <div className="setup-modal">
       <form className="setup-card" onSubmit={submit}>
-        <h2>Board Setup</h2>
+        <h2>Board Diagnostics</h2>
         <div className="sub">UTM MSA · MusallahBoard kiosk</div>
 
+        <div className="setup-diag">
+          <Row label="Device" value={existing.deviceId || 'not enrolled'} />
+          <Row label="Backend" value={backend} />
+          <Row label="Last payload" value={status?.lastPayloadAt} />
+          <Row label="On screen" value={status?.slideKey} />
+          {status?.error && <Row label="Last error" value={status.error} />}
+        </div>
+
         <div className="setup-field">
-          <label htmlFor="deviceId">Device ID (from enrollment)</label>
+          <label htmlFor="deviceId">Device ID override</label>
           <input
             id="deviceId"
             type="text"
@@ -49,6 +64,13 @@ export default function SetupModal({ onComplete, onCancel, dismissable = false }
             placeholder="00000000-0000-0000-0000-000000000000"
             autoFocus
           />
+          {idDirty && trimmed && !valid && (
+            <div className="setup-hint setup-hint-bad">Must be a UUID.</div>
+          )}
+          <div className="setup-hint">
+            Normally set by the device agent. Change this only to re-point a
+            board by hand.
+          </div>
         </div>
 
         <div className="setup-row">
@@ -62,12 +84,10 @@ export default function SetupModal({ onComplete, onCancel, dismissable = false }
         </div>
 
         <div className="setup-actions">
-          {dismissable && (
-            <button type="button" className="setup-cancel" onClick={() => onCancel?.()}>
-              Cancel
-            </button>
-          )}
-          <button type="submit" disabled={!valid}>Save &amp; Launch</button>
+          <button type="button" className="setup-cancel" onClick={() => onCancel?.()}>
+            Close
+          </button>
+          <button type="submit" disabled={!canApply}>Apply</button>
         </div>
       </form>
     </div>

@@ -37,7 +37,7 @@ export function saveSetupConfig({ deviceId, hideCursor }) {
 }
 
 export function isSetupComplete() {
-  return !!getCookie('deviceId');
+  return isValidDeviceId(getCookie('deviceId'));
 }
 
 /**
@@ -60,6 +60,48 @@ export function getDeviceIdFromQuery() {
   } catch {
     return null;
   }
+}
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** The backend keys every board read on a UUID, so anything else is garbage. */
+export function isValidDeviceId(value) {
+  return typeof value === 'string' && UUID_RE.test(value.trim());
+}
+
+/**
+ * Settle the board's identity and return it, or null if unpaired.
+ *
+ * Must run BEFORE the first React render. The agent provisions a board by
+ * navigating to `<board-url>?deviceId=<uuid>`; if that reconciliation happens
+ * in an effect it lands after paint, and the board flashes its unpaired screen
+ * on every healthy cold boot.
+ *
+ * A malformed id is dropped rather than persisted — storing it would leave the
+ * board 404ing against the backend forever with no way to tell why.
+ */
+export function resolveDeviceId() {
+  const fromQuery = getDeviceIdFromQuery();
+
+  if (fromQuery !== null) {
+    // Strip the param either way: valid ones are now in the cookie, and a bad
+    // one shouldn't linger in the address bar or survive a reload.
+    try {
+      const u = new URL(window.location.href);
+      u.searchParams.delete('deviceId');
+      window.history.replaceState({}, '', u);
+    } catch { /* non-fatal */ }
+
+    if (isValidDeviceId(fromQuery)) {
+      setDeviceId(fromQuery);
+      return fromQuery.trim();
+    }
+    console.warn(`Ignoring malformed deviceId in URL: ${fromQuery}`);
+  }
+
+  const stored = getCookie('deviceId');
+  return isValidDeviceId(stored) ? stored.trim() : null;
 }
 
 export function applyCursorPreference() {

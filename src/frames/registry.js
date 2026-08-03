@@ -50,18 +50,16 @@ export function buildSlideshow(normalized, ctx) {
   const out = [];
   const seenTypes = new Set();
 
-  for (const def of normalized.frames) {
+  normalized.frames.forEach((def, i) => {
     const type = String(def.frameType || '').toLowerCase();
-    if (type === 'jummah') continue; // consumed by the rail, not a slide
-    // The Today view is frontend-managed: it's derived from the payload's
-    // event pool below, never from a backend daily_schedule frame.
-    if (type === 'daily_schedule') continue;
-    const frame = buildFrame(def, ctx);
+    if (type === 'jummah') return; // consumed by the rail, not a slide
+    if (type === 'daily_schedule') return;
+    const frame = buildFrame(def, { ...ctx, frameIndex: i });
     if (frame) {
       out.push(frame);
       seenTypes.add(type);
     }
-  }
+  });
 
   // Synthesize a next-prayer frame if the backend didn't send one — prayer
   // data is always available client-side and it's the hero of the rotation.
@@ -70,17 +68,12 @@ export function buildSlideshow(normalized, ctx) {
     if (f) out.unshift(f);
   }
 
-  // Frontend-managed Today view — always present, built from payload events,
-  // placed right after the next-prayer hero (design rotation order).
   const today = buildFrame({ frameType: 'today', durationInSeconds: 16 }, ctx);
   if (today) {
     const npIdx = out.findIndex((f) => f.key === 'next-prayer');
     out.splice(npIdx === -1 ? 0 : npIdx + 1, 0, today);
   }
 
-  // Posters render *after* the "This Week" view. Pull every poster slide out
-  // and re-insert the group immediately after the week slide (falling back to
-  // after Today, then the end, when there is no week slide).
   const posters = out.filter((f) => f.key.startsWith('poster'));
   if (posters.length) {
     const rest = out.filter((f) => !f.key.startsWith('poster'));
@@ -94,7 +87,7 @@ export function buildSlideshow(normalized, ctx) {
     }
   }
 
-  // Instagram/QR is a frontend-only frame (no API frame type for it).
+  // Instagram/QR is a frontend-only frame. The API does not control it 
   const ig = buildFrame({ frameType: 'instagram', durationInSeconds: 13 }, ctx);
   if (ig) out.push(ig);
 

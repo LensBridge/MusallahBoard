@@ -1,0 +1,47 @@
+name: CI
+
+# src/api is generated from LensBridgeBackend/openapi.yaml. The kiosk reads one
+# endpoint, but it runs unattended on a wall -- a silently changed payload shape
+# shows up as a blank board, so the contract is checked here instead.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: MusallahBoard
+
+      - name: Check out the backend for its OpenAPI contract
+        uses: actions/checkout@v4
+        with:
+          repository: LensBridge/LensBridgeBackend
+          path: LensBridgeBackend
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: MusallahBoard/package-lock.json
+
+      - run: npm ci
+        working-directory: MusallahBoard
+
+      - name: Fail if the generated client is stale
+        working-directory: MusallahBoard
+        env:
+          OPENAPI_SPEC: ${{ github.workspace }}/LensBridgeBackend/openapi.yaml
+        run: npm run api:check
+
+      - name: Type-check the API layer
+        working-directory: MusallahBoard
+        run: npm run typecheck
+
+      - run: npx vite build
+        working-directory: MusallahBoard

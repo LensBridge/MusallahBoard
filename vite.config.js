@@ -14,7 +14,10 @@ export default defineConfig({
     port: 3000,
     open: true,
     proxy: {
-      '/api': { target: BACKEND, changeOrigin: true },
+      // ws: the refresh channel upgrades under /api too, and without this the
+      // upgrade isn't forwarded — the socket reconnect-loops silently in dev
+      // while every HTTP call works fine.
+      '/api': { target: BACKEND, changeOrigin: true, ws: true },
     },
   },
   preview: {
