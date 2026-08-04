@@ -13,12 +13,14 @@
 // the live view.
 import { useEffect } from 'react';
 import { PRAYER_ORDER, toMinutes, zonedClock, zonedSeconds } from '../models/index.js';
+import { THEMES as THEME_DEFS, isKnownTheme } from '../themes/registry.js';
 
+// Derived from the registry rather than listed here, so dropping a new file
+// into src/themes/ and registering it is the whole job — the drawer picks it
+// up. `null` is the tri-state "don't override".
 const THEMES = [
   { value: null, label: 'Auto' },
-  { value: 'day', label: 'Day' },
-  { value: 'night', label: 'Night' },
-  { value: 'reverent', label: 'Reverent' },
+  ...THEME_DEFS.map((t) => ({ value: t.name, label: t.label })),
 ];
 
 const TRISTATE = [
@@ -60,6 +62,22 @@ function toLocalInputValue(d) {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
+/**
+ * Why the board is on the theme it is on. Worth spelling out: once the backend
+ * can pin a theme, "it won't go night after Isha" stops being a bug report and
+ * starts being a config question, and this line is the difference.
+ */
+function themeNote(autoTheme, pinnedTheme) {
+  if (isKnownTheme(pinnedTheme)) {
+    return `Pinned to ${pinnedTheme} by the backend — time of day is not consulted.`;
+  }
+  if (pinnedTheme) {
+    return `Backend asked for “${pinnedTheme}”, which this build does not ship. ` +
+      `Ignored; auto resolves to ${autoTheme}.`;
+  }
+  return `Auto currently resolves to ${autoTheme}.`;
+}
+
 function Seg({ options, value, onChange, disabled }) {
   return (
     <div className="dbg-seg">
@@ -91,7 +109,7 @@ function Section({ title, note, children }) {
 export default function DebugMenu({
   debug, setDebug, onClose,
   data, now, slides, slideIdx, setSlideIdx,
-  autoTheme, autoJummah,
+  autoTheme, pinnedTheme, autoJummah,
 }) {
   useEffect(() => {
     const onKey = (e) => {
@@ -155,7 +173,7 @@ export default function DebugMenu({
 
       <Section
         title="Theme"
-        note={`Auto currently resolves to ${autoTheme}.`}
+        note={themeNote(autoTheme, pinnedTheme)}
       >
         <Seg
           options={THEMES}

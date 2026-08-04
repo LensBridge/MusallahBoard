@@ -1,0 +1,30 @@
+/* =========================================================================
+   Theme: night — deep MSA navy, MSA yellow
+   -------------------------------------------------------------------------
+   The board after Isha. Surfaces are navy (hue 258) well below the mid point;
+   text is a warm off-white (hue 95) so it sits in the same family as the
+   yellow rather than reading as clinical grey. Yellow does double duty as
+   accent and hero because at 0.91 lightness it is the loudest thing that can
+   sit on a 0.20 ground without glare.
+
+   Reference for day.css, which mirrors these lightness relationships.
+   See _contract.css.
+   ========================================================================= */
+
+[data-theme="night"] {
+  --bg:          oklch(0.20 0.08 258);   /* deeper MSA navy */
+  --bg-soft:     oklch(0.25 0.085 258);
+  --bg-card:     oklch(0.23 0.085 258);
+  --fg:          oklch(0.96 0.01 95);
+  --fg-2:        oklch(0.85 0.04 95);
+  --fg-3:        oklch(0.68 0.03 95);
+  --line:        oklch(0.38 0.07 258);
+  /* Was oklch(0.91 0.16 95), which is outside sRGB and clamped to #FFDF50 —
+     close to Energy Yellow but not it. These are the official value, exact. */
+  --accent:      oklch(0.905 0.151 99.4); /* Energy Yellow #F8E15D */
+  --accent-soft: oklch(0.45 0.10 99);
+  --hero:        oklch(0.905 0.151 99.4); /* yellow hero on dark */
+
+  --logo-dark-display: none;
+  --logo-light-display: block;
+}

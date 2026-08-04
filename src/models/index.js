@@ -18,8 +18,13 @@
 //
 // DeviceConfig {
 //   id: uuid, location: Location, darkModeAfterIsha: bool,
-//   enableScrollingMessage: bool, scrollingMessages: string[]
+//   enableScrollingMessage: bool, scrollingMessages: string[],
+//   theme?: string
 // }
+//   `theme` is not in the OpenAPI schema yet — it is read forward so a board
+//   already in the field picks the field up the day the backend starts
+//   sending it, with no frontend release. Unknown names are ignored rather
+//   than applied; see themes/registry.js.
 // Location { city, country, latitude, longitude, timezone, method }
 //   method ∈ KARACHI|ISNA|MWL|MAKKAH|EGYPT|TEHRAN|GULF|KUWAIT|QATAR|
 //            SINGAPORE|FRANCE|TURKEY|RUSSIA|DUBAI
@@ -249,6 +254,10 @@ export function emptyDeviceConfig() {
     darkModeAfterIsha: true,
     enableScrollingMessage: false,
     scrollingMessages: [],
+    // Board-wide theme name, pinned by the backend. Null means "decide
+    // locally" — the time-of-day logic in App. Validated against the theme
+    // registry before it reaches the stage, so a bad value costs nothing.
+    theme: null,
     // Optional per-device destination for the closing slide's QR code. Empty
     // means the board falls back to the app-level Instagram URL.
     socialUrl: '',

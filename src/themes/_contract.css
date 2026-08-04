@@ -1,0 +1,53 @@
+/* =========================================================================
+   MusallahBoard — theme contract
+   -------------------------------------------------------------------------
+   A theme is one self-contained CSS file that recolours the board. It sets
+   the eleven semantic tokens below (plus the two structural hooks) inside a
+   single `[data-theme="<name>"]` block and nothing else. That constraint is
+   what makes themes shippable from the backend later: a theme file has no
+   dependency on this stylesheet's raw palette, no selectors of its own, and
+   no layout opinions, so it can be served, swapped or added without touching
+   the app.
+
+   Rules a theme file must follow:
+
+   1. Declare colours as literal `oklch(...)`, never `var(--navy)` and friends.
+      The raw brand palette lives in styles.css and a remotely-served theme
+      cannot rely on it being loaded.
+   2. Set every token in the table below. Anything omitted falls through to
+      the `:root` block in day.css, which will almost certainly clash.
+   3. Use exactly one selector: `[data-theme="<name>"]`. `day.css` is the one
+      exception — it also claims `:root` so a board with no attribute at all
+      still paints something legible.
+   4. Register the name in `registry.js`. Nothing outside that file should
+      hardcode a theme name.
+
+   ---- The tokens ---------------------------------------------------------
+
+   Surface     --bg          stage + top bar + ticker ground
+               --bg-soft     recessed panels (rail, poster mat, striped fills)
+               --bg-card     raised cards; must read as lifted off --bg
+   Text        --fg          primary copy, clocks, prayer times
+               --fg-2        secondary copy, translations
+               --fg-3        eyebrows, labels, captions — the quietest step
+   Structure   --line        hairline rules and card borders
+   Accent      --accent      hairlines, eyebrows, QR brackets. Carries TEXT,
+                             so it must hold ~4.5:1 against --bg.
+               --accent-soft large fills and washes only — never text.
+   Emphasis    --hero        display headings, prayer names, brand wordmark
+
+   `--state` is set per-component from `--accent` / `--fg-3` / the raw palette
+   status hues; themes do not own it.
+
+   ---- Structural hooks ---------------------------------------------------
+
+   The MSA mark ships in two colourways and exactly one may be visible. Rather
+   than keying that off a theme name in styles.css, each theme declares which
+   plate it wants. A light theme keeps the defaults below; a dark theme flips
+   both. See `.brand-mark` in styles.css for the rules that read these.
+   ========================================================================= */
+
+:root {
+  --logo-dark-display: block;   /* navy mark — for light surfaces */
+  --logo-light-display: none;   /* white mark — for dark surfaces */
+}

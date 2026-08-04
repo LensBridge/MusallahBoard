@@ -1,0 +1,58 @@
+/* =========================================================================
+   Theme: day — Chambray daylight
+   -------------------------------------------------------------------------
+   The board before Isha. Night sits *inside* MSA Navy Blue; day sits inside
+   the same brand's Chambray, opened up to daylight. Both themes are the
+   scheme's own blues at two different depths — day is not a paper theme with
+   a blue cast, it is Chambray tinted up until you can read navy on it.
+
+   Where the colours come from — every one traces to the 2024 sheet:
+
+   · The ground is Chambray. #2E5380 is oklch(0.437 0.086 254.3); --bg is that
+     hue carried up to 0.94 lightness, with chroma at the sRGB ceiling for that
+     lightness (0.028 — light blues simply cannot hold more and stay in gamut).
+     --bg-card and --bg-soft step down 0.03 / 0.05 and *gain* chroma as they
+     darken, so the deeper planes read bluer rather than greyer.
+
+   · The ink is Navy Blue. --fg is #082D5D exactly, the primary, unmodified.
+     --fg-2 and --fg-3 walk it up toward the ground, shedding chroma as they
+     go: the quiet tier separates from the loud one by saturation as much as
+     by lightness, which is what keeps three legible steps available on a
+     ground this bright. --hero drops below the primary rather than above it —
+     on a light ground the heaviest thing wins, exactly as night's near-white
+     yellow wins on a dark one.
+
+   · The yellow cannot carry text here, so it splits in two. Energy Yellow is
+     0.905 lightness; on a 0.94 ground it is invisible. --accent-soft keeps it
+     exact (#F8E15D) for fills and washes, where yellow-on-blue is the
+     strongest pairing the scheme owns. --accent is the same colour deepened
+     to 0.50 to clear 4.5:1, and warmed to hue 90 on the way down — held at
+     Energy Yellow's own 99.4 a dark yellow turns olive (#71640B) rather than
+     gold (#796006).
+
+   Why the ground stops at 0.94: --bg-card sits 0.03 below it, and --fg-3 and
+   --accent both have to clear 4.5:1 against *that*. Every 0.01 taken off the
+   ground has to come back off the quiet tier, and below roughly 0.90 the two
+   collide — there is no longer room for three ink steps plus an accent. 0.94
+   is the bluest ground that still holds the whole hierarchy at AA.
+
+   Claimed by `:root` as well as its own attribute, so a stage that never gets
+   a data-theme still paints. See _contract.css.
+   ========================================================================= */
+
+:root,
+[data-theme="day"] {
+  --bg:          oklch(0.94 0.028 254);   /* Chambray, opened to daylight */
+  --bg-soft:     oklch(0.89 0.046 254);
+  --bg-card:     oklch(0.91 0.040 254);
+  --fg:          oklch(0.303 0.095 257.1);/* Navy Blue #082D5D, exact */
+  --fg-2:        oklch(0.40 0.085 256);
+  --fg-3:        oklch(0.50 0.050 256);
+  --line:        oklch(0.79 0.055 254);
+  --accent:      oklch(0.50 0.10 90);     /* Energy Yellow, deepened to hold text */
+  --accent-soft: oklch(0.905 0.151 99.4); /* Energy Yellow #F8E15D — fills only */
+  --hero:        oklch(0.24 0.075 257);   /* below the primary: heaviest wins */
+
+  --logo-dark-display: block;
+  --logo-light-display: none;
+}

@@ -3,9 +3,11 @@
 // design data shape → drive the slideshow built from the frame-builder registry.
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { getBoardPayload, getPrayerData, connectRefreshSocket } from './api/index.js';
+import { prefetchPayloadImages } from './utils/prefetch.js';
 import { buildAgendaDays, buildHijri, zonedClock, isoDateKey } from './models/index.js';
 import { classifyPrayers } from './utils/prayers.js';
 import { buildSlideshow } from './frames/registry.js';
+import { resolveTheme, DEFAULT_THEME } from './themes/registry.js';
 import './frames/builders.jsx'; // registers default builders
 import {
   getSetupConfig, applyCursorPreference, isValidDeviceId,
@@ -151,6 +153,7 @@ export default function App() {
     if (!isValidDeviceId(id)) return { ok: false, reason: 'unpaired' };
     try {
       const p = await getBoardPayload(id);
+      prefetchPayloadImages(p);
       setPayload(p);
       setError(null);
       setLastPayloadAt(Date.now());
@@ -306,7 +309,7 @@ export default function App() {
   // The drawer is reachable from every render path — a board stuck on the
   // loading screen is exactly when you want to force a theme or hold the deck.
   // The auto-* values only exist past the guards below, hence the parameters.
-  const renderDebug = (autoTheme = 'day', autoJummah = false) =>
+  const renderDebug = (autoTheme = DEFAULT_THEME, autoJummah = false) =>
     debugOpen && (
       <DebugMenu
         debug={debug}
@@ -318,6 +321,7 @@ export default function App() {
         slideIdx={slideIdx}
         setSlideIdx={setSlideIdx}
         autoTheme={autoTheme}
+        pinnedTheme={payload?.deviceConfig?.theme ?? null}
         autoJummah={autoJummah}
       />
     );
@@ -366,13 +370,18 @@ export default function App() {
     );
   }
 
-  // Theme: switch to night after Isha when the device opts in.
+  // Theme, in precedence order: the operator's drawer override, then whatever
+  // the backend pinned on this device, then the board's own time-of-day rule
+  // (night after Isha, when the device opts in). resolveTheme skips anything
+  // that isn't a real theme, so an unset or misspelled backend value simply
+  // falls through to the next choice instead of blanking the stage.
   const { current, next } = classifyPrayers(data.prayers, now, tz);
   const autoTheme =
     payload.deviceConfig.darkModeAfterIsha && (current === 'isha' || next === 'fajr')
       ? 'night'
       : 'day';
-  const theme = debug.theme ?? autoTheme;
+  const boardTheme = resolveTheme(payload.deviceConfig.theme, autoTheme);
+  const theme = resolveTheme(debug.theme, boardTheme);
 
   const active = slides[slideIdx] || slides[0];
   const isPoster = active.key.startsWith('poster');
@@ -419,7 +428,7 @@ export default function App() {
         </div>
       </ScaledStage>
     </div>
-    {renderDebug(autoTheme, autoJummah)}
+    {renderDebug(boardTheme, autoJummah)}
     {setupOpen && (
       <SetupModal
         status={statusRef.current?.()}

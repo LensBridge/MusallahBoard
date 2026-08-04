@@ -1,0 +1,26 @@
+/* =========================================================================
+   Theme: reverent — muted paper, cool accent
+   -------------------------------------------------------------------------
+   The quiet alternative: warm paper held below white, near-neutral navy type,
+   and a cool teal accent in place of gold. Predates the day/night pair and
+   does not derive from either — it is the one theme that steps outside the
+   brand's navy-and-yellow reading.
+
+   See _contract.css.
+   ========================================================================= */
+
+[data-theme="reverent"] {
+  --bg:          oklch(0.94 0.01 80);
+  --bg-soft:     oklch(0.91 0.012 80);
+  --bg-card:     oklch(0.96 0.008 80);
+  --fg:          oklch(0.26 0.03 258);
+  --fg-2:        oklch(0.40 0.03 258);
+  --fg-3:        oklch(0.55 0.02 258);
+  --line:        oklch(0.82 0.018 80);
+  --accent:      oklch(0.50 0.10 200);
+  --accent-soft: oklch(0.82 0.06 200);
+  --hero:        oklch(0.30 0.06 220);
+
+  --logo-dark-display: block;
+  --logo-light-display: none;
+}

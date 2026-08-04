@@ -3,35 +3,39 @@
    1920×1080 landscape kiosk · viewed at 2–5m
    ========================================================================= */
 
-:root {
-  /* ---- Palette: evolved navy + gold ------------------------------------ */
-  /* Day (default) — refined MSA navy + yellow */
-  --paper:        oklch(0.97 0.008 80);
-  --paper-2:      oklch(0.94 0.012 80);
-  --paper-3:      oklch(0.90 0.014 78);
-  --ink:          oklch(0.27 0.10 258);   /* MSA navy as text color */
-  --ink-2:        oklch(0.40 0.08 258);
-  --ink-3:        oklch(0.55 0.05 258);
-  --rule:         oklch(0.86 0.02 80);
-  --navy:         oklch(0.27 0.10 258);   /* MSA #082D5D */
-  --navy-2:       oklch(0.36 0.09 258);
-  --gold:         oklch(0.91 0.16 95);    /* MSA #F8E15D */
-  --gold-soft:    oklch(0.94 0.10 95);
-  --gold-deep:    oklch(0.68 0.14 88);
-  --sage:         oklch(0.62 0.08 158);
-  --rose:         oklch(0.62 0.13 30);
+/* ---- Themes -------------------------------------------------------------
+   One file per theme, each owning nothing but the semantic tokens for its
+   `[data-theme]` scope. They are imported rather than inlined so a theme can
+   be added, replaced or served from the backend without editing this
+   stylesheet. Read _contract.css before writing one. `day.css` also claims
+   `:root`, which is why it must be imported first. */
+@import "./themes/_contract.css";
+@import "./themes/day.css";
+@import "./themes/night.css";
+@import "./themes/reverent.css";
 
-  /* Stage tokens (recoloured by themes) */
-  --bg:           var(--paper);
-  --bg-soft:      var(--paper-2);
-  --bg-card:      var(--paper);
-  --fg:           var(--ink);
-  --fg-2:         var(--ink-2);
-  --fg-3:         var(--ink-3);
-  --line:         var(--rule);
-  --accent:       var(--gold-deep);
-  --accent-soft:  var(--gold-soft);
-  --hero:         var(--navy);
+:root {
+  /* ---- Raw brand palette ------------------------------------------------
+     The UTM MSA 2024 scheme, transcribed exactly. Fixed, and deliberately NOT
+     theme-scoped: these are the brand colours themselves, for the rare thing
+     that must stay constant no matter which theme is up. Everything else
+     should reach for a semantic token instead — using these directly opts out
+     of theming.
+
+     Each value below round-trips to its official hex. The three brand entries
+     previously did not: --navy rendered #002356, and --gold was chromatic
+     enough to fall outside sRGB and clamp to #FFDF50. Both were visibly off
+     the sheet, so both are corrected here. */
+  --navy:         oklch(0.303 0.095 257.1);  /* Primary   · Navy Blue     #082D5D */
+  --chambray:     oklch(0.437 0.086 254.3);  /* Secondary · Chambray      #2E5380 */
+  --gold:         oklch(0.905 0.151 99.4);   /* Tertiary  · Energy Yellow #F8E15D */
+  /* Working shades of the tertiary. Energy Yellow is near-white, so anything
+     that must carry text on a light ground has to be deepened; hue warms as it
+     darkens because 99.4 goes olive below ~0.6 lightness. */
+  --gold-soft:    oklch(0.94 0.075 99);
+  --gold-deep:    oklch(0.50 0.10 90);
+  --sage:         oklch(0.62 0.08 158);      /* status hues, fed to --state */
+  --rose:         oklch(0.62 0.13 30);
 
   /* Type — two families only: Cinzel (display) + Montserrat (everything else).
      Amiri is kept solely for Arabic script, which neither family covers.
@@ -55,33 +59,6 @@
   /* Geometry */
   --r-card: 14px;
   --r-pill: 999px;
-}
-
-/* ---- Themes ------------------------------------------------------------- */
-[data-theme="night"] {
-  --bg:        oklch(0.20 0.08 258);     /* deeper MSA navy */
-  --bg-soft:   oklch(0.25 0.085 258);
-  --bg-card:   oklch(0.23 0.085 258);
-  --fg:        oklch(0.96 0.01 95);
-  --fg-2:      oklch(0.85 0.04 95);
-  --fg-3:      oklch(0.68 0.03 95);
-  --line:      oklch(0.38 0.07 258);
-  --accent:    oklch(0.91 0.16 95);      /* MSA yellow */
-  --accent-soft: oklch(0.45 0.10 95);
-  --hero:      oklch(0.91 0.16 95);      /* yellow hero on dark */
-}
-
-[data-theme="reverent"] {
-  --bg:        oklch(0.94 0.01 80);
-  --bg-soft:   oklch(0.91 0.012 80);
-  --bg-card:   oklch(0.96 0.008 80);
-  --fg:        oklch(0.26 0.03 258);
-  --fg-2:      oklch(0.40 0.03 258);
-  --fg-3:      oklch(0.55 0.02 258);
-  --line:      oklch(0.82 0.018 80);
-  --accent:    oklch(0.50 0.10 200);
-  --accent-soft: oklch(0.82 0.06 200);
-  --hero:      oklch(0.30 0.06 220);
 }
 
 /* ---- Density ------------------------------------------------------------ */
@@ -166,12 +143,18 @@ img { display: block; max-width: 100%; }
   object-fit: contain;
   display: block;
 }
-/* Exactly one logo variant is visible per theme. These must out-specify
-   `.brand-mark img.brand-img { display: block }` above (0,2,1) or both would
-   render stacked — hence the redundant-looking `.brand-mark img` prefix. */
-.brand-mark img.brand-img-light { display: none; }
-[data-theme="night"] .brand-mark img.brand-img-dark { display: none; }
-[data-theme="night"] .brand-mark img.brand-img-light { display: block; }
+/* Exactly one logo variant is visible per theme — the navy mark on light
+   grounds, the white one on dark. Which is which is the theme's call, not
+   this stylesheet's: it declares the pair of display hooks (see
+   themes/_contract.css) and these rules just obey, so a theme added later
+   gets the right mark without anyone touching this file. Fallbacks cover a
+   theme that forgets to set them.
+
+   Both rules must out-specify `.brand-mark img.brand-img { display: block }`
+   above (0,2,1) or the variants would render stacked — hence the
+   redundant-looking `.brand-mark img` prefix. */
+.brand-mark img.brand-img-dark  { display: var(--logo-dark-display, block); }
+.brand-mark img.brand-img-light { display: var(--logo-light-display, none); }
 .rail-brand .brand-mark { width: 56px; height: 56px; }
 .brand-text { line-height: 1; }
 .brand-eyebrow {
