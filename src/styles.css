@@ -540,7 +540,15 @@ img { display: block; max-width: 100%; }
   padding: var(--pad-stage, 48px) var(--pad-stage, 48px) calc(var(--pad-stage, 48px) - 8px);
   display: flex; flex-direction: column;
   z-index: 1;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.slide.is-active {
   opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  z-index: 2;
 }
 .slide.is-animating {
   animation: slide-in 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
@@ -1341,6 +1349,7 @@ img { display: block; max-width: 100%; }
   position: relative;
   mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent);
   min-width: 0;
+  contain: content;
 }
 .ticker-content {
   display: inline-flex; gap: 80px;
@@ -1349,6 +1358,9 @@ img { display: block; max-width: 100%; }
   font-size: 20px;
   color: var(--fg);
   padding-right: 80px;
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 .ticker-content span {
   display: inline-flex; align-items: center; gap: 60px;

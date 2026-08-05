@@ -355,7 +355,7 @@ export default function App() {
       <>
         <Status
           title="MusallahBoard"
-          detail={error ? 'Reconnecting to the board service…' : 'Loading the board…'}
+          detail={error ? 'Reconnecting to the board service…' : 'Version 2027'}
           error={error}
         />
         {renderDebug()}
@@ -383,16 +383,6 @@ export default function App() {
   const boardTheme = resolveTheme(payload.deviceConfig.theme, autoTheme);
   const theme = resolveTheme(debug.theme, boardTheme);
 
-  const active = slides[slideIdx] || slides[0];
-  const isPoster = active.key.startsWith('poster');
-  const isQuote = active.key === 'verse' || active.key === 'hadith';
-  const activeCls = [
-    'slide',
-    isPoster ? 'poster-slide' : '',
-    isQuote ? 'quote-slide' : '',
-    active.key === 'ig' ? 'ig-slide' : '',
-  ].filter(Boolean).join(' ');
-
   const showTicker = data.scrollingMessages.length > 0;
   // Show the Jummah card Wed–Fri (matches prior board behaviour). Read in the
   // board's zone: near midnight the browser's day can be the wrong one.
@@ -414,9 +404,23 @@ export default function App() {
           />
           <main className="stage-main">
             <div className="slides">
-              <div key={active.key} className={activeCls}>
-                {active.render({ data, now })}
-              </div>
+              {slides.map((slide, i) => {
+                const isActive = i === slideIdx;
+                const isPoster = slide.key.startsWith('poster');
+                const isQuote = slide.key === 'verse' || slide.key === 'hadith';
+                const cls = [
+                  'slide',
+                  isPoster ? 'poster-slide' : '',
+                  isQuote ? 'quote-slide' : '',
+                  slide.key === 'ig' ? 'ig-slide' : '',
+                  isActive ? 'is-active' : 'is-hidden',
+                ].filter(Boolean).join(' ');
+                return (
+                  <div key={slide.key} className={cls}>
+                    {slide.render({ data, now })}
+                  </div>
+                );
+              })}
             </div>
           </main>
 
