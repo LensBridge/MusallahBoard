@@ -58,7 +58,8 @@
       "PowerShell(ssh ibra@100.112.91.179 \"journalctl --user -u rpi-connect --no-pager -n 20 --since '2 minutes ago'\")",
       "Bash(node --check js/app.js)",
       "WebFetch(domain:api.anthropic.com)",
-      "Bash(curl -s -o \"C:/Code/MusallahBoard/frontend/.design_tmp/api-docs.json\" -w \"%{http_code}\" --max-time 4 \"http://localhost:8080/v3/api-docs\")"
+      "Bash(curl -s -o \"C:/Code/MusallahBoard/frontend/.design_tmp/api-docs.json\" -w \"%{http_code}\" --max-time 4 \"http://localhost:8080/v3/api-docs\")",
+      "PowerShell(npm view *)"
     ]
   }
 }
