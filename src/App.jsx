@@ -41,8 +41,9 @@ function ScaledStage({ children }) {
     window.addEventListener('resize', calc);
     return () => window.removeEventListener('resize', calc);
   }, []);
+  // Geometry lives in `.stage-scaler`; only the ratio comes from here.
   return (
-    <div style={{ transform: `scale(${s})`, transformOrigin: 'center center', width: 1920, height: 1080 }}>
+    <div className="stage-scaler" style={{ '--stage-scale': s }}>
       {children}
     </div>
   );

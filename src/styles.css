@@ -86,13 +86,31 @@ img { display: block; max-width: 100%; }
    ========================================================================= */
 .stage-wrap {
   position: fixed; inset: 0;
-  display: grid; place-items: center;
   background: #000;
   overflow: hidden;
 }
+/* `transform` doesn't shrink a layout box, so the scaler stays 1920×1080 no
+   matter what `--stage-scale` is and overflows any viewport smaller than that
+   — which is every windowed browser. Grid and flex centring is no help there:
+   both fall back to start alignment once the item overflows, so the box pinned
+   itself to the top and the scale-about-centre then pushed the visible board
+   half the overflow down and off the bottom edge.
+
+   Pinning the box's top-left to the viewport centre and translating back by
+   half its own size sidesteps alignment entirely. `translate` and `scale`
+   compose right-to-left, so the -50% offsets are measured against the
+   unscaled 1920×1080 and the scale then shrinks that offset in step: the
+   board's centre lands on the viewport's centre at every scale, fullscreen or
+   not, with the remainder letterboxed black. */
+.stage-scaler {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 1920px; height: 1080px;
+  transform: translate(-50%, -50%) scale(var(--stage-scale, 1));
+  transform-origin: center center;
+}
 .stage {
   width: 1920px; height: 1080px;
-  transform-origin: center center;
   background: var(--bg);
   color: var(--fg);
   position: relative;
