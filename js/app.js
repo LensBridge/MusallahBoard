@@ -518,6 +518,8 @@ function initializeScrollingMessage() {
 
     messageElement.textContent = message;
     messageElement.classList.remove('is-animating');
+    // Set before measuring: the Arabic face and size bump change scrollWidth.
+    messageElement.classList.toggle('is-arabic', containsArabic(message));
 
     const duration = getScrollDuration(messageBar, messageElement);
     messageElement.style.setProperty('--scroll-duration', `${duration}s`);
@@ -536,7 +538,22 @@ function initializeScrollingMessage() {
     messageElement.addEventListener('animationend', animationEndHandler, { once: true });
   };
 
-  playMessage();
+  // Wait for webfonts so the first message is measured with real metrics
+  // rather than the fallback face.
+  if (document.fonts?.ready) {
+    document.fonts.ready.then(playMessage).catch(() => playMessage());
+  } else {
+    playMessage();
+  }
+}
+
+/**
+ * Arabic, Arabic Supplement, Extended-A, and Presentation Forms A/B blocks.
+ * @param {string} text
+ * @returns {boolean}
+ */
+function containsArabic(text) {
+  return /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFC]/.test(text);
 }
 
 function getScrollingMessages(boardConfig) {

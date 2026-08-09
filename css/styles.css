@@ -35,6 +35,8 @@
     --font-display: 'Cinzel', serif;
     --font-body: 'Montserrat', sans-serif;
     --font-decorative: 'Great Vibes', cursive;
+    --font-arabic: 'Noto Naskh Arabic', 'Amiri', serif;
+    --font-quran: 'Amiri', 'Noto Naskh Arabic', serif;
     
     /* Spacing */
     --spacing-xs: 0.5rem;
@@ -1929,7 +1931,7 @@ body.cursor-hidden * {
 }
 
 .quote-arabic {
-    font-family: 'Amiri', 'Traditional Arabic', serif;
+    font-family: var(--font-quran);
     font-size: clamp(1.8rem, 3vw, 2.5rem);
     line-height: 1.8;
     color: var(--text-primary);
@@ -2172,9 +2174,26 @@ body.cursor-hidden * {
         0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
+/* Arabic messages: Naskh face, no letter-spacing (it breaks the joined
+   script), RTL bidi, and a size bump since Arabic reads smaller than Latin
+   at the same font-size. */
+.scrolling-message-content.is-arabic {
+    font-family: var(--font-arabic);
+    font-size: 1.15em;
+    font-weight: 600;
+    letter-spacing: normal;
+    direction: rtl;
+    unicode-bidi: isolate;
+}
+
 .scrolling-message-content.is-animating {
     animation: scrollText var(--scroll-duration, 15s) linear forwards;
     animation-iteration-count: 1;
+}
+
+/* RTL text scrolls the other way so the start of the sentence leads. */
+.scrolling-message-content.is-arabic.is-animating {
+    animation-name: scrollTextRtl;
 }
 
 @keyframes scrollText {
@@ -2183,6 +2202,15 @@ body.cursor-hidden * {
     }
     100% {
         transform: translateX(-100%);
+    }
+}
+
+@keyframes scrollTextRtl {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(calc(100vw));
     }
 }
 
