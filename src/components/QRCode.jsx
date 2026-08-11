@@ -32,9 +32,10 @@ const ERROR_CORRECTION = 'M';
  * @param {string} [props.className]    extra class on the wrapper
  */
 export default function QRCode({ value, size = 300, caption, className = '' }) {
-  // Nothing to encode is a normal state, not an error: socialUrl and signupUrl
-  // are both optional. Callers use this to decide whether to show a QR panel at
-  // all, so returning null keeps that check in one place.
+  // Nothing to encode is a normal state, not an error: a poster's signupUrl is
+  // optional, and a malformed frame can arrive without one. Callers use this to
+  // decide whether to show a QR panel at all, so returning null keeps that
+  // check in one place.
   if (!value || !String(value).trim()) return null;
 
   return (

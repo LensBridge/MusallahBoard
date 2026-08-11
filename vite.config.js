@@ -24,4 +24,11 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 3000,
   },
+  // Vitest reads this config, so the React plugin and the aliases above apply
+  // to tests too — a component test compiles exactly like the bundle does.
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    include: ['src/**/*.test.{js,jsx}'],
+  },
 })

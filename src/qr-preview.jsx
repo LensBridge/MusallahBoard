@@ -1,12 +1,12 @@
 /**
  * TEMPORARY preview harness — delete after visual verification.
  *
- * Renders the real PosterSlide and IGSlide against mock data so the QR layouts
- * can be checked without a backend, a device id, or a live payload.
+ * Renders the real PosterSlide and SocialsSlide against mock data so the QR
+ * layouts can be checked without a backend, a device id, or a live payload.
  */
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { PosterSlide, IGSlide } from './components/slides.jsx';
+import { PosterSlide, SocialsSlide } from './components/slides.jsx';
 import './styles.css';
 
 const POSTER_IMAGE =
@@ -20,8 +20,26 @@ const POSTER_IMAGE =
             font-family="sans-serif">Every Friday · 6:30 PM</text>
     </svg>`);
 
-const igData = {
-  instagram: { handle: '@utmmsa', url: 'https://instagram.com/utmmsa' },
+// Shaped exactly like frameConfig for a `socials` frame, Markdown and all.
+const INSTAGRAM_SOCIAL = {
+  socialType: 'instagram',
+  url: 'https://instagram.com/utmmsa',
+  headerText: 'follow along',
+  heroText: 'Catch the community on *Instagram*.',
+  handle: '@utmmsa',
+  footerText:
+    'Follow *your home on campus* on Instagram for event recaps, announcements, and more!',
+};
+
+// The handle-less case: WhatsApp entries have none, and the element must not
+// leave a gap where it used to be.
+const WHATSAPP_SOCIAL = {
+  socialType: 'whatsapp',
+  url: 'https://chat.whatsapp.com/example-invite',
+  headerText: 'join the chat',
+  heroText: 'Get the day-of updates on *WhatsApp*.',
+  handle: null,
+  footerText: 'Room changes, cancellations, and **iqamah** times, straight to your phone.',
 };
 
 function Stage({ label, children, poster = false }) {
@@ -60,8 +78,12 @@ createRoot(document.getElementById('root')).render(
         <PosterSlide poster={{ image: POSTER_IMAGE, title: 'Weekly Halaqa', signupUrl: '' }} />
       </Stage>
 
-      <Stage label="C · STAY CONNECTED (real QR from deviceConfig.socialUrl)">
-        <IGSlide data={igData} />
+      <Stage label="C · STAY CONNECTED — INSTAGRAM (real QR from frameConfig.url)">
+        <SocialsSlide social={INSTAGRAM_SOCIAL} />
+      </Stage>
+
+      <Stage label="D · STAY CONNECTED — WHATSAPP (no handle)">
+        <SocialsSlide social={WHATSAPP_SOCIAL} />
       </Stage>
     </div>
   </StrictMode>

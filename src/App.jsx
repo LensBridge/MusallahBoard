@@ -4,7 +4,9 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { getBoardPayload, getPrayerData, connectRefreshSocket } from './api/index.js';
 import { prefetchPayloadImages } from './utils/prefetch.js';
-import { buildAgendaDays, buildHijri, zonedClock, isoDateKey } from './models/index.js';
+import {
+  buildAgendaDays, buildTodayEvents, buildHijri, zonedClock, isoDateKey,
+} from './models/index.js';
 import { classifyPrayers } from './utils/prayers.js';
 import { buildSlideshow } from './frames/registry.js';
 import { resolveTheme, DEFAULT_THEME } from './themes/registry.js';
@@ -19,11 +21,6 @@ import TopBar from './components/TopBar.jsx';
 import PrayerRail from './components/PrayerRail.jsx';
 import Ticker from './components/Ticker.jsx';
 
-// Fallback for the closing "Stay Connected" slide. A device that sets
-// deviceConfig.socialUrl overrides the URL, so two boards can point at
-// different destinations; the handle stays the org's since it is displayed
-// as text rather than encoded.
-const INSTAGRAM = { handle: '@utmmsa', url: 'https://instagram.com/utmmsa' };
 const PAYLOAD_REFRESH_MS = 10 * 60 * 1000;
 
 // Presentation overrides driven by the debug drawer (Alt+Shift+D). `null` on a
@@ -194,14 +191,10 @@ export default function App() {
       weather: payload.weather,
       prayers: prayerInfo.prayers,
       jummahPrayers: payload.jummahPrayers,
-      todayEvents: payload.todayEvents,
-      agenda: buildAgendaDays(payload.weekEvents, now, tz),
+      todayEvents: buildTodayEvents(payload.agendaDays, now, tz),
+      agenda: buildAgendaDays(payload.agendaDays, now, tz),
       verse: payload.verse,
       hadith: payload.hadith,
-      instagram: {
-        ...INSTAGRAM,
-        url: payload.deviceConfig?.socialUrl?.trim() || INSTAGRAM.url,
-      },
       scrollingMessages: payload.scrollingMessages,
     };
     // now intentionally excluded — gregorian and the agenda window only need
@@ -213,10 +206,17 @@ export default function App() {
   }, [payload, prayerInfo, tz, isoDateKey(now, tz)]);
 
   // Build the slideshow from the registry whenever the payload changes.
+  //
+  // The ctx carries the composed view data a builder needs to size itself: a
+  // frame whose duration is "auto" has to know how much it will end up showing,
+  // and the frame definition alone cannot say. `data.agenda` rather than
+  // `payload.agendaDays` because the day-rollover layer is what decides which
+  // bucket is today — so the deck is also rebuilt when the board's date turns
+  // over, with the durations recomputed for the new day.
   const slides = useMemo(() => {
-    if (!payload) return [];
-    return buildSlideshow(payload, {});
-  }, [payload]);
+    if (!payload || !data) return [];
+    return buildSlideshow(payload, { agendaDays: data.agenda });
+  }, [payload, data]);
 
   // Keep slide index in range when the deck changes.
   useEffect(() => {
@@ -413,7 +413,7 @@ export default function App() {
                   'slide',
                   isPoster ? 'poster-slide' : '',
                   isQuote ? 'quote-slide' : '',
-                  slide.key === 'ig' ? 'ig-slide' : '',
+                  slide.key.startsWith('social-') ? 'social-slide' : '',
                   isActive ? 'is-active' : 'is-hidden',
                 ].filter(Boolean).join(' ');
                 return (

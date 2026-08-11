@@ -1,7 +1,8 @@
-// Slideshow frames — Next Prayer, Agenda, Poster, Verse, Hadith, Instagram
+// Slideshow frames — Next Prayer, Agenda, Poster, Verse, Hadith, Socials
 import { formatTo12, toMinutes, zonedMinutes, zonedSeconds } from '../models/index.js';
 import { classifyPrayers } from '../utils/prayers.js';
 import QRCode, { hasQR } from './QRCode.jsx';
+import Markdown from './Markdown.jsx';
 import Digits from './Digits.jsx';
 
 // ---------- Next Prayer ----------
@@ -89,8 +90,12 @@ export function NextPrayerSlide({ data, now }) {
 
 // ---------- Agenda: today in focus, the next six days beneath ----------
 
-/** Rows the "up next" column can hold before it starts counting overflow. */
-const QUEUE_LIMIT = 4;
+/**
+ * Rows the "up next" column can hold before it starts counting overflow.
+ * Exported because the agenda frame's auto-duration is a function of how many
+ * rows actually land on screen, and that ceiling is decided here.
+ */
+export const QUEUE_LIMIT = 4;
 /** Events a ribbon day shows by name before collapsing into "+N more". */
 const RIBBON_LIMIT = 2;
 
@@ -416,8 +421,23 @@ export function QuoteSlide({ kind, quote }) {
   );
 }
 
-// ---------- Instagram QR ----------
-export function IGSlide({ data }) {
+// ---------- Socials QR ----------
+//
+// One promoted social account. Every string on this slide is backend data now
+// — this used to be a single hardcoded Instagram frame whose QR destination
+// came from deviceConfig.socialUrl. A board can carry several of these
+// (Instagram and a WhatsApp group, say), so nothing here may assume Instagram.
+//
+// The four copy fields are stored as Markdown so an operator can italicize a
+// phrase ("Follow *your home on campus* ...") without a deploy. They render
+// through <Markdown>, which emits React nodes rather than HTML — see
+// components/Markdown.jsx.
+export function SocialsSlide({ social }) {
+  // WhatsApp entries have no handle. Drop the element rather than rendering an
+  // empty div: .social-text is a flex column with a gap, so an empty child
+  // would leave a visible hole between the headline and the paragraph.
+  const handle = (social?.handle ?? '').trim();
+
   return (
     <>
       <div className="slide-eyebrow">
@@ -425,26 +445,21 @@ export function IGSlide({ data }) {
         <span className="rule" />
         <span>Stay Connected</span>
       </div>
-      <div className="ig-body">
-        <div className="ig-text">
-          <div className="ig-eyebrow">Follow Along</div>
-          <div className="ig-title">
-            Catch the<br />community on<br />Instagram.
-          </div>
-          <div className="ig-handle">{data.instagram.handle}</div>
-          <div className="ig-sub">
-            Follow <i>your home on campus</i> on Instagram for event recaps, announcements, and more!
-          </div>
+      <div className="social-body" data-social={social?.socialType || 'other'}>
+        <div className="social-text">
+          <div className="social-eyebrow"><Markdown text={social?.headerText} /></div>
+          <div className="social-title"><Markdown text={social?.heroText} /></div>
+          {handle && <div className="social-handle"><Markdown text={handle} /></div>}
+          <div className="social-sub"><Markdown text={social?.footerText} /></div>
         </div>
-        <div className="ig-qr-wrap">
-          {/* Encodes the board's own socialUrl, so two boards can point at
-              different destinations. Falls back to the app-level Instagram URL
-              when a device has no socialUrl configured. */}
+        <div className="social-qr-wrap">
+          {/* frameConfig.url — the account this frame promotes, not a
+              board-wide setting. */}
           <QRCode
-            value={data.instagram.url}
+            value={social?.url}
             size={300}
             caption="Scan with your camera"
-            className="qr-panel--ig"
+            className="qr-panel--social"
           />
         </div>
       </div>

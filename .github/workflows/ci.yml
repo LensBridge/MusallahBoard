@@ -43,5 +43,9 @@ jobs:
         working-directory: MusallahBoard
         run: npm run typecheck
 
+      - name: Unit tests
+        working-directory: MusallahBoard
+        run: npm test
+
       - run: npx vite build
         working-directory: MusallahBoard

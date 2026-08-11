@@ -29,18 +29,36 @@
 //   method ∈ KARACHI|ISNA|MWL|MAKKAH|EGYPT|TEHRAN|GULF|KUWAIT|QATAR|
 //            SINGAPORE|FRANCE|TURKEY|RUSSIA|DUBAI
 // FrameDefinition {
-//   frameType ∈ poster|event_list|daily_schedule|next_prayer|jummah|islamic_quote,
-//   durationInSeconds: int, slot ∈ PRIMARY|TICKER|SIDEBAR|OVERLAY,
-//   priority: int, frameConfig: <discriminated on .type>
+//   frameId: string, frameType ∈ poster|next_prayer|agenda|socials|jummah|
+//   islamic_quote, durationInSeconds: int|null,
+//   frameConfig: <discriminated on .type>
 // }
-//   PosterFrameConfig        { type, posterUrl, title }
-//   EventListFrameConfig     { type, heading, events: EventView[] }
-//   DailyScheduleFrameConfig { type, heading, events: EventView[] }
+//   Array order is display order — the backend composes the sequence.
+//   PosterFrameConfig        { type, posterUrl, title, signupUrl }
+//   AgendaFrameConfig        { type, heading, days: DayBucket[] }
 //   JummahFrameConfig        { type, prayers: JummahSlot[] }
 //   IslamicQuoteFrameConfig  { type, kind: VERSE|HADITH, arabic,
 //                              transliteration, translation, reference }
+//   NextPrayerFrameConfig    { type }  — marker only; countdown computed client-side
+//   PromotableSocialMediaFrameConfig
+//                            { type: "socials", socialType, url, headerText,
+//                              heroText, handle, footerText }
+//     socialType ∈ instagram|youtube|tiktok|whatsapp|other (lowercase).
+//     handle is nullable — WhatsApp entries have none.
+//     headerText/heroText/handle/footerText are Markdown; see utils/markdown.js.
+//     Zero or more per payload, one per social account promoted to the board's
+//     audience. This replaced a single hardcoded `instagram` frame whose QR
+//     target the board read from deviceConfig.socialUrl; both are gone.
+// DayBucket { date("YYYY-MM-DD" in the board's zone), events: EventView[] }
 // EventView { name, description, location, startTime(ISO), endTime(ISO), allDay }
 // JummahSlot { prayerTime, khatib, room }
+//
+// The agenda frame replaced the former event_list + daily_schedule pair, which
+// queried the same events over a 7-day and a 1-day window and differed only in
+// layout. Today's events are now just the bucket whose date is today's — and
+// *which* bucket that is has to be decided here rather than server-side, because
+// a board can run for days on one payload and the answer changes at midnight.
+// For the same reason DayBucket carries no isToday flag.
 // ---------------------------------------------------------------------------
 
 /** Prayer calculation method enum → Aladhan numeric method id. */
@@ -207,8 +225,6 @@ export function isoDateKey(input, timezone) {
 /** Indexed to match Date#getDay() — 0 = Sunday. Used for weekday arithmetic. */
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-/** Days in the agenda frame's rolling window: today plus the next six. */
-export const AGENDA_DAYS = 7;
 
 function normalizeQuote(cfg) {
   if (!cfg) return null;
@@ -258,9 +274,6 @@ export function emptyDeviceConfig() {
     // locally" — the time-of-day logic in App. Validated against the theme
     // registry before it reaches the stage, so a bad value costs nothing.
     theme: null,
-    // Optional per-device destination for the closing slide's QR code. Empty
-    // means the board falls back to the app-level Instagram URL.
-    socialUrl: '',
   };
 }
 
@@ -276,8 +289,7 @@ export function emptyDeviceConfig() {
  *   frames: any[],
  *   weather: {temp:number,condition:string,city:string}|null,
  *   posters: {title:string,image:string,signupUrl:string,durationMs:number}[],
- *   weekEvents: object[],
- *   todayEvents: object[],
+ *   agendaDays: {dateKey:string, events:object[]}[],
  *   jummahPrayers: object[],
  *   verse: object|null,
  *   hadith: object|null,
@@ -294,22 +306,11 @@ export function normalizePayload(payload) {
     },
   };
 
-  const rawFrames = Array.isArray(payload?.frames) ? payload.frames : [];
-
-  // Stable slideshow order: by slot, then priority desc, preserving input
-  // order as the tiebreaker.
-  const SLOT_RANK = { PRIMARY: 0, SIDEBAR: 1, OVERLAY: 2, TICKER: 3 };
-  const frames = rawFrames
-    .map((f, i) => ({ ...f, _i: i }))
-    .sort((a, b) => {
-      const sa = SLOT_RANK[a.slot] ?? 9;
-      const sb = SLOT_RANK[b.slot] ?? 9;
-      if (sa !== sb) return sa - sb;
-      const pa = a.priority ?? 0;
-      const pb = b.priority ?? 0;
-      if (pa !== pb) return pb - pa;
-      return a._i - b._i;
-    });
+  // Payload order is slideshow order. The board does not re-sort: composing the
+  // sequence is the backend's job, and a client-side sort could only ever fight
+  // it. The frames previously carried `slot` and `priority` for a reordering
+  // that was never built; both are gone from the contract.
+  const frames = Array.isArray(payload?.frames) ? payload.frames : [];
 
   const tz = deviceConfig.location?.timezone;
   const ft = (f) => String(f?.frameType || '').toLowerCase();
@@ -325,23 +326,8 @@ export function normalizePayload(payload) {
       durationMs: (f.durationInSeconds ?? 10) * 1000,
     }));
 
-  const eventListFrame = frames.find((f) => ft(f) === 'event_list');
-  const dailyFrame = frames.find((f) => ft(f) === 'daily_schedule');
+  const agendaFrame = frames.find((f) => ft(f) === 'agenda');
   const jummahFrame = frames.find((f) => ft(f) === 'jummah');
-
-  // Unified event pool drawn ONLY from the /payload frames. event_list is the
-  // week feed; daily_schedule is today's, and is folded in so an all-day event
-  // that the week frame happens to miss still reaches the pool.
-  const eventSeen = new Set();
-  const eventPool = [
-    ...(eventListFrame?.frameConfig?.events ?? []),
-    ...(dailyFrame?.frameConfig?.events ?? []),
-  ].filter((e) => {
-    const k = `${e?.name}|${e?.startTime}|${e?.endTime}`;
-    if (eventSeen.has(k)) return false;
-    eventSeen.add(k);
-    return true;
-  });
   const verseFrame = frames.find(
     (f) => ft(f) === 'islamic_quote' && f.frameConfig?.kind === 'VERSE'
   );
@@ -349,40 +335,25 @@ export function normalizePayload(payload) {
     (f) => ft(f) === 'islamic_quote' && f.frameConfig?.kind === 'HADITH'
   );
 
-  // The agenda frame buckets these by calendar day, so the day key is resolved
-  // here — once, in the board's zone — rather than re-derived per render.
-  const weekEvents = eventPool.map((e) => {
-    const epoch = e.startTime ? new Date(e.startTime).getTime() : NaN;
-    return {
-      name: e.name || '',
-      room: e.location || '',
-      startTime: e.startTime,
-      endTime: e.endTime,
-      allDay: Boolean(e.allDay),
-      dateKey: isoDateKey(e.startTime, tz),
-      epoch: Number.isFinite(epoch) ? epoch : 0,
-      hm: isoToHM(e.startTime, tz),
-    };
-  });
-
-  // Today's events. The backend scopes its daily_schedule frame to the device's
-  // own day, so prefer it; fall back to filtering the pool ourselves when the
-  // frame is absent (it is omitted entirely on a day with nothing on).
-  const todayKey = isoDateKey(new Date(), tz);
-  const todaySource = dailyFrame
-    ? (dailyFrame.frameConfig?.events ?? [])
-    : eventPool.filter((e) => e.startTime && isoDateKey(e.startTime, tz) === todayKey);
-  const todayEvents = todaySource
-    .slice()
-    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
-    .map((e, i) => ({
-      id: i + 1,
-      name: e.name || '',
-      room: e.location || '',
-      start: isoToHM(e.startTime, tz),
-      end: isoToHM(e.endTime, tz),
-      allDay: Boolean(e.allDay),
-    }));
+  // The backend already bucketed the window by calendar day in the board's own
+  // zone, so this only converts each event into the shape the slide renders.
+  // Nothing here depends on the current time — buildAgendaDays() and
+  // buildTodayEvents() add everything that does, so they can be recomputed at
+  // midnight without refetching.
+  const agendaDays = (agendaFrame?.frameConfig?.days ?? []).map((bucket) => ({
+    dateKey: bucket?.date ?? '',
+    events: (bucket?.events ?? []).map((e) => {
+      const epoch = e?.startTime ? new Date(e.startTime).getTime() : NaN;
+      return {
+        name: e?.name || '',
+        room: e?.location || '',
+        allDay: Boolean(e?.allDay),
+        epoch: Number.isFinite(epoch) ? epoch : 0,
+        start: isoToHM(e?.startTime, tz),
+        end: isoToHM(e?.endTime, tz),
+      };
+    }),
+  }));
 
   const jummahPrayers = (jummahFrame?.frameConfig?.prayers ?? []).map(
     normalizeJummah
@@ -393,8 +364,7 @@ export function normalizePayload(payload) {
     frames,
     weather: normalizeWeather(payload?.weather, deviceConfig.location?.city),
     posters,
-    weekEvents,
-    todayEvents,
+    agendaDays,
     jummahPrayers,
     verse: normalizeQuote(verseFrame?.frameConfig),
     hadith: normalizeQuote(hadithFrame?.frameConfig),
@@ -405,68 +375,114 @@ export function normalizePayload(payload) {
 }
 
 /**
- * Seven consecutive day buckets starting at `now`, read in the board's zone.
+ * Whole days from `fromKey` to `toKey`, both "YYYY-MM-DD".
  *
- * Days are generated from the calendar rather than from the events, so an empty
- * day still knows its own date. The previous buildWeekColumns() derived each
- * column's date number from that column's first event, which left quiet days
- * with a blank number — tolerable on a Mon–Sun grid where most days had
- * something, unacceptable on a rolling window where most days often don't.
+ * Compared at UTC midnight rather than by adding 86_400_000ms: across a DST
+ * transition the millisecond arithmetic skips or repeats a local calendar date,
+ * and these boards run in America/Toronto.
+ */
+function dayOffset(fromKey, toKey) {
+  const [y1, m1, d1] = fromKey.split('-').map(Number);
+  const [y2, m2, d2] = toKey.split('-').map(Number);
+  return Math.round(
+    (Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 86_400_000
+  );
+}
+
+/**
+ * Add the display layer to the backend's day buckets: labels, and which bucket
+ * is today.
  *
- * Dates advance through Date.UTC(y, m, d + i) instead of adding 86_400_000ms:
- * across a DST transition the millisecond arithmetic skips or repeats a local
- * calendar date, and these boards run in America/Toronto. Building each day at
- * UTC midnight also makes `toISOString().slice(0, 10)` an exact day key.
+ * The backend fixes the *content* of the window and deliberately ships no
+ * isToday marker, because a board can run for days on one payload and any such
+ * marker is wrong after the first midnight. So "today" is resolved here against
+ * the board's clock, and buckets whose date has already passed are dropped —
+ * a payload that outlived its own first day degrades to a shorter agenda
+ * instead of labelling yesterday as today.
  *
- * @param {object[]} weekEvents normalized events (carry dateKey/epoch/hm)
+ * A bucket for today is synthesized when the payload has none, so days[0] is
+ * always today; AgendaSlide's "next day with anything" search relies on that.
+ *
+ * @param {object[]} agendaDays normalized buckets from normalizePayload()
  * @param {Date} now            the board's clock (honours the debug offset)
  * @param {string} [timezone]   IANA zone; falls back to the runtime's own
  * @returns {{key:string, weekday:string, date:string, month:string,
  *            offset:number, isToday:boolean, isTomorrow:boolean,
  *            events:{t:string,n:string,r:string,allDay:boolean}[]}[]}
  */
-export function buildAgendaDays(weekEvents, now, timezone) {
-  const [y, m, d] = isoDateKey(now, timezone).split('-').map(Number);
+export function buildAgendaDays(agendaDays, now, timezone) {
+  const todayKey = isoDateKey(now, timezone);
 
-  // All-day entries sort ahead of timed ones: they frame the whole day rather
-  // than occupying a slot in it, so a 9am talk listed above "Eid Weekend" reads
-  // as though the weekend starts at 9.
-  const buckets = new Map();
-  for (const ev of [...(weekEvents || [])].sort(
-    (a, b) => (b.allDay ? 1 : 0) - (a.allDay ? 1 : 0) || a.epoch - b.epoch
-  )) {
-    if (!ev?.dateKey) continue;
-    if (!buckets.has(ev.dateKey)) buckets.set(ev.dateKey, []);
-    buckets.get(ev.dateKey).push({
-      t: ev.allDay ? 'All Day' : formatTo12(ev.hm),
-      n: ev.name,
-      r: ev.room,
-      allDay: ev.allDay,
-    });
+  const upcoming = (agendaDays || []).filter(
+    (d) => d?.dateKey && d.dateKey >= todayKey
+  );
+  if (!upcoming.some((d) => d.dateKey === todayKey)) {
+    upcoming.unshift({ dateKey: todayKey, events: [] });
   }
 
   const label = new Intl.DateTimeFormat('en-US', {
     weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC',
   });
 
-  const out = [];
-  for (let i = 0; i < AGENDA_DAYS; i++) {
-    const at = new Date(Date.UTC(y, m - 1, d + i));
-    const parts = label.formatToParts(at);
-    const part = (t) => parts.find((p) => p.type === t)?.value ?? '';
-    const key = at.toISOString().slice(0, 10);
-    out.push({
-      key,
-      weekday: part('weekday'),
-      date: part('day'),
-      month: part('month'),
-      offset: i,
-      isToday: i === 0,
-      isTomorrow: i === 1,
-      events: buckets.get(key) ?? [],
+  return upcoming
+    .sort((a, b) => a.dateKey.localeCompare(b.dateKey))
+    .map((day) => {
+      const [y, m, d] = day.dateKey.split('-').map(Number);
+      const parts = label.formatToParts(new Date(Date.UTC(y, m - 1, d)));
+      const part = (t) => parts.find((p) => p.type === t)?.value ?? '';
+      const offset = dayOffset(todayKey, day.dateKey);
+
+      // All-day entries sort ahead of timed ones: they frame the whole day
+      // rather than occupying a slot in it, so a 9am talk listed above "Eid
+      // Weekend" reads as though the weekend starts at 9.
+      const events = [...(day.events || [])]
+        .sort((a, b) => (b.allDay ? 1 : 0) - (a.allDay ? 1 : 0) || a.epoch - b.epoch)
+        .map((e) => ({
+          t: e.allDay ? 'All Day' : formatTo12(e.start),
+          n: e.name,
+          r: e.room,
+          allDay: e.allDay,
+        }));
+
+      return {
+        key: day.dateKey,
+        weekday: part('weekday'),
+        date: part('day'),
+        month: part('month'),
+        offset,
+        isToday: offset === 0,
+        isTomorrow: offset === 1,
+        events,
+      };
     });
-  }
-  return out;
+}
+
+/**
+ * Today's events in the shape AgendaSlide's hero card consumes.
+ *
+ * Split out of normalizePayload() because it depends on the current date: the
+ * old version resolved "today" once, when the payload arrived, and a board that
+ * ran past midnight kept showing the previous day's schedule until the next
+ * fetch. Recomputed alongside buildAgendaDays() on each day rollover instead.
+ *
+ * @param {object[]} agendaDays normalized buckets from normalizePayload()
+ * @param {Date} now            the board's clock (honours the debug offset)
+ * @param {string} [timezone]   IANA zone; falls back to the runtime's own
+ */
+export function buildTodayEvents(agendaDays, now, timezone) {
+  const todayKey = isoDateKey(now, timezone);
+  const today = (agendaDays || []).find((d) => d?.dateKey === todayKey);
+
+  return [...(today?.events || [])]
+    .sort((a, b) => a.epoch - b.epoch)
+    .map((e, i) => ({
+      id: i + 1,
+      name: e.name,
+      room: e.room,
+      start: e.start,
+      end: e.end,
+      allDay: e.allDay,
+    }));
 }
 
 /** Build the design's hijri date block from an Aladhan hijri object. */

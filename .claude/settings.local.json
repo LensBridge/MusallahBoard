@@ -59,7 +59,10 @@
       "Bash(node --check js/app.js)",
       "WebFetch(domain:api.anthropic.com)",
       "Bash(curl -s -o \"C:/Code/MusallahBoard/frontend/.design_tmp/api-docs.json\" -w \"%{http_code}\" --max-time 4 \"http://localhost:8080/v3/api-docs\")",
-      "PowerShell(npm view *)"
+      "PowerShell(npm view *)",
+      "Bash(taskkill //F //FI \"WINDOWTITLE eq npm*\")",
+      "Bash(npx --no-install kill-port 3000)",
+      "Bash(netstat -ano)"
     ]
   }
 }
