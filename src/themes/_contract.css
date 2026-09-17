@@ -41,13 +41,14 @@
 
    ---- Structural hooks ---------------------------------------------------
 
-   The MSA mark ships in two colourways and exactly one may be visible. Rather
-   than keying that off a theme name in styles.css, each theme declares which
-   plate it wants. A light theme keeps the defaults below; a dark theme flips
-   both. See `.brand-mark` in styles.css for the rules that read these.
+   The MusallahBoard mark ships in two colourways and exactly one may be
+   visible. Rather than keying that off a theme name in styles.css, each theme
+   declares which plate it wants. A light theme keeps the defaults below; a dark
+   theme flips both. See `.brand-mark` in styles.css for the rules that read
+   these.
    ========================================================================= */
 
 :root {
-  --logo-dark-display: block;   /* navy mark — for light surfaces */
-  --logo-light-display: none;   /* white mark — for dark surfaces */
+  --logo-dark-display: block;   /* ink board — for light surfaces */
+  --logo-light-display: none;   /* cream board — for dark surfaces */
 }

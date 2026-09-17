@@ -88,6 +88,17 @@ registerFrameBuilder('poster', (def, ctx) => {
   };
 });
 
+/**
+ * A verse or hadith slide.
+ *
+ * Duration is per-quote now: an admin can time an individual quote (5–120s)
+ * and a number on the wire is honoured as-is, exactly as for agenda, poster and
+ * socials frames. `durationInSeconds: null` is the "auto" path — a quote nobody
+ * timed — and the 18 below is what "auto" means for a quote. It is longer than
+ * the 12 the other content slides get because this is the one slide a passer-by
+ * is expected to *read*: Arabic, transliteration and translation stacked, in
+ * that order, at kiosk distance. Tunable, not an invariant.
+ */
 registerFrameBuilder('islamic_quote', (def) => {
   const c = def?.frameConfig || {};
   const isVerse = c.kind === 'VERSE';

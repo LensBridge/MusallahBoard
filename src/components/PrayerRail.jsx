@@ -14,7 +14,7 @@ export default function PrayerRail({ data, now, showJummah, brothers }) {
         <div className="brand-mark"><BrandGlyph /></div>
         <div className="brand-text">
           {/* <div className="brand-eyebrow">UTM · MSA</div> */}
-          <div className="brand-name">MUSALLAHBOARD</div>
+          <div className="brand-name"><b>MUSALLAH</b>BOARD</div>
         </div>
       </div>
 

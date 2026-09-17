@@ -34,11 +34,18 @@
 //   frameConfig: <discriminated on .type>
 // }
 //   Array order is display order — the backend composes the sequence.
+//   `durationInSeconds` means the same thing for every frame type, quotes
+//   included: a number is the dwell time in seconds and is honoured as sent,
+//   null means "auto" and leaves the dwell time to the frame's builder (see
+//   frames/builders.jsx). No frame type is exempt from either case.
 //   PosterFrameConfig        { type, posterUrl, title, signupUrl }
 //   AgendaFrameConfig        { type, heading, days: DayBucket[] }
 //   JummahFrameConfig        { type, prayers: JummahSlot[] }
 //   IslamicQuoteFrameConfig  { type, kind: VERSE|HADITH, arabic,
 //                              transliteration, translation, reference }
+//     The quote's own duration lives on the frame, not in this config: an
+//     admin may time a single quote (5–120s) and the board honours it; an
+//     untimed quote arrives as null and gets the builder's auto dwell time.
 //   NextPrayerFrameConfig    { type }  — marker only; countdown computed client-side
 //   PromotableSocialMediaFrameConfig
 //                            { type: "socials", socialType, url, headerText,

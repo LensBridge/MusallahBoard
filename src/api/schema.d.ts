@@ -1492,6 +1492,7 @@ export interface components {
             url: string;
         };
         CreateUserRequest: {
+            /** Format: email */
             email: string;
             firstName: string;
             lastName: string;
@@ -1566,6 +1567,8 @@ export interface components {
         };
         IslamicQuote: {
             arabic?: string;
+            /** Format: int32 */
+            durationSeconds?: number;
             /** Format: uuid */
             id?: string;
             /** @enum {string} */
@@ -1656,6 +1659,7 @@ export interface components {
             timezone?: string;
         };
         LoginRequest: {
+            /** Format: email */
             email: string;
             password: string;
         };
@@ -1855,6 +1859,8 @@ export interface components {
         };
         QuoteEntry: {
             arabic?: string;
+            /** Format: int32 */
+            durationSeconds?: number;
             /** @enum {string} */
             kind?: "VERSE" | "HADITH";
             reference?: string;
@@ -1871,6 +1877,7 @@ export interface components {
             permissions?: string[];
         };
         SignupRequest: {
+            /** Format: email */
             email: string;
             firstName: string;
             lastName: string;

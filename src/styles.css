@@ -156,23 +156,19 @@ img { display: block; max-width: 100%; }
   position: relative;
   flex: none;
 }
-.brand-mark svg, .brand-mark img.brand-img {
+.brand-mark svg.brand-img {
   width: 100%; height: 100%;
   object-fit: contain;
-  display: block;
 }
-/* Exactly one logo variant is visible per theme — the navy mark on light
-   grounds, the white one on dark. Which is which is the theme's call, not
-   this stylesheet's: it declares the pair of display hooks (see
-   themes/_contract.css) and these rules just obey, so a theme added later
-   gets the right mark without anyone touching this file. Fallbacks cover a
-   theme that forgets to set them.
-
-   Both rules must out-specify `.brand-mark img.brand-img { display: block }`
-   above (0,2,1) or the variants would render stacked — hence the
-   redundant-looking `.brand-mark img` prefix. */
-.brand-mark img.brand-img-dark  { display: var(--logo-dark-display, block); }
-.brand-mark img.brand-img-light { display: var(--logo-light-display, none); }
+/* Exactly one colourway is visible per theme — the ink board on light grounds,
+   the cream board on dark. Which is which is the theme's call, not this
+   stylesheet's: it declares the pair of display hooks (see themes/_contract.css)
+   and these rules just obey, so a theme added later gets the right mark without
+   anyone touching this file. Fallbacks cover a theme that forgets to set them.
+   The visible plate always matches one of these two rules, so `<svg>`'s inline
+   default never shows through. */
+.brand-mark svg.brand-img-dark  { display: var(--logo-dark-display, block); }
+.brand-mark svg.brand-img-light { display: var(--logo-light-display, none); }
 .rail-brand .brand-mark { width: 56px; height: 56px; }
 .brand-text { line-height: 1; }
 .brand-eyebrow {
@@ -187,10 +183,13 @@ img { display: block; max-width: 100%; }
   font-family: var(--f-display);
   font-size: 22px;
   letter-spacing: 0.18em;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--hero);
   white-space: nowrap;
 }
+/* MUSALLAH carries the weight, BOARD rides light behind it — the shift is the
+   only separator in the wordmark; never a space or hyphen. */
+.brand-name b { font-weight: 600; }
 .brand-eyebrow { white-space: nowrap; }
 
 .date-strip {

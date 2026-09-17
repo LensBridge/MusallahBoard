@@ -62,11 +62,22 @@ export function weatherIcon(condition) {
   return <Icon.Cloud />;
 }
 
+// The MusallahBoard mark: a board frame — the minbar arch flattened — standing
+// on the ember platform bar. Two colourways ship inline so each stays a crisp
+// vector at any rail size and the frame colour is exact per ground; the ember
+// bar is a brand constant and never themes. Exactly one is shown, picked by the
+// theme via the --logo-*-display hooks (see themes/_contract.css).
 export function BrandGlyph() {
   return (
     <>
-      <img src="/images/msa_logo.png" alt="UTM MSA" className="brand-img brand-img-dark" />
-      <img src="/images/msa_logo_white.png" alt="" aria-hidden="true" className="brand-img brand-img-light" />
+      <svg viewBox="0 0 100 100" className="brand-img brand-img-dark" role="img" aria-label="MusallahBoard">
+        <rect x="22" y="30" width="56" height="48" rx="9" fill="none" stroke="#3A211A" strokeWidth="7.5" strokeLinejoin="round" />
+        <rect x="16" y="84" width="68" height="8" rx="4" fill="#D94E20" />
+      </svg>
+      <svg viewBox="0 0 100 100" className="brand-img brand-img-light" aria-hidden="true">
+        <rect x="22" y="30" width="56" height="48" rx="9" fill="none" stroke="#EDE3D8" strokeWidth="7.5" strokeLinejoin="round" />
+        <rect x="16" y="84" width="68" height="8" rx="4" fill="#D94E20" />
+      </svg>
     </>
   );
 }
