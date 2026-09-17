@@ -12,3 +12,11 @@ new/*
 .dev.vars*
 !.dev.vars.example
 !.env.example
+
+# design-sync: staged converter scripts, build output, and machine state.
+# The durable inputs (.design-sync/config.json, NOTES.md, conventions.md) are committed.
+.ds-sync/
+ds-bundle/
+.design-sync/*
+.design-sync/learnings/
+.design-sync/node_modules
