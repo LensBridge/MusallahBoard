@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   getBoardPayload, getPrayerData, getLocalStatus, connectLocalEvents,
-  isNoContentError, statusContent, contentCreatedAt, isValidDeviceId,
+  isNoContentError, isValidDeviceId,
 } from './api/index.js';
 import { prefetchPayloadImages } from './utils/prefetch.js';
 import {
@@ -119,9 +119,9 @@ function WaitingForContent({ status }) {
  */
 function StaleNote({ status }) {
   if (!(status?.staleDays > 0)) return null;
-  const b = statusContent(status);
+  const b = status?.content;
   let when = b?.lastDay ?? '';
-  const createdAt = contentCreatedAt(b);
+  const createdAt = b?.createdAt;
   const at = createdAt ? new Date(createdAt) : null;
   if (at && !Number.isNaN(at.getTime())) {
     try {
@@ -274,7 +274,7 @@ export default function App() {
       window.location.reload();
       return;
     }
-    if (fromPoll && noContent && statusContent(s)) refreshRef.current();
+    if (fromPoll && noContent && s?.content) refreshRef.current();
   };
   const applyLocalStatusRef = useRef(applyLocalStatus);
   useEffect(() => { applyLocalStatusRef.current = applyLocalStatus; });
@@ -366,7 +366,7 @@ export default function App() {
       deviceId: deviceId ?? null,
       paired: isValidDeviceId(deviceId),
       appVersion: APP_VERSION,
-      content: statusContent(localStatus),
+      content: localStatus?.content ?? null,
       noContent,
       slideKey: slides[slideIdx]?.key ?? null,
       slideIndex: slides.length ? slideIdx : null,

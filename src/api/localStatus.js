@@ -17,11 +17,6 @@
  *     sync: { enabled, lastSuccessAt, lastAttemptAt,
  *             lastError },
  *     update: { active } }
- *
- * v1 agents answered with `bundle` (and `generatedAt`)
- * where v2 has `content` (and `createdAt`); the helpers
- * below read either, so a board whose agent is one step
- * behind its app still shows its staleness note.
  * =====================================================
  */
 
@@ -33,8 +28,7 @@ const TIMEOUT_MS = 5000;
  * @property {string} lastDay
  * @property {string} [timezone]
  * @property {number} [sequence]
- * @property {string} [createdAt]    v2
- * @property {string} [generatedAt]  v1
+ * @property {string} [createdAt]
  * @property {string} [source]       sync | usb | upload | cli
  * @property {string} [installedAt]
  */
@@ -45,8 +39,7 @@ const TIMEOUT_MS = 5000;
  * @property {string} [agentVersion]
  * @property {string} [deviceId]
  * @property {{version:string}|null} [app]
- * @property {LocalContent|null} [content]  v2
- * @property {LocalContent|null} [bundle]   v1
+ * @property {LocalContent|null} [content]
  * @property {string} [today]
  * @property {string|null} [servingDay]
  * @property {number|null} [daysRemaining]
@@ -59,7 +52,7 @@ const TIMEOUT_MS = 5000;
 /**
  * Fetch the agent's status. Never throws: the status feeds the device id, the
  * waiting screen, the staleness note and the diagnostics panel, and a board
- * must keep showing its payload even if the agent is too old to answer this.
+ * must keep showing its payload even if the agent cannot answer right now.
  * @returns {Promise<LocalStatus|null>}
  */
 export async function getLocalStatus() {
@@ -79,24 +72,6 @@ export async function getLocalStatus() {
   } finally {
     clearTimeout(timeoutId);
   }
-}
-
-/**
- * The installed content, whichever agent generation described it.
- * @param {LocalStatus|null|undefined} status
- * @returns {LocalContent|null}
- */
-export function statusContent(status) {
-  return status?.content ?? status?.bundle ?? null;
-}
-
-/**
- * When the installed content was made: v2 `createdAt`, v1 `generatedAt`.
- * @param {LocalContent|null|undefined} content
- * @returns {string|null}
- */
-export function contentCreatedAt(content) {
-  return content?.createdAt ?? content?.generatedAt ?? null;
 }
 
 const UUID_RE =

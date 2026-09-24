@@ -1,7 +1,6 @@
 // Operator diagnostics panel. Opened by Alt+Shift+F or `window.MusallahBoard.openSetup()`. Sibling to DebugMenu.jsx (Alt+Shift+D)
 import { useState, useEffect } from 'react';
 import { getHideCursor, setHideCursor as saveHideCursor } from '../utils/cookies.js';
-import { statusContent } from '../api/index.js';
 import { APP_VERSION } from '../version.js';
 
 function Row({ label, value }) {
@@ -16,7 +15,7 @@ function Row({ label, value }) {
 /** Rows from the agent's /api/local/status (may be null). */
 function LocalRows({ local }) {
   if (!local) return <Row label="Agent" value="status unavailable" />;
-  const c = statusContent(local);
+  const c = local?.content;
   const sync = local.sync;
   let remaining = null;
   if (c) {
