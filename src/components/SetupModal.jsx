@@ -1,10 +1,8 @@
 // Operator diagnostics panel. Opened by Alt+Shift+F or `window.MusallahBoard.openSetup()`. Sibling to DebugMenu.jsx (Alt+Shift+D)
 import { useState, useEffect } from 'react';
-import {
-  saveSetupConfig, getSetupConfig, isValidDeviceId,
-} from '../utils/cookies.js';
-import { getApiConfig, statusContent } from '../api/index.js';
-import { RUNTIME, APP_VERSION } from '../runtime.js';
+import { getHideCursor, setHideCursor as saveHideCursor } from '../utils/cookies.js';
+import { statusContent } from '../api/index.js';
+import { APP_VERSION } from '../version.js';
 
 function Row({ label, value }) {
   return (
@@ -15,7 +13,7 @@ function Row({ label, value }) {
   );
 }
 
-/** Local-runtime rows, from the agent's /api/local/status (may be null). */
+/** Rows from the agent's /api/local/status (may be null). */
 function LocalRows({ local }) {
   if (!local) return <Row label="Agent" value="status unavailable" />;
   const c = statusContent(local);
@@ -53,36 +51,25 @@ function LocalRows({ local }) {
   );
 }
 
-export default function SetupModal({ onComplete, onCancel, status, localStatus }) {
-  const existing = getSetupConfig();
-  const [deviceId, setDeviceId] = useState(existing.deviceId || '');
-  const [hideCursor, setHideCursor] = useState(existing.hideCursor);
-
-  const trimmed = deviceId.trim();
-  const valid = isValidDeviceId(trimmed);
-  const idDirty = trimmed !== (existing.deviceId || '');
-  const cursorDirty = hideCursor !== existing.hideCursor;
-  const canApply = (idDirty ? valid : true) && (idDirty || cursorDirty);
+export default function SetupModal({ onClose, status, localStatus }) {
+  const savedHideCursor = getHideCursor();
+  const [hideCursor, setHideCursor] = useState(savedHideCursor);
+  const canApply = hideCursor !== savedHideCursor;
 
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'Escape') { e.preventDefault(); onCancel?.(); }
+      if (e.key === 'Escape') { e.preventDefault(); onClose?.(); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onCancel]);
+  }, [onClose]);
 
   function submit(e) {
     e.preventDefault();
     if (!canApply) return;
-    saveSetupConfig({ deviceId: idDirty && valid ? trimmed : null, hideCursor });
-    onComplete?.(idDirty && valid ? trimmed : existing.deviceId);
+    saveHideCursor(hideCursor);
+    onClose?.();
   }
-
-  const backend = getApiConfig().baseUrl || `${window.location.origin} (same-origin)`;
-  const local = RUNTIME === 'local';
-  // Local: the agent's word on identity, not the cookie (which it never sets).
-  const device = local ? localStatus?.deviceId : existing.deviceId;
 
   return (
     <div className="setup-modal">
@@ -91,36 +78,14 @@ export default function SetupModal({ onComplete, onCancel, status, localStatus }
         <div className="sub">UTM MSA · MusallahBoard kiosk</div>
 
         <div className="setup-diag">
-          <Row label="Device" value={device || (local ? 'unknown' : 'not enrolled')} />
-          <Row label="Runtime" value={RUNTIME} />
+          <Row label="Device" value={localStatus?.deviceId || 'unknown'} />
           <Row label="App version" value={APP_VERSION} />
-          <Row label={local ? 'Served by' : 'Backend'} value={backend} />
-          {local && <LocalRows local={localStatus} />}
+          <Row label="Served by" value={window.location.origin} />
+          <LocalRows local={localStatus} />
           <Row label="Last payload" value={status?.lastPayloadAt} />
           <Row label="On screen" value={status?.slideKey} />
           {status?.error && <Row label="Last error" value={status.error} />}
         </div>
-
-        {/* The override writes the cookie, which only the hosted site reads. A
-            local board is whoever its agent says it is. */}
-        {!local && <div className="setup-field">
-          <label htmlFor="deviceId">Device ID override</label>
-          <input
-            id="deviceId"
-            type="text"
-            value={deviceId}
-            onChange={(e) => setDeviceId(e.target.value)}
-            placeholder="00000000-0000-0000-0000-000000000000"
-            autoFocus
-          />
-          {idDirty && trimmed && !valid && (
-            <div className="setup-hint setup-hint-bad">Must be a UUID.</div>
-          )}
-          <div className="setup-hint">
-            Normally set by the device agent. Change this only to re-point a
-            board by hand.
-          </div>
-        </div>}
 
         <div className="setup-row">
           <input
@@ -133,7 +98,7 @@ export default function SetupModal({ onComplete, onCancel, status, localStatus }
         </div>
 
         <div className="setup-actions">
-          <button type="button" className="setup-cancel" onClick={() => onCancel?.()}>
+          <button type="button" className="setup-cancel" onClick={() => onClose?.()}>
             Close
           </button>
           <button type="submit" disabled={!canApply}>Apply</button>

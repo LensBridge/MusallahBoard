@@ -1,8 +1,9 @@
 name: CI
 
-# src/api is generated from LensBridgeBackend/openapi.yaml. The kiosk reads one
-# endpoint, but it runs unattended on a wall -- a silently changed payload shape
-# shows up as a blank board, so the contract is checked here instead.
+# src/api/schema.d.ts is generated from LensBridgeBackend/openapi.yaml. The kiosk
+# reads one payload shape (MusallahBoardPayload, served by its agent), but it
+# runs unattended on a wall -- a silently changed payload shape shows up as a
+# blank board, so the contract is checked here instead.
 
 on:
   push:

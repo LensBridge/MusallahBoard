@@ -1,10 +1,11 @@
 // MusallahBoard — root orchestrator.
-// Setup gate → fetch payload (weather rides along) + prayer → compose the
-// design data shape → drive the slideshow built from the frame-builder registry.
+// Served by the device agent at 127.0.0.1:8080: fetch the payload (weather
+// rides along) + prayer → compose the design data shape → drive the slideshow
+// built from the frame-builder registry.
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
-  getBoardPayload, getPrayerData, connectRefreshSocket, getLocalStatus,
-  connectLocalEvents, isNoContentError, statusContent, contentCreatedAt,
+  getBoardPayload, getPrayerData, getLocalStatus, connectLocalEvents,
+  isNoContentError, statusContent, contentCreatedAt, isValidDeviceId,
 } from './api/index.js';
 import { prefetchPayloadImages } from './utils/prefetch.js';
 import {
@@ -14,11 +15,8 @@ import { classifyPrayers } from './utils/prayers.js';
 import { buildSlideshow } from './frames/registry.js';
 import { resolveTheme, DEFAULT_THEME } from './themes/registry.js';
 import './frames/builders.jsx'; // registers default builders
-import {
-  getSetupConfig, applyCursorPreference, isValidDeviceId,
-  setDeviceId as saveDeviceId,
-} from './utils/cookies.js';
-import { RUNTIME, APP_VERSION } from './runtime.js';
+import { applyCursorPreference } from './utils/cookies.js';
+import { APP_VERSION } from './version.js';
 import SetupModal from './components/SetupModal.jsx';
 import DebugMenu from './components/DebugMenu.jsx';
 import TopBar from './components/TopBar.jsx';
@@ -27,11 +25,6 @@ import Ticker from './components/Ticker.jsx';
 
 const PAYLOAD_REFRESH_MS = 10 * 60 * 1000;
 const LOCAL_STATUS_REFRESH_MS = 60 * 1000;
-
-// 'local' when the device agent serves this page from the board's own disk,
-// 'hosted' on the Cloudflare site. Fixed for the life of the page; see
-// runtime.js and agent/docs/architecture.md, section 15.
-const LOCAL = RUNTIME === 'local';
 
 // Presentation overrides driven by the debug drawer (Alt+Shift+D). `null` on a
 // tri-state field means "don't override, use the board's own logic". Held in
@@ -74,7 +67,7 @@ function Status({ title, detail, error, hint, large = false }) {
 const SERVICE_PORT_URL = 'http://10.77.0.1/';
 
 /**
- * Local runtime, agent up, but no content package installed yet. What an
+ * Agent up, but no content package installed yet. What an
  * operator can do about it depends on whether the agent is trying to sync:
  *
  *   - sync on and no error yet: it is downloading; nothing to do but wait.
@@ -151,27 +144,22 @@ function gregorian(now, timezone) {
 }
 
 export default function App() {
-  // Hosted: identity is settled by resolveDeviceId() in main.jsx before the
-  // first render, so the cookie is already authoritative here: no
-  // reconciliation effect, and no unpaired flash on a board the agent
-  // provisioned. Local: the agent says who we are in /api/local/status, and
-  // until that answers the id is simply unknown (never "unpaired").
-  const [deviceId, setDeviceIdState] = useState(() =>
-    LOCAL ? null : getSetupConfig().deviceId
-  );
+  // The agent says who we are in /api/local/status. Until that answers the id
+  // is simply unknown; it is for diagnostics only, since the agent serves just
+  // its own board and the payload is fetched without it.
+  const [deviceId, setDeviceId] = useState(null);
   const [payload, setPayload] = useState(null);
   const [prayerInfo, setPrayerInfo] = useState(null); // { prayers, hijri }
   const [error, setError] = useState(null);
-  // Local runtime: the last payload fetch said the agent has no content yet.
+  // The last payload fetch said the agent has no content yet.
   const [noContent, setNoContent] = useState(false);
   const [lastPayloadAt, setLastPayloadAt] = useState(null);
-  // Local runtime only: the agent's /api/local/status, refreshed with the
-  // payload and every minute (see applyLocalStatus below).
+  // The agent's /api/local/status, refreshed with the payload and every
+  // minute (see applyLocalStatus below).
   const [localStatus, setLocalStatus] = useState(null);
   const [realNow, setRealNow] = useState(new Date());
   const [slideIdx, setSlideIdx] = useState(0);
-  // Setup modal force-opened by the operator hotkey. It is a diagnostics
-  // panel now — never a gate. An unpaired board waits, it does not prompt.
+  // Diagnostics panel, opened by the operator hotkey. Never a gate.
   const [setupOpen, setSetupOpen] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
   const [debug, setDebug] = useState(NO_DEBUG);
@@ -185,11 +173,6 @@ export default function App() {
     [realNow, debug.timeOffsetMs]
   );
 
-  // Only the hosted site can be unpaired. A local board's kiosk points at the
-  // agent only once it is enrolled (architecture doc, section 14), and the id
-  // arrives with the status; a missing cookie there means nothing.
-  const needsSetup = !LOCAL && !isValidDeviceId(deviceId);
-
   // Force the cursor visible while either operator panel is open, otherwise
   // an operator on a touchscreen-less board can't aim at its own fields. Both
   // panels share one effect: as two, closing either would re-hide the cursor
@@ -197,20 +180,7 @@ export default function App() {
   useEffect(() => {
     if (setupOpen || debugOpen) document.body.classList.remove('cursor-hidden');
     else applyCursorPreference();
-  }, [needsSetup, setupOpen, debugOpen]);
-
-  // While unpaired, watch for the cookie appearing. The agent's normal path is
-  // to rewrite /etc/musallahboard/kiosk-url and let the systemd .path watcher
-  // bounce the kiosk, but it can also provision in-place over CDP — this is
-  // what makes that land without a reload.
-  useEffect(() => {
-    if (!needsSetup) return;
-    const id = setInterval(() => {
-      const current = getSetupConfig().deviceId;
-      if (isValidDeviceId(current)) setDeviceIdState(current);
-    }, 2000);
-    return () => clearInterval(id);
-  }, [needsSetup]);
+  }, [setupOpen, debugOpen]);
 
   // Operator hotkeys: Alt+Shift+F opens setup, Alt+Shift+D the debug drawer.
   // Matched on e.code too because Alt+Shift on some layouts yields a dead key
@@ -236,24 +206,15 @@ export default function App() {
     return () => clearInterval(id);
   }, []);
 
-  // Reads identity from the cookie at call time rather than from the closure:
-  // the agent provisions and refreshes in a single evaluated expression, so
-  // setDeviceId() and refresh() run in the same tick — before React has
-  // re-rendered with the new id. Closing over `deviceId` would refetch with
-  // the old one (or refuse as unpaired) on exactly the call that matters.
-  //
-  // Local: no id is needed at all. The agent serves only its own board, so the
-  // payload is fetched without one, and the id for diagnostics comes with the
-  // status.
+  // No device id is needed: the agent serves only its own board. The result
+  // is what window.MusallahBoard.refresh() resolves to for the agent.
   const loadPayload = useCallback(async () => {
-    const id = LOCAL ? null : getSetupConfig().deviceId;
-    if (!LOCAL && !isValidDeviceId(id)) return { ok: false, reason: 'unpaired' };
     // Alongside the payload, not after it: when the agent has no content the
     // payload 503s, and that is exactly when the waiting screen and the
     // diagnostics need the status.
-    if (LOCAL) getLocalStatus().then((s) => applyLocalStatusRef.current(s));
+    getLocalStatus().then((s) => applyLocalStatusRef.current(s));
     try {
-      const p = await getBoardPayload(id, { local: LOCAL });
+      const p = await getBoardPayload();
       prefetchPayloadImages(p);
       setPayload(p);
       setError(null);
@@ -266,19 +227,17 @@ export default function App() {
       } catch (e) {
         console.error('prayer computation failed', e);
       }
-      return { ok: true, deviceId: id, at: new Date().toISOString() };
+      return { ok: true, at: new Date().toISOString() };
     } catch (e) {
       // Not an error on a board that has simply never been given content: it
       // gets its own screen instead of "Reconnecting…".
-      const empty = LOCAL && isNoContentError(e);
+      const empty = isNoContentError(e);
       if (!empty) console.error('payload fetch failed', e);
       setNoContent(empty);
       setError(e?.message || 'Unknown error');
-      return { ok: false, deviceId: id, error: e?.message || 'Unknown error' };
+      return { ok: false, error: e?.message || 'Unknown error' };
     }
-    // deviceId is not read here, but a change to it must restart the polling
-    // effect below so a freshly-paired board fetches immediately.
-  }, [deviceId]);
+  }, []);
 
   useEffect(() => {
     loadPayload();
@@ -287,7 +246,7 @@ export default function App() {
   }, [loadPayload]);
 
   // ---------------------------------------------------------------------
-  // Local runtime: status. Polled every minute (and with every payload load)
+  // Agent status. Polled every minute (and with every payload load)
   // so the waiting screen, the staleness note and the diagnostics stay current
   // without depending on the event stream. It is also the backstop for events
   // missed while the stream was down:
@@ -308,7 +267,7 @@ export default function App() {
   const applyLocalStatus = (s, { fromPoll = false } = {}) => {
     setLocalStatus(s);
     if (!s) return;
-    if (isValidDeviceId(s.deviceId)) setDeviceIdState(s.deviceId.trim());
+    if (isValidDeviceId(s.deviceId)) setDeviceId(s.deviceId.trim());
     const appVersion = s.app?.version ?? null;
     if (seenAppVersion.current === undefined) seenAppVersion.current = appVersion;
     else if (appVersion && appVersion !== seenAppVersion.current) {
@@ -321,7 +280,6 @@ export default function App() {
   useEffect(() => { applyLocalStatusRef.current = applyLocalStatus; });
 
   useEffect(() => {
-    if (!LOCAL) return undefined;
     const id = setInterval(
       () => getLocalStatus().then((s) => applyLocalStatusRef.current(s, { fromPoll: true })),
       LOCAL_STATUS_REFRESH_MS
@@ -390,15 +348,14 @@ export default function App() {
   // ---------------------------------------------------------------------
   // Agent-facing surface.
   //
-  // The device agent drives this page over the DevTools Protocol. Two paths
-  // provision a board, both implemented:
-  //   • navigate to <board-url>?deviceId=<uuid>   (kiosk-url + .path watcher)
-  //   • Runtime.evaluate: window.MusallahBoard.setDeviceId('<uuid>')
+  // The device agent drives this page over the DevTools Protocol: its
+  // config.refresh command calls window.MusallahBoard.refresh(), and its
+  // telemetry reads getStatus().
   //
   // The globals must always see current values, but they are registered once
   // so the agent never races a re-render and finds them missing. Hence the
   // latest-value refs: registering them in an effect that closed over the
-  // first render would refetch with a stale deviceId forever.
+  // first render would report stale state forever.
   // ---------------------------------------------------------------------
   const refreshRef = useRef(loadPayload);
   const statusRef = useRef(null);
@@ -407,12 +364,8 @@ export default function App() {
   useEffect(() => {
     statusRef.current = () => ({
       deviceId: deviceId ?? null,
-      paired: LOCAL ? isValidDeviceId(deviceId) : !needsSetup,
-      runtime: RUNTIME,
+      paired: isValidDeviceId(deviceId),
       appVersion: APP_VERSION,
-      // v1 names, kept for agent builds that still read them.
-      mode: LOCAL ? 'offline' : 'online',
-      bundle: statusContent(localStatus),
       content: statusContent(localStatus),
       noContent,
       slideKey: slides[slideIdx]?.key ?? null,
@@ -425,17 +378,6 @@ export default function App() {
 
   useEffect(() => {
     window.MusallahBoard = {
-      /** Provision (or re-point) this board. Rejects anything but a UUID. */
-      setDeviceId(id, { reload = true } = {}) {
-        const next = String(id ?? '').trim();
-        if (!isValidDeviceId(next)) {
-          throw new Error(`setDeviceId: not a UUID: ${JSON.stringify(id)}`);
-        }
-        saveDeviceId(next);
-        if (reload) window.location.reload();
-        else setDeviceIdState(next);
-        return next;
-      },
       /** Re-fetch the payload and repaint in place. No reload. */
       refresh: () => refreshRef.current(),
       /** What this board thinks it is and what is currently on screen. */
@@ -447,32 +389,15 @@ export default function App() {
       /** Apply presentation overrides without the drawer. Partial patch. */
       setDebug: (patch) => setDebug((d) => ({ ...d, ...(patch || {}) })),
       resetDebug: () => setDebug(NO_DEBUG),
-      getConfig: () => getSetupConfig(),
     };
-    // Alias for agent builds that predate MusallahBoard.refresh().
-    window.__refreshBoard = () => window.MusallahBoard.refresh();
-    return () => {
-      delete window.MusallahBoard;
-      delete window.__refreshBoard;
-    };
+    return () => { delete window.MusallahBoard; };
   }, []);
 
-  // Hosted: live content push. Only opened once this board is enrolled: the
-  // channel carries enrolled devices only, and the backend closes anything that
-  // cannot name a known device. The cookie poll above re-runs this on
-  // enrollment. Goes through the ref so it always calls the current loader.
-  //
-  // Local: the agent listens on that channel itself and turns it into content
-  // syncs. The page only hears the outcome, from the agent's event stream: new
-  // content re-fetches in place, a new app release reloads into it.
+  // The agent listens on the backend's refresh channel itself and turns it
+  // into content syncs. The page only hears the outcome, from the agent's event
+  // stream: new content re-fetches in place, a new app release reloads into it.
+  // Goes through the ref so it always calls the current loader.
   useEffect(() => {
-    if (LOCAL || !isValidDeviceId(deviceId)) return undefined;
-    return connectRefreshSocket(deviceId, () => refreshRef.current());
-  }, [deviceId]);
-  // Opened once, not per device id: the id arrives with the first status, and
-  // re-opening the stream then would only drop and redo the connection.
-  useEffect(() => {
-    if (!LOCAL) return undefined;
     return connectLocalEvents({
       onContent: () => refreshRef.current(),
       onApp: () => window.location.reload(),
@@ -499,35 +424,12 @@ export default function App() {
       />
     );
 
-  // Unpaired: wait, never prompt. This is a wall-mounted screen with no
-  // keyboard and a hidden cursor — a form here is a dead end. The agent
-  // provisions us on its own schedule and the poll above picks it up.
-  if (needsSetup) {
-    return (
-      <>
-        <Status
-          title="Waiting for device enrollment"
-          detail="This board has not been paired with a device yet."
-        />
-        {renderDebug()}
-        {setupOpen && (
-          <SetupModal
-            status={statusRef.current?.()}
-            localStatus={localStatus}
-            onCancel={() => setSetupOpen(false)}
-            onComplete={(id) => { setSetupOpen(false); setDeviceIdState(id); }}
-          />
-        )}
-      </>
-    );
-  }
-
-  // Loading / error screen — still allow the operator hotkey to summon setup
-  // so a mis-provisioned board can be fixed on the spot.
+  // Loading / error screen: the operator hotkeys still work, so a stuck board
+  // can be diagnosed on the spot.
   if (!data || !slides.length) {
     return (
       <>
-        {LOCAL && noContent ? (
+        {noContent ? (
           <WaitingForContent status={localStatus} />
         ) : (
           <Status
@@ -541,8 +443,7 @@ export default function App() {
           <SetupModal
             status={statusRef.current?.()}
             localStatus={localStatus}
-            onCancel={() => setSetupOpen(false)}
-            onComplete={(id) => { setSetupOpen(false); setDeviceIdState(id); }}
+            onClose={() => setSetupOpen(false)}
           />
         )}
       </>
@@ -617,8 +518,7 @@ export default function App() {
       <SetupModal
         status={statusRef.current?.()}
         localStatus={localStatus}
-        onCancel={() => setSetupOpen(false)}
-        onComplete={(id) => { setSetupOpen(false); setDeviceIdState(id); }}
+        onClose={() => setSetupOpen(false)}
       />
     )}
     </>

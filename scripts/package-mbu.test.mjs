@@ -189,14 +189,12 @@ describe('listBuildFiles', () => {
   let dir;
   afterEach(() => { if (dir) rmSync(dir, { recursive: true, force: true }); });
 
-  it('lists regular files sorted, without the Cloudflare deploy files', () => {
+  it('lists regular files sorted', () => {
     dir = mkdtempSync(join(tmpdir(), 'mbu-build-'));
     mkdirSync(join(dir, 'assets'));
     writeFileSync(join(dir, 'index.html'), 'x');
     writeFileSync(join(dir, 'assets', 'b.js'), 'x');
     writeFileSync(join(dir, 'assets', 'a.css'), 'x');
-    writeFileSync(join(dir, 'wrangler.json'), '{}');
-    writeFileSync(join(dir, '.assetsignore'), 'wrangler.json');
     expect(listBuildFiles(dir)).toEqual(['assets/a.css', 'assets/b.js', 'index.html']);
   });
 

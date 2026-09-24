@@ -39,12 +39,22 @@ This will install the agent and all of its dependencies, setup the configuration
 
 Every board runs this app from its own disk. The [device agent](https://github.com/LensBridge/agent) serves it at `http://127.0.0.1:8080/` together with the day's content, and the kiosk always loads that address, online or not. The network only changes how fresh the content is. The agent's `docs/architecture.md` is the contract for all of this.
 
-The same build also runs as the hosted site on Cloudflare. It picks its runtime once at startup (`src/runtime.js`):
+The page is same-origin with the agent: it fetches today's payload from `/api/musallah/payload`, learns its device id from `/api/local/status`, and `/api/local/events` tells it when new content (re-fetch in place) or a new app release (reload) is installed. With no content installed yet it shows a "Waiting for content" screen saying whether it is downloading or needs a USB stick or a laptop on its ethernet port.
 
-- **local** when served from `127.0.0.1:8080` or `localhost:8080`, or with `?runtime=local` (or the older `?mode=offline`). The API is same-origin, the board learns its device id from `/api/local/status`, and `/api/local/events` tells it when new content (re-fetch in place) or a new app release (reload) is installed. With no content installed yet it shows a "Waiting for content" screen saying whether it is downloading or needs a USB stick or a laptop on its ethernet port.
-- **hosted** everywhere else: device id from the `deviceId` cookie or `?deviceId=`, backend from `VITE_API_BASE_URL`, live refresh over the backend's WebSocket.
+Alt+Shift+F shows diagnostics: app and agent versions, installed content and sync status.
 
-Alt+Shift+F shows diagnostics: runtime, app and agent versions, installed content and sync status.
+### Developing
+
+`npm run dev` serves the app on port 3000 and proxies `/api` (including the `/api/local/events` stream) and `/media` to a device agent, `http://127.0.0.1:8080` by default. To develop against a real board's content, forward its agent port first:
+
+```bash
+ssh -L 8080:127.0.0.1:8080 <board>
+npm run dev
+```
+
+Set `VITE_DEV_AGENT` to proxy to an agent somewhere else instead (`VITE_DEV_AGENT=http://127.0.0.1:18080 npm run dev`).
+
+`npm test` runs the unit tests and `npm run typecheck` checks the API layer. The payload types in `src/api/schema.d.ts` are generated from the backend's `openapi.yaml` (`MusallahBoardPayload`); regenerate them with `npm run api:generate`, with LensBridgeBackend checked out beside this repository or `OPENAPI_SPEC` pointing at the spec.
 
 ### Releasing the board app
 

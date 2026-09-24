@@ -1,6 +1,6 @@
 /**
  * =====================================================
- * Local Events (local runtime only)
+ * Local Events
  * =====================================================
  * The agent announces installs on GET /api/local/events,
  * a Server-Sent Events stream (agent/docs/architecture.md,
@@ -16,8 +16,7 @@
  *
  * EventSource reconnects on its own after a dropped
  * connection (an agent restart, say), so there is no
- * backoff loop here as there is in refreshSocket.js. An
- * event can still be missed while disconnected; the
+ * backoff loop here. An event can still be missed while disconnected; the
  * payload poll (10 min) and status poll (1 min) in
  * App.jsx bound what that costs, and a re-opened stream
  * triggers one catch-up refresh.

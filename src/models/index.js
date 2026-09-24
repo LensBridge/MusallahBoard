@@ -13,7 +13,7 @@
 // Wire contract (authoritative — from /v3/api-docs)
 // ---------------------------------------------------------------------------
 //
-// GET /api/musallah/payload?deviceId=<uuid>  -> MusallahBoardPayload
+// GET /api/musallah/payload (served by the agent)  -> MusallahBoardPayload
 //   { deviceConfig: DeviceConfig, frames: FrameDefinition[] }
 //
 // DeviceConfig {

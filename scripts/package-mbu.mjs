@@ -28,8 +28,7 @@
  *                           release for v<version>.
  *
  * Options:
- *   --dir <path>      build output (default: dist/client
- *                     if it holds index.html, else dist)
+ *   --dir <path>      build output (default: dist)
  *   --out-dir <path>  default: release
  *   --unsigned        write without mbu.sig
  * =====================================================
@@ -62,16 +61,6 @@ const MAX_TOTAL_FILE_BYTES = 1024 * 1024 * 1024; // sum of files[].bytes
 const MAX_PACKAGE_BYTES = 512 * 1024 * 1024;
 const MAX_MANIFEST_BYTES = 1024 * 1024;
 
-/**
- * Files the Cloudflare Vite plugin writes into the build output for
- * `wrangler deploy`. They describe the hosted deployment, not the app: a board
- * has no use for them, `wrangler.json` embeds absolute paths from the build
- * machine, and `.assetsignore` is a hidden name the entry rules reject. Left
- * out by name, at the root only; any other file that breaks the rules still
- * fails the build.
- */
-const HOSTING_ONLY = new Set(['.assetsignore', 'wrangler.json']);
-
 // ---------------------------------------------------------------------------
 // Entry names
 // ---------------------------------------------------------------------------
@@ -101,20 +90,8 @@ export function checkEntryName(name) {
 // ---------------------------------------------------------------------------
 
 /**
- * Where the build is. The Cloudflare plugin writes a static-assets-only project
- * straight to dist/, and moves the assets to dist/client/ once the project
- * gains a Worker; take whichever holds the SPA.
- * @param {string} root  repository root
- */
-export function findBuildDir(root) {
-  const client = join(root, 'dist', 'client');
-  if (existsSync(join(client, 'index.html'))) return client;
-  return join(root, 'dist');
-}
-
-/**
  * Every regular file under `dir`, as sorted slash-separated paths relative to
- * it, minus HOSTING_ONLY at the root. Symlinks and other special files are an
+ * it. Symlinks and other special files are an
  * error: the package may only carry regular files, and following a link could
  * pull in something from outside the build.
  * @param {string} dir
@@ -127,7 +104,7 @@ export function listBuildFiles(dir) {
       const full = join(d, ent.name);
       const rel = relative(dir, full).split(sep).join('/');
       if (ent.isDirectory()) walk(full);
-      else if (ent.isFile()) { if (!HOSTING_ONLY.has(rel)) out.push(rel); }
+      else if (ent.isFile()) out.push(rel);
       else throw new Error(`${rel}: not a regular file (symlink or special file)`);
     }
   };
@@ -379,7 +356,7 @@ function main() {
     );
   }
 
-  const dir = opts.dir ? resolve(opts.dir) : findBuildDir(root);
+  const dir = resolve(opts.dir ?? join(root, 'dist'));
   if (!existsSync(join(dir, 'index.html')) || !lstatSync(dir).isDirectory()) {
     throw new Error(`${dir} does not hold a build (no index.html). Run vite build first.`);
   }

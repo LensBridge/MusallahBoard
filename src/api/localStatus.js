@@ -1,10 +1,9 @@
 /**
  * =====================================================
- * Local Status (local runtime only)
+ * Local Status
  * =====================================================
- * On a board the device agent serves this page, and the
- * payload, from 127.0.0.1:8080 off an installed content
- * package. GET /api/local/status says who this board is,
+ * The device agent serves this page, and the payload,
+ * from 127.0.0.1:8080 off an installed content package. GET /api/local/status says who this board is,
  * what is installed and how fresh it is
  * (agent/docs/architecture.md, section 7). It is the
  * agent's, not LensBridge's, so it is not in the OpenAPI
@@ -98,4 +97,16 @@ export function statusContent(status) {
  */
 export function contentCreatedAt(content) {
   return content?.createdAt ?? content?.generatedAt ?? null;
+}
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Whether the agent's `deviceId` is a real device id (a UUID). An agent that
+ * is not enrolled yet has none, and the board then reports itself unpaired.
+ * @param {unknown} value
+ */
+export function isValidDeviceId(value) {
+  return typeof value === 'string' && UUID_RE.test(value.trim());
 }

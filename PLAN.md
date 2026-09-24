@@ -1,5 +1,7 @@
 # MusallahBoard Production Plan
 
+> Superseded: the board app is no longer hosted; it runs only served by the device agent (see README and agent/docs/architecture.md).
+
 Path from the current PoC (hosted Vite site + `setup.sh`-hardened Pi kiosk) to a
 production fleet with per-device identity, remote control from the admin
 portal, granular per-board configuration, and offline resilience.

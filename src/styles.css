@@ -1524,25 +1524,6 @@ body.cursor-hidden, body.cursor-hidden * { cursor: none !important; }
   overflow-wrap: anywhere;
 }
 
-.setup-hint {
-  font-family: var(--f-sans); font-size: 12px; line-height: 1.45;
-  color: oklch(0.68 0.03 95);
-}
-.setup-hint-bad { color: oklch(0.72 0.15 30); }
-
-.setup-field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
-.setup-field label {
-  font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.2em;
-  text-transform: uppercase; color: oklch(0.85 0.04 95);
-}
-.setup-field input[type="text"],
-.setup-field input[type="password"] {
-  background: oklch(0.20 0.08 258);
-  border: 1px solid oklch(0.38 0.07 258);
-  border-radius: 8px; padding: 12px 14px;
-  color: oklch(0.96 0.01 95); font-family: var(--f-mono); font-size: 14px;
-}
-.setup-field input:focus { outline: 2px solid oklch(0.91 0.16 95); }
 .setup-row { display: flex; align-items: center; gap: 10px; margin-bottom: 26px; }
 .setup-row label { font-family: var(--f-sans); font-size: 14px; color: oklch(0.85 0.04 95); }
 .setup-card button {

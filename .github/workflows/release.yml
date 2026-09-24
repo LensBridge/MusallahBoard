@@ -7,8 +7,6 @@ name: Release
 # releases/latest/download/app-channel.json, so publishing the release is what
 # rolls the fleet forward; the package signature, not this workflow, is what
 # makes that safe.
-#
-# The Cloudflare deployment is unaffected: it builds from the branch as before.
 
 on:
   push:

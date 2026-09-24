@@ -9,10 +9,6 @@ logs/*
 npm-debug.log*
 new/*
 
-# wrangler files
-.wrangler
-.dev.vars*
-!.dev.vars.example
 !.env.example
 
 # design-sync: staged converter scripts, build output, and machine state.
