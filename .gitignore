@@ -1,5 +1,7 @@
 node_modules/*
 dist/*
+# npm run package: signed board app packages and the channel pointer
+release/
 .env
 .DS_Store
 .vscode/*

@@ -90,6 +90,13 @@ elevated privileges, so they don't touch the agent.
 
 ### 1. Service worker (offline)
 
+> **Superseded.** Offline operation is no longer a service-worker concern:
+> every board is now served from its own disk by the device agent, with
+> signed content and app packages (local-first, no online/offline mode). See
+> `docs/architecture.md` in the [agent repo](https://github.com/LensBridge/agent).
+> The notes below, and the related non-goals and tech choices in this plan,
+> describe the earlier approach.
+
 In the existing Vite app, using `vite-plugin-pwa` (Workbox under the hood).
 
 - Precache app shell (HTML/CSS/JS/fonts/logo).

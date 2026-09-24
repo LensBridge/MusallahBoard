@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -9,8 +10,18 @@ const BACKEND = process.env.VITE_DEV_BACKEND || 'http://localhost:8080'
 
 import { cloudflare } from "@cloudflare/vite-plugin";
 
+// Baked into the bundle as the build's own version (src/runtime.js). It is the
+// same number scripts/package-mbu.mjs signs into the app package, so the
+// diagnostics can show which build is really running, hosted or on a board.
+const { version: APP_VERSION } = JSON.parse(
+  readFileSync(new URL('./package.json', import.meta.url), 'utf8')
+)
+
 export default defineConfig({
   plugins: [cloudflare(), react()],
+  define: {
+    __MB_APP_VERSION__: JSON.stringify(APP_VERSION),
+  },
   server: {
     host: '0.0.0.0',
     port: 3000,
@@ -31,6 +42,6 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    include: ['src/**/*.test.{js,jsx}'],
+    include: ['src/**/*.test.{js,jsx}', 'scripts/**/*.test.mjs'],
   },
 })

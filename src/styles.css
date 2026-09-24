@@ -1464,6 +1464,19 @@ body.cursor-hidden, body.cursor-hidden * { cursor: none !important; }
   margin-top: 18px; font-size: 12px; color: oklch(0.72 0.13 30);
   word-break: break-word; text-transform: none; letter-spacing: 0.02em;
 }
+.board-status .bs-hint {
+  margin-top: 28px; font-size: 15px; line-height: 1.6;
+  color: oklch(0.96 0.01 95);
+}
+/* Screens someone has to act on from across the room (waiting for content).
+   Same look as the loading screen, sized for distance rather than a glance
+   from up close. Not scaled with the stage: this sits outside it, so these are
+   real pixels on a 1080p panel. */
+.board-status.bs-large .bs-inner { max-width: 1280px; }
+.board-status.bs-large h1 { font-size: 72px; margin-bottom: 28px; }
+.board-status.bs-large p { font-size: 28px; letter-spacing: 0.12em; }
+.board-status.bs-large .bs-err { margin-top: 24px; font-size: 24px; }
+.board-status.bs-large .bs-hint { margin-top: 48px; font-size: 32px; }
 
 .setup-modal {
   position: fixed; inset: 0; z-index: 50;

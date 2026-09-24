@@ -8,8 +8,8 @@
  * location + calculation method (DeviceConfig.location).
  *
  * This used to call the Aladhan API. It is computed
- * locally now so a board with no internet (offline mode,
- * see agent/docs/offline.md) still shows correct times
+ * locally now so a board with no internet (local runtime,
+ * see agent/docs/architecture.md) still shows correct times
  * indefinitely — and so an online board has one fewer
  * third party that can blank its prayer rail.
  * =====================================================
