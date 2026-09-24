@@ -11,8 +11,8 @@ export function NextPrayerSlide({ data, now }) {
   const { ordered, next, current } = classifyPrayers(prayers, now, timezone);
   const nextP = prayers[next];
 
-  // Aladhan can hand back blank timings (polar latitudes, a bad method id, a
-  // partial response). Rendering an empty schedule beats a white screen: this
+  // A prayer can come back blank (a polar latitude where the sun never
+  // reaches the angle, a location with no coordinates). Rendering an empty schedule beats a white screen: this
   // used to dereference prayers[undefined] and take the whole board down.
   if (!nextP) {
     return (

@@ -594,6 +594,26 @@ img { display: block; max-width: 100%; }
   opacity: 0.45;
 }
 
+/* Offline board whose content bundle has run out (bottom-left of stage-main).
+   Deliberately quiet — --fg-3 on the recessed ground, the eyebrow type — so it
+   informs whoever maintains the board without competing with the slide. */
+.stale-note {
+  position: absolute;
+  bottom: 14px; left: var(--pad-stage, 48px);
+  z-index: 5;
+  padding: 5px 14px;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--fg-3);
+  background: color-mix(in oklch, var(--bg-soft) 85%, transparent);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  pointer-events: none;
+}
+
 /* Slide indicators (bottom-right of stage-main) */
 .slide-indicators {
   position: absolute;

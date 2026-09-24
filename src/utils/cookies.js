@@ -104,6 +104,32 @@ export function resolveDeviceId() {
   return isValidDeviceId(stored) ? stored.trim() : null;
 }
 
+let boardMode = null;
+
+/**
+ * 'offline' when the page was opened with `?mode=offline`, else 'online'.
+ *
+ * The agent sets this in kiosk-url when it serves the board itself from
+ * 127.0.0.1 off an installed content bundle (agent/docs/offline.md): no refresh
+ * socket, plus /api/local/status for bundle freshness. Read once and
+ * remembered — the mode is fixed for the life of the page, and a later
+ * history.replaceState() must not flip it. Deliberately not a cookie: a board
+ * switched back to online gets a kiosk-url without the param and must not stay
+ * offline.
+ * @returns {'online'|'offline'}
+ */
+export function readBoardMode() {
+  if (boardMode === null) {
+    try {
+      const v = new URLSearchParams(window.location.search).get('mode');
+      boardMode = v && v.trim().toLowerCase() === 'offline' ? 'offline' : 'online';
+    } catch {
+      boardMode = 'online';
+    }
+  }
+  return boardMode;
+}
+
 export function applyCursorPreference() {
   document.body.classList.toggle('cursor-hidden', getSetupConfig().hideCursor);
 }

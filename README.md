@@ -8,7 +8,7 @@ MusallahBoard aims to make digital signage for mosques and Islamic centres acces
 
 ## Features
 
-- Displays prayer times, powered by [Aladhan](https://aladhan.com/prayer-times-api)
+- Displays prayer times, computed on the board with [adhan](https://github.com/batoulapps/adhan-js) to [Aladhan](https://aladhan.com/calculation-methods)'s method definitions (no internet needed)
 - Displays announcements, events, and posters
 - Supports multiple locations and screens, with centralized management via LensBridge
 

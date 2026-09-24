@@ -1,6 +1,8 @@
 // Operator diagnostics panel. Opened by Alt+Shift+F or `window.MusallahBoard.openSetup()`. Sibling to DebugMenu.jsx (Alt+Shift+D)
 import { useState, useEffect } from 'react';
-import { saveSetupConfig, getSetupConfig, isValidDeviceId } from '../utils/cookies.js';
+import {
+  saveSetupConfig, getSetupConfig, isValidDeviceId, readBoardMode,
+} from '../utils/cookies.js';
 import { getApiConfig } from '../api/index.js';
 
 function Row({ label, value }) {
@@ -12,7 +14,27 @@ function Row({ label, value }) {
   );
 }
 
-export default function SetupModal({ onComplete, onCancel, status }) {
+/** Offline-mode rows, from the agent's /api/local/status (may be null). */
+function OfflineRows({ local }) {
+  const b = local?.bundle;
+  let remaining = null;
+  if (local && b) {
+    remaining = local.staleDays > 0
+      ? `0 — content ran out ${local.staleDays} day${local.staleDays === 1 ? '' : 's'} ago`
+      : String(local.daysRemaining ?? '—');
+  }
+  return (
+    <>
+      <Row label="Bundle" value={
+        !local ? 'status unavailable'
+          : b ? `${b.firstDay} → ${b.lastDay}` : 'none installed'
+      } />
+      <Row label="Days remaining" value={remaining} />
+    </>
+  );
+}
+
+export default function SetupModal({ onComplete, onCancel, status, localStatus }) {
   const existing = getSetupConfig();
   const [deviceId, setDeviceId] = useState(existing.deviceId || '');
   const [hideCursor, setHideCursor] = useState(existing.hideCursor);
@@ -39,6 +61,7 @@ export default function SetupModal({ onComplete, onCancel, status }) {
   }
 
   const backend = getApiConfig().baseUrl || `${window.location.origin} (same-origin)`;
+  const mode = readBoardMode();
 
   return (
     <div className="setup-modal">
@@ -48,7 +71,9 @@ export default function SetupModal({ onComplete, onCancel, status }) {
 
         <div className="setup-diag">
           <Row label="Device" value={existing.deviceId || 'not enrolled'} />
+          <Row label="Mode" value={mode} />
           <Row label="Backend" value={backend} />
+          {mode === 'offline' && <OfflineRows local={localStatus} />}
           <Row label="Last payload" value={status?.lastPayloadAt} />
           <Row label="On screen" value={status?.slideKey} />
           {status?.error && <Row label="Last error" value={status.error} />}

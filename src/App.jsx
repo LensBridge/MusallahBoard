@@ -2,7 +2,9 @@
 // Setup gate → fetch payload (weather rides along) + prayer → compose the
 // design data shape → drive the slideshow built from the frame-builder registry.
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { getBoardPayload, getPrayerData, connectRefreshSocket } from './api/index.js';
+import {
+  getBoardPayload, getPrayerData, connectRefreshSocket, getLocalStatus,
+} from './api/index.js';
 import { prefetchPayloadImages } from './utils/prefetch.js';
 import {
   buildAgendaDays, buildTodayEvents, buildHijri, zonedClock, isoDateKey,
@@ -13,7 +15,7 @@ import { resolveTheme, DEFAULT_THEME } from './themes/registry.js';
 import './frames/builders.jsx'; // registers default builders
 import {
   getSetupConfig, applyCursorPreference, isValidDeviceId,
-  setDeviceId as saveDeviceId,
+  setDeviceId as saveDeviceId, readBoardMode,
 } from './utils/cookies.js';
 import SetupModal from './components/SetupModal.jsx';
 import DebugMenu from './components/DebugMenu.jsx';
@@ -22,6 +24,10 @@ import PrayerRail from './components/PrayerRail.jsx';
 import Ticker from './components/Ticker.jsx';
 
 const PAYLOAD_REFRESH_MS = 10 * 60 * 1000;
+
+// 'offline' when the agent serves this page from a content bundle (see
+// agent/docs/offline.md). Fixed for the life of the page.
+const MODE = readBoardMode();
 
 // Presentation overrides driven by the debug drawer (Alt+Shift+D). `null` on a
 // tri-state field means "don't override, use the board's own logic". Held in
@@ -58,6 +64,28 @@ function Status({ title, detail, error }) {
   );
 }
 
+/**
+ * "Content last updated …" note for an offline board whose bundle has run
+ * out. Past lastDay the agent keeps serving lastDay's payload, so the board
+ * still looks alive — this is the one visible hint that nobody has pushed new
+ * content. Dated by when the bundle was generated, in the bundle's zone.
+ */
+function StaleNote({ status }) {
+  if (!(status?.staleDays > 0)) return null;
+  const b = status.bundle;
+  let when = b?.lastDay ?? '';
+  const at = b?.generatedAt ? new Date(b.generatedAt) : null;
+  if (at && !Number.isNaN(at.getTime())) {
+    try {
+      when = new Intl.DateTimeFormat('en-US', {
+        month: 'long', day: 'numeric', year: 'numeric',
+        timeZone: b.timezone || undefined,
+      }).format(at);
+    } catch { /* keep lastDay */ }
+  }
+  return <div className="stale-note">Content last updated {when}</div>;
+}
+
 function gregorian(now, timezone) {
   const f = new Intl.DateTimeFormat('en-US', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
@@ -76,6 +104,8 @@ export default function App() {
   const [prayerInfo, setPrayerInfo] = useState(null); // { prayers, hijri }
   const [error, setError] = useState(null);
   const [lastPayloadAt, setLastPayloadAt] = useState(null);
+  // Offline mode only: the agent's /api/local/status, refreshed with the payload.
+  const [localStatus, setLocalStatus] = useState(null);
   const [realNow, setRealNow] = useState(new Date());
   const [slideIdx, setSlideIdx] = useState(0);
   // Setup modal force-opened by the operator hotkey. It is a diagnostics
@@ -149,17 +179,21 @@ export default function App() {
   const loadPayload = useCallback(async () => {
     const id = getSetupConfig().deviceId;
     if (!isValidDeviceId(id)) return { ok: false, reason: 'unpaired' };
+    // Alongside the payload, not after it: when the agent has no bundle the
+    // payload 503s, and that is exactly when the diagnostics need the status.
+    if (MODE === 'offline') getLocalStatus().then(setLocalStatus);
     try {
       const p = await getBoardPayload(id);
       prefetchPayloadImages(p);
       setPayload(p);
       setError(null);
       setLastPayloadAt(Date.now());
+      // Computed locally (adhan + Intl), recomputed on every payload load —
+      // which is also what rolls the times over after midnight.
       try {
-        const pr = await getPrayerData(p.deviceConfig.location);
-        setPrayerInfo(pr);
+        setPrayerInfo(getPrayerData(p.deviceConfig.location));
       } catch (e) {
-        console.error('prayer fetch failed', e);
+        console.error('prayer computation failed', e);
       }
       return { ok: true, deviceId: id, at: new Date().toISOString() };
     } catch (e) {
@@ -256,6 +290,8 @@ export default function App() {
     statusRef.current = () => ({
       deviceId: deviceId ?? null,
       paired: !needsSetup,
+      mode: MODE,
+      bundle: localStatus?.bundle ?? null,
       slideKey: slides[slideIdx]?.key ?? null,
       slideIndex: slides.length ? slideIdx : null,
       slideCount: slides.length,
@@ -302,8 +338,12 @@ export default function App() {
   // carries enrolled devices only, and the backend closes anything that cannot
   // name a known device. The cookie poll above re-runs this on enrollment.
   // Goes through the ref so it always calls the current loader.
+  //
+  // Offline there is no backend to push anything; new content arrives as a
+  // bundle install, which reloads the page or is picked up by the 10-minute
+  // poll.
   useEffect(() => {
-    if (!isValidDeviceId(deviceId)) return undefined;
+    if (MODE === 'offline' || !isValidDeviceId(deviceId)) return undefined;
     return connectRefreshSocket(deviceId, () => refreshRef.current());
   }, [deviceId]);
 
@@ -341,6 +381,7 @@ export default function App() {
         {setupOpen && (
           <SetupModal
             status={statusRef.current?.()}
+            localStatus={localStatus}
             onCancel={() => setSetupOpen(false)}
             onComplete={(id) => { setSetupOpen(false); setDeviceIdState(id); }}
           />
@@ -363,6 +404,7 @@ export default function App() {
         {setupOpen && (
           <SetupModal
             status={statusRef.current?.()}
+            localStatus={localStatus}
             onCancel={() => setSetupOpen(false)}
             onComplete={(id) => { setSetupOpen(false); setDeviceIdState(id); }}
           />
@@ -423,6 +465,7 @@ export default function App() {
                 );
               })}
             </div>
+            <StaleNote status={localStatus} />
           </main>
 
           {showTicker ? (
@@ -437,6 +480,7 @@ export default function App() {
     {setupOpen && (
       <SetupModal
         status={statusRef.current?.()}
+        localStatus={localStatus}
         onCancel={() => setSetupOpen(false)}
         onComplete={(id) => { setSetupOpen(false); setDeviceIdState(id); }}
       />

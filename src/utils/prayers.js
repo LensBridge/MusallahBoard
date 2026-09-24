@@ -6,8 +6,8 @@ import { toMinutes, zonedMinutes, PRAYER_ORDER } from '../models/index.js';
  *
  * @param {object} prayers  { fajr:{adhan}, sunrise, ... }
  * @param {Date} now
- * @param {string} [timezone]  board timezone. Adhan times come from Aladhan for
- *   the board's coordinates, so they are that zone's wall clock — comparing
+ * @param {string} [timezone]  board timezone. Adhan times are computed for
+ *   the board's coordinates and formatted in its zone, so they are that zone's wall clock — comparing
  *   them against the browser's clock only works while the two agree.
  */
 export function classifyPrayers(prayers, now, timezone) {
