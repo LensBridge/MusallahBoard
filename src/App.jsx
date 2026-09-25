@@ -120,6 +120,9 @@ function WaitingForContent({ status }) {
  * content. Dated by when the package was made, in the content's zone.
  */
 function StaleNote({ status }) {
+  if (status?.staleDays === 0 && status.daysRemaining != null && status.daysRemaining <= CONTENT_LOW_DAYS) {
+    return <ContentEndsNote status={status} />;
+  }
   if (!(status?.staleDays > 0)) return null;
   const b = status?.content;
   let when = b?.lastDay ?? '';
@@ -134,6 +137,27 @@ function StaleNote({ status }) {
     } catch { /* keep lastDay */ }
   }
   return <div className="stale-note">Content last updated {when}</div>;
+}
+
+/** Content ending this many days after today, or sooner, gets a note. */
+const CONTENT_LOW_DAYS = 2;
+
+/**
+ * "Content ends Wednesday, October 1": the last days before an offline board's
+ * content runs out, so whoever maintains it has warning to send more before
+ * the stale note appears. An online board never gets here: it syncs a week
+ * ahead every half hour, unless its sync is failing, which is worth knowing.
+ */
+function ContentEndsNote({ status }) {
+  const lastDay = status?.content?.lastDay;
+  let when = lastDay ?? '';
+  const at = lastDay ? new Date(`${lastDay}T12:00:00Z`) : null;
+  if (at && !Number.isNaN(at.getTime())) {
+    when = new Intl.DateTimeFormat('en-US', {
+      weekday: 'long', month: 'long', day: 'numeric', timeZone: 'UTC',
+    }).format(at);
+  }
+  return <div className="stale-note">{status.daysRemaining === 0 ? 'Content ends today' : `Content ends ${when}`}</div>;
 }
 
 /**
