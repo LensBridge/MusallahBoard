@@ -23,6 +23,7 @@ import DebugMenu from './components/DebugMenu.jsx';
 import TopBar from './components/TopBar.jsx';
 import PrayerRail from './components/PrayerRail.jsx';
 import Ticker from './components/Ticker.jsx';
+import NoticeBanner from './components/NoticeBanner.jsx';
 
 const PAYLOAD_REFRESH_MS = 10 * 60 * 1000;
 const LOCAL_STATUS_REFRESH_MS = 60 * 1000;
@@ -164,6 +165,11 @@ export default function App() {
   const [setupOpen, setSetupOpen] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
   const [debug, setDebug] = useState(NO_DEBUG);
+  // The agent's latest update notice (components/NoticeBanner.jsx). Each
+  // gets an id so a banner timing out cannot clear the one that replaced it.
+  const [notice, setNotice] = useState(null);
+  const noticeSeq = useRef(0);
+  const clearNotice = useCallback((id) => setNotice((n) => (n && n.id === id ? null : n)), []);
   const advanceTimer = useRef(null);
 
   // Everything downstream reads `now`, so time travel is a single shift here.
@@ -403,6 +409,7 @@ export default function App() {
       onContent: () => refreshRef.current(),
       onApp: () => window.location.reload(),
       onUpdates: () => getLocalStatus().then((s) => applyLocalStatusRef.current(s)),
+      onNotice: (n) => setNotice({ ...n, id: ++noticeSeq.current }),
     });
   }, []);
 
@@ -441,6 +448,7 @@ export default function App() {
           />
         )}
         {renderDebug()}
+        <NoticeBanner notice={notice} onDone={clearNotice} />
         {setupOpen && (
           <SetupModal
             status={statusRef.current?.()}
@@ -467,8 +475,8 @@ export default function App() {
 
   // Software waiting for the night's install window is announced on the
   // ticker, after the board's own messages.
-  const notice = updateNotice(localStatus?.updates, now, tz);
-  const tickerMessages = notice ? [...data.scrollingMessages, notice] : data.scrollingMessages;
+  const updateLine = updateNotice(localStatus?.updates, now, tz);
+  const tickerMessages = updateLine ? [...data.scrollingMessages, updateLine] : data.scrollingMessages;
   const showTicker = tickerMessages.length > 0;
   // Show the Jummah card Wed–Fri (matches prior board behaviour). Read in the
   // board's zone: near midnight the browser's day can be the wrong one.
@@ -520,6 +528,7 @@ export default function App() {
       </ScaledStage>
     </div>
     {renderDebug(boardTheme, autoJummah)}
+    <NoticeBanner notice={notice} onDone={clearNotice} onBoard />
     {setupOpen && (
       <SetupModal
         status={statusRef.current?.()}

@@ -12,6 +12,9 @@
  *   event: app       data: {"version": "..."}
  *     a new board app release is installed: reload, so
  *     the new build is what runs.
+ *   event: notice    data: {tone, headline, lines, seconds}
+ *     an update outcome for the people at the board, shown
+ *     as a banner (components/NoticeBanner.jsx).
  *   event: updates   data: the status's `updates` object
  *     software started or stopped waiting for the night's
  *     install window: re-read the status for the ticker.
@@ -27,10 +30,11 @@
  */
 
 /**
- * @param {{ onContent: () => unknown, onApp: () => unknown, onUpdates?: () => unknown }} handlers
+ * @param {{ onContent: () => unknown, onApp: () => unknown, onUpdates?: () => unknown,
+ *           onNotice?: (notice: object) => unknown }} handlers
  * @returns {() => void} disposer: closes the stream. Safe to call twice.
  */
-export function connectLocalEvents({ onContent, onApp, onUpdates }) {
+export function connectLocalEvents({ onContent, onApp, onUpdates, onNotice }) {
   if (typeof EventSource === 'undefined') return () => {};
 
   const source = new EventSource('/api/local/events');
@@ -54,6 +58,17 @@ export function connectLocalEvents({ onContent, onApp, onUpdates }) {
   source.addEventListener('content', () => run(onContent, 'content refresh'));
   source.addEventListener('app', () => run(onApp, 'app reload'));
   if (onUpdates) source.addEventListener('updates', () => run(onUpdates, 'updates refresh'));
+  if (onNotice) {
+    source.addEventListener('notice', (e) => {
+      let notice;
+      try {
+        notice = JSON.parse(e.data);
+      } catch {
+        return;
+      }
+      if (notice && typeof notice.headline === 'string') run(() => onNotice(notice), 'notice');
+    });
+  }
 
   return () => source.close();
 }
