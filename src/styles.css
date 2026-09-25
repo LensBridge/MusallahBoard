@@ -594,13 +594,23 @@ img { display: block; max-width: 100%; }
   opacity: 0.45;
 }
 
-/* Offline board whose content bundle has run out (bottom-left of stage-main).
-   Deliberately quiet — --fg-3 on the recessed ground, the eyebrow type — so it
-   informs whoever maintains the board without competing with the slide. */
-.stale-note {
+/* Notes for whoever maintains the board (bottom-left of stage-main), stacked:
+   the clock note above the stale-content note. */
+.board-notes {
   position: absolute;
   bottom: 14px; left: var(--pad-stage, 48px);
   z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  pointer-events: none;
+}
+
+/* Offline board whose content bundle has run out. Deliberately quiet: --fg-3
+   on the recessed ground, the eyebrow type, so it informs whoever maintains
+   the board without competing with the slide. */
+.stale-note {
   padding: 5px 14px;
   font-family: var(--f-mono);
   font-size: 11px;
@@ -612,6 +622,31 @@ img { display: block; max-width: 100%; }
   border: 1px solid var(--line);
   border-radius: var(--r-pill);
   pointer-events: none;
+}
+
+/* The board's clock is not confirmed since boot, so the prayer times on
+   screen may be wrong. Louder than the stale note, since what it doubts is
+   what the congregation reads the board for, but still a note, not an alarm:
+   sentence case at a readable size, with the accent's diamond. */
+.clock-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 16px 7px 14px;
+  font-family: var(--f-sans);
+  font-size: 15px;
+  color: var(--fg-2);
+  background: color-mix(in oklch, var(--bg-soft) 92%, transparent);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+}
+.clock-note::before {
+  content: "";
+  flex: none;
+  width: 8px; height: 8px;
+  transform: rotate(45deg);
+  background: var(--accent);
+  border-radius: 1px;
 }
 
 /* Slide indicators (bottom-right of stage-main) */

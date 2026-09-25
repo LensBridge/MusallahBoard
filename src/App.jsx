@@ -136,6 +136,21 @@ function StaleNote({ status }) {
   return <div className="stale-note">Content last updated {when}</div>;
 }
 
+/**
+ * The agent could not confirm the board's clock since it booted: no NTP, no
+ * hardware clock, no laptop's time (agent/docs/architecture.md, section 10).
+ * After a power cut an offline Pi without an RTC comes up at whatever time it
+ * last saved, and every prayer time on screen follows it.
+ */
+function ClockNote({ status }) {
+  if (status?.clock?.trusted !== false) return null;
+  return (
+    <div className="clock-note">
+      The clock may be wrong: connect the board to the internet, or send an update from a laptop
+    </div>
+  );
+}
+
 function gregorian(now, timezone) {
   const f = new Intl.DateTimeFormat('en-US', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
@@ -516,7 +531,10 @@ export default function App() {
                 );
               })}
             </div>
-            <StaleNote status={localStatus} />
+            <div className="board-notes">
+              <ClockNote status={localStatus} />
+              <StaleNote status={localStatus} />
+            </div>
           </main>
 
           {showTicker ? (

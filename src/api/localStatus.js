@@ -49,6 +49,9 @@ const TIMEOUT_MS = 5000;
  * @property {number|null} [staleDays]
  * @property {{enabled:boolean,lastSuccessAt:string|null,lastAttemptAt:string|null,lastError:string|null}} [sync]
  * @property {{active:boolean}} [update]
+ * @property {{source:string,trusted:boolean}} [clock]
+ *   where the clock's time comes from (ntp, rtc, uploader, starting,
+ *   unverified); trusted false means the board should say it may be wrong
  * @property {{available:{type:string,version:string,description:string}[],installTime:string,installAt:string|null,installing:boolean}} [updates]
  *   software waiting for the install window (utils/updates.js)
  * @property {string} [error]  installed content could not be read
