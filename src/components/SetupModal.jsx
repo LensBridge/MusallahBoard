@@ -1,9 +1,7 @@
 // Operator diagnostics panel. Opened by Alt+Shift+F or `window.MusallahBoard.openSetup()`. Sibling to DebugMenu.jsx (Alt+Shift+D)
 import { useState, useEffect } from 'react';
-import {
-  saveSetupConfig, getSetupConfig, isValidDeviceId, readBoardMode,
-} from '../utils/cookies.js';
-import { getApiConfig } from '../api/index.js';
+import { getHideCursor, setHideCursor as saveHideCursor } from '../utils/cookies.js';
+import { APP_VERSION } from '../version.js';
 
 function Row({ label, value }) {
   return (
@@ -14,54 +12,63 @@ function Row({ label, value }) {
   );
 }
 
-/** Offline-mode rows, from the agent's /api/local/status (may be null). */
-function OfflineRows({ local }) {
-  const b = local?.bundle;
+/** Rows from the agent's /api/local/status (may be null). */
+function LocalRows({ local }) {
+  if (!local) return <Row label="Agent" value="status unavailable" />;
+  const c = local?.content;
+  const sync = local.sync;
   let remaining = null;
-  if (local && b) {
+  if (c) {
     remaining = local.staleDays > 0
       ? `0 — content ran out ${local.staleDays} day${local.staleDays === 1 ? '' : 's'} ago`
       : String(local.daysRemaining ?? '—');
   }
+  // The version the agent installed, next to the one actually running: they
+  // differ for the moment between an app install and the reload it triggers,
+  // and a board stuck in that state is worth seeing.
+  const installed = local.app?.version;
   return (
     <>
-      <Row label="Bundle" value={
-        !local ? 'status unavailable'
-          : b ? `${b.firstDay} → ${b.lastDay}` : 'none installed'
+      <Row label="Agent" value={local.agentVersion} />
+      <Row label="App installed" value={
+        !installed ? 'none'
+          : installed === APP_VERSION ? installed : `${installed} (running ${APP_VERSION})`
       } />
+      <Row label="Content" value={
+        c ? `${c.firstDay} → ${c.lastDay}` : local.error ? `unreadable: ${local.error}` : 'none installed'
+      } />
+      {c && <Row label="Source" value={c.source} />}
+      {c && <Row label="Installed" value={c.installedAt} />}
       <Row label="Days remaining" value={remaining} />
+      <Row label="Sync" value={
+        !sync ? null
+          : !sync.enabled ? 'off'
+            : sync.lastSuccessAt ? `last success ${sync.lastSuccessAt}` : 'no success yet'
+      } />
+      {sync?.lastError && <Row label="Sync error" value={sync.lastError} />}
     </>
   );
 }
 
-export default function SetupModal({ onComplete, onCancel, status, localStatus }) {
-  const existing = getSetupConfig();
-  const [deviceId, setDeviceId] = useState(existing.deviceId || '');
-  const [hideCursor, setHideCursor] = useState(existing.hideCursor);
-
-  const trimmed = deviceId.trim();
-  const valid = isValidDeviceId(trimmed);
-  const idDirty = trimmed !== (existing.deviceId || '');
-  const cursorDirty = hideCursor !== existing.hideCursor;
-  const canApply = (idDirty ? valid : true) && (idDirty || cursorDirty);
+export default function SetupModal({ onClose, status, localStatus }) {
+  const savedHideCursor = getHideCursor();
+  const [hideCursor, setHideCursor] = useState(savedHideCursor);
+  const canApply = hideCursor !== savedHideCursor;
 
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'Escape') { e.preventDefault(); onCancel?.(); }
+      if (e.key === 'Escape') { e.preventDefault(); onClose?.(); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onCancel]);
+  }, [onClose]);
 
   function submit(e) {
     e.preventDefault();
     if (!canApply) return;
-    saveSetupConfig({ deviceId: idDirty && valid ? trimmed : null, hideCursor });
-    onComplete?.(idDirty && valid ? trimmed : existing.deviceId);
+    saveHideCursor(hideCursor);
+    onClose?.();
   }
-
-  const backend = getApiConfig().baseUrl || `${window.location.origin} (same-origin)`;
-  const mode = readBoardMode();
 
   return (
     <div className="setup-modal">
@@ -70,32 +77,13 @@ export default function SetupModal({ onComplete, onCancel, status, localStatus }
         <div className="sub">UTM MSA · MusallahBoard kiosk</div>
 
         <div className="setup-diag">
-          <Row label="Device" value={existing.deviceId || 'not enrolled'} />
-          <Row label="Mode" value={mode} />
-          <Row label="Backend" value={backend} />
-          {mode === 'offline' && <OfflineRows local={localStatus} />}
+          <Row label="Device" value={localStatus?.deviceId || 'unknown'} />
+          <Row label="App version" value={APP_VERSION} />
+          <Row label="Served by" value={window.location.origin} />
+          <LocalRows local={localStatus} />
           <Row label="Last payload" value={status?.lastPayloadAt} />
           <Row label="On screen" value={status?.slideKey} />
           {status?.error && <Row label="Last error" value={status.error} />}
-        </div>
-
-        <div className="setup-field">
-          <label htmlFor="deviceId">Device ID override</label>
-          <input
-            id="deviceId"
-            type="text"
-            value={deviceId}
-            onChange={(e) => setDeviceId(e.target.value)}
-            placeholder="00000000-0000-0000-0000-000000000000"
-            autoFocus
-          />
-          {idDirty && trimmed && !valid && (
-            <div className="setup-hint setup-hint-bad">Must be a UUID.</div>
-          )}
-          <div className="setup-hint">
-            Normally set by the device agent. Change this only to re-point a
-            board by hand.
-          </div>
         </div>
 
         <div className="setup-row">
@@ -109,7 +97,7 @@ export default function SetupModal({ onComplete, onCancel, status, localStatus }
         </div>
 
         <div className="setup-actions">
-          <button type="button" className="setup-cancel" onClick={() => onCancel?.()}>
+          <button type="button" className="setup-cancel" onClick={() => onClose?.()}>
             Close
           </button>
           <button type="submit" disabled={!canApply}>Apply</button>

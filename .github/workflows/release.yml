@@ -1,0 +1,53 @@
+name: Release
+
+# Publishes the board app for the device agents (agent/docs/architecture.md,
+# sections 4, 9.4 and 15). Pushing a tag vX.Y.Z builds the SPA, signs it into
+# musallahboard-app-X.Y.Z.mbu with the release key, and attaches that plus
+# app-channel.json to the GitHub release. Boards poll
+# releases/latest/download/app-channel.json, so publishing the release is what
+# rolls the fleet forward; the package signature, not this workflow, is what
+# makes that safe.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      # The channel file advertises package.json's version under this tag's
+      # download URL. A tag that disagrees would publish a pointer to a file
+      # that is not there.
+      - name: Check the tag matches package.json
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "v${version}" != "${GITHUB_REF_NAME}" ]; then
+            echo "tag ${GITHUB_REF_NAME} does not match package.json version ${version}" >&2
+            exit 1
+          fi
+
+      - run: npm test
+
+      - name: Build and sign the app package
+        env:
+          MB_RELEASE_SIGNING_KEY: ${{ secrets.MB_RELEASE_SIGNING_KEY }}
+        run: npm run package
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/*.mbu
+            release/app-channel.json

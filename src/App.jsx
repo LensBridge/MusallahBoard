@@ -1,9 +1,11 @@
 // MusallahBoard — root orchestrator.
-// Setup gate → fetch payload (weather rides along) + prayer → compose the
-// design data shape → drive the slideshow built from the frame-builder registry.
+// Served by the device agent at 127.0.0.1:8080: fetch the payload (weather
+// rides along) + prayer → compose the design data shape → drive the slideshow
+// built from the frame-builder registry.
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
-  getBoardPayload, getPrayerData, connectRefreshSocket, getLocalStatus,
+  getBoardPayload, getPrayerData, getLocalStatus, connectLocalEvents,
+  isNoContentError, isValidDeviceId,
 } from './api/index.js';
 import { prefetchPayloadImages } from './utils/prefetch.js';
 import {
@@ -13,10 +15,8 @@ import { classifyPrayers } from './utils/prayers.js';
 import { buildSlideshow } from './frames/registry.js';
 import { resolveTheme, DEFAULT_THEME } from './themes/registry.js';
 import './frames/builders.jsx'; // registers default builders
-import {
-  getSetupConfig, applyCursorPreference, isValidDeviceId,
-  setDeviceId as saveDeviceId, readBoardMode,
-} from './utils/cookies.js';
+import { applyCursorPreference } from './utils/cookies.js';
+import { APP_VERSION } from './version.js';
 import SetupModal from './components/SetupModal.jsx';
 import DebugMenu from './components/DebugMenu.jsx';
 import TopBar from './components/TopBar.jsx';
@@ -24,10 +24,7 @@ import PrayerRail from './components/PrayerRail.jsx';
 import Ticker from './components/Ticker.jsx';
 
 const PAYLOAD_REFRESH_MS = 10 * 60 * 1000;
-
-// 'offline' when the agent serves this page from a content bundle (see
-// agent/docs/offline.md). Fixed for the life of the page.
-const MODE = readBoardMode();
+const LOCAL_STATUS_REFRESH_MS = 60 * 1000;
 
 // Presentation overrides driven by the debug drawer (Alt+Shift+D). `null` on a
 // tri-state field means "don't override, use the board's own logic". Held in
@@ -52,29 +49,80 @@ function ScaledStage({ children }) {
   );
 }
 
-function Status({ title, detail, error }) {
+// `large` is for screens that someone has to act on from across the room (the
+// waiting-for-content screen); `hint` is a second, plainer line under detail.
+function Status({ title, detail, error, hint, large = false }) {
   return (
-    <div className="board-status">
+    <div className={large ? 'board-status bs-large' : 'board-status'}>
       <div className="bs-inner">
         <h1>{title}</h1>
         <p>{detail}</p>
         {error && <div className="bs-err">{error}</div>}
+        {hint && <div className="bs-hint">{hint}</div>}
       </div>
     </div>
   );
 }
 
+const SERVICE_PORT_URL = 'http://10.77.0.1/';
+
 /**
- * "Content last updated …" note for an offline board whose bundle has run
+ * Agent up, but no content package installed yet. What an
+ * operator can do about it depends on whether the agent is trying to sync:
+ *
+ *   - sync on and no error yet: it is downloading; nothing to do but wait.
+ *   - sync on and failing: say why (sync.lastError), and offer the offline
+ *     routes too, since a board with no internet also lands here (its sync
+ *     attempts fail fast with no route, section 11 of the architecture doc).
+ *   - sync off, or no status at all: only the offline routes can help.
+ */
+function WaitingForContent({ status }) {
+  const sync = status?.sync;
+  const offline =
+    `Plug in a USB stick with a MusallahBoard update, or connect a laptop or phone ` +
+    `to the board's ethernet port and open ${SERVICE_PORT_URL}`;
+  if (sync?.enabled && !sync.lastError) {
+    return (
+      <Status
+        large
+        title="Waiting for content"
+        detail="Downloading content from LensBridge…"
+      />
+    );
+  }
+  if (sync?.enabled) {
+    return (
+      <Status
+        large
+        title="Waiting for content"
+        detail="Could not download content from LensBridge"
+        error={sync.lastError}
+        hint={offline}
+      />
+    );
+  }
+  return (
+    <Status
+      large
+      title="Waiting for content"
+      detail="No content is installed on this board"
+      hint={offline}
+    />
+  );
+}
+
+/**
+ * "Content last updated …" note for a board whose installed content has run
  * out. Past lastDay the agent keeps serving lastDay's payload, so the board
- * still looks alive — this is the one visible hint that nobody has pushed new
- * content. Dated by when the bundle was generated, in the bundle's zone.
+ * still looks alive, and this is the one visible hint that nobody has sent new
+ * content. Dated by when the package was made, in the content's zone.
  */
 function StaleNote({ status }) {
   if (!(status?.staleDays > 0)) return null;
-  const b = status.bundle;
+  const b = status?.content;
   let when = b?.lastDay ?? '';
-  const at = b?.generatedAt ? new Date(b.generatedAt) : null;
+  const createdAt = b?.createdAt;
+  const at = createdAt ? new Date(createdAt) : null;
   if (at && !Number.isNaN(at.getTime())) {
     try {
       when = new Intl.DateTimeFormat('en-US', {
@@ -96,20 +144,22 @@ function gregorian(now, timezone) {
 }
 
 export default function App() {
-  // Identity is settled by resolveDeviceId() in main.jsx before the first
-  // render, so the cookie is already authoritative here — no reconciliation
-  // effect, and no unpaired flash on a board the agent provisioned.
-  const [deviceId, setDeviceIdState] = useState(() => getSetupConfig().deviceId);
+  // The agent says who we are in /api/local/status. Until that answers the id
+  // is simply unknown; it is for diagnostics only, since the agent serves just
+  // its own board and the payload is fetched without it.
+  const [deviceId, setDeviceId] = useState(null);
   const [payload, setPayload] = useState(null);
   const [prayerInfo, setPrayerInfo] = useState(null); // { prayers, hijri }
   const [error, setError] = useState(null);
+  // The last payload fetch said the agent has no content yet.
+  const [noContent, setNoContent] = useState(false);
   const [lastPayloadAt, setLastPayloadAt] = useState(null);
-  // Offline mode only: the agent's /api/local/status, refreshed with the payload.
+  // The agent's /api/local/status, refreshed with the payload and every
+  // minute (see applyLocalStatus below).
   const [localStatus, setLocalStatus] = useState(null);
   const [realNow, setRealNow] = useState(new Date());
   const [slideIdx, setSlideIdx] = useState(0);
-  // Setup modal force-opened by the operator hotkey. It is a diagnostics
-  // panel now — never a gate. An unpaired board waits, it does not prompt.
+  // Diagnostics panel, opened by the operator hotkey. Never a gate.
   const [setupOpen, setSetupOpen] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
   const [debug, setDebug] = useState(NO_DEBUG);
@@ -123,8 +173,6 @@ export default function App() {
     [realNow, debug.timeOffsetMs]
   );
 
-  const needsSetup = !isValidDeviceId(deviceId);
-
   // Force the cursor visible while either operator panel is open, otherwise
   // an operator on a touchscreen-less board can't aim at its own fields. Both
   // panels share one effect: as two, closing either would re-hide the cursor
@@ -132,20 +180,7 @@ export default function App() {
   useEffect(() => {
     if (setupOpen || debugOpen) document.body.classList.remove('cursor-hidden');
     else applyCursorPreference();
-  }, [needsSetup, setupOpen, debugOpen]);
-
-  // While unpaired, watch for the cookie appearing. The agent's normal path is
-  // to rewrite /etc/musallahboard/kiosk-url and let the systemd .path watcher
-  // bounce the kiosk, but it can also provision in-place over CDP — this is
-  // what makes that land without a reload.
-  useEffect(() => {
-    if (!needsSetup) return;
-    const id = setInterval(() => {
-      const current = getSetupConfig().deviceId;
-      if (isValidDeviceId(current)) setDeviceIdState(current);
-    }, 2000);
-    return () => clearInterval(id);
-  }, [needsSetup]);
+  }, [setupOpen, debugOpen]);
 
   // Operator hotkeys: Alt+Shift+F opens setup, Alt+Shift+D the debug drawer.
   // Matched on e.code too because Alt+Shift on some layouts yields a dead key
@@ -171,22 +206,19 @@ export default function App() {
     return () => clearInterval(id);
   }, []);
 
-  // Reads identity from the cookie at call time rather than from the closure:
-  // the agent provisions and refreshes in a single evaluated expression, so
-  // setDeviceId() and refresh() run in the same tick — before React has
-  // re-rendered with the new id. Closing over `deviceId` would refetch with
-  // the old one (or refuse as unpaired) on exactly the call that matters.
+  // No device id is needed: the agent serves only its own board. The result
+  // is what window.MusallahBoard.refresh() resolves to for the agent.
   const loadPayload = useCallback(async () => {
-    const id = getSetupConfig().deviceId;
-    if (!isValidDeviceId(id)) return { ok: false, reason: 'unpaired' };
-    // Alongside the payload, not after it: when the agent has no bundle the
-    // payload 503s, and that is exactly when the diagnostics need the status.
-    if (MODE === 'offline') getLocalStatus().then(setLocalStatus);
+    // Alongside the payload, not after it: when the agent has no content the
+    // payload 503s, and that is exactly when the waiting screen and the
+    // diagnostics need the status.
+    getLocalStatus().then((s) => applyLocalStatusRef.current(s));
     try {
-      const p = await getBoardPayload(id);
+      const p = await getBoardPayload();
       prefetchPayloadImages(p);
       setPayload(p);
       setError(null);
+      setNoContent(false);
       setLastPayloadAt(Date.now());
       // Computed locally (adhan + Intl), recomputed on every payload load —
       // which is also what rolls the times over after midnight.
@@ -195,21 +227,65 @@ export default function App() {
       } catch (e) {
         console.error('prayer computation failed', e);
       }
-      return { ok: true, deviceId: id, at: new Date().toISOString() };
+      return { ok: true, at: new Date().toISOString() };
     } catch (e) {
-      console.error('payload fetch failed', e);
+      // Not an error on a board that has simply never been given content: it
+      // gets its own screen instead of "Reconnecting…".
+      const empty = isNoContentError(e);
+      if (!empty) console.error('payload fetch failed', e);
+      setNoContent(empty);
       setError(e?.message || 'Unknown error');
-      return { ok: false, deviceId: id, error: e?.message || 'Unknown error' };
+      return { ok: false, error: e?.message || 'Unknown error' };
     }
-    // deviceId is not read here, but a change to it must restart the polling
-    // effect below so a freshly-paired board fetches immediately.
-  }, [deviceId]);
+  }, []);
 
   useEffect(() => {
     loadPayload();
     const id = setInterval(loadPayload, PAYLOAD_REFRESH_MS);
     return () => clearInterval(id);
   }, [loadPayload]);
+
+  // ---------------------------------------------------------------------
+  // Agent status. Polled every minute (and with every payload load)
+  // so the waiting screen, the staleness note and the diagnostics stay current
+  // without depending on the event stream. It is also the backstop for events
+  // missed while the stream was down:
+  //   - content appearing while we sit on the waiting screen loads it at once
+  //     rather than at the next 10-minute payload poll;
+  //   - a change of installed app version between two polls reloads the page.
+  //     Compared poll to poll, never against APP_VERSION: a package whose
+  //     signed version differs from the package.json it was built from would
+  //     otherwise reload the board forever.
+  // Held in a ref so loadPayload (above) and the interval always call the
+  // version that sees current state.
+  // ---------------------------------------------------------------------
+  const seenAppVersion = useRef(undefined);
+  //
+  // Only the minute poll may trigger the content catch-up. loadPayload fetches
+  // the status too, and if it could also call back into loadPayload, an agent
+  // whose status and payload disagree would have the two chase each other.
+  const applyLocalStatus = (s, { fromPoll = false } = {}) => {
+    setLocalStatus(s);
+    if (!s) return;
+    if (isValidDeviceId(s.deviceId)) setDeviceId(s.deviceId.trim());
+    const appVersion = s.app?.version ?? null;
+    if (seenAppVersion.current === undefined) seenAppVersion.current = appVersion;
+    else if (appVersion && appVersion !== seenAppVersion.current) {
+      window.location.reload();
+      return;
+    }
+    if (fromPoll && noContent && s?.content) refreshRef.current();
+  };
+  const applyLocalStatusRef = useRef(applyLocalStatus);
+  useEffect(() => { applyLocalStatusRef.current = applyLocalStatus; });
+
+  useEffect(() => {
+    const id = setInterval(
+      () => getLocalStatus().then((s) => applyLocalStatusRef.current(s, { fromPoll: true })),
+      LOCAL_STATUS_REFRESH_MS
+    );
+    return () => clearInterval(id);
+  }, []);
 
   const tz = payload?.deviceConfig?.location?.timezone;
 
@@ -272,15 +348,14 @@ export default function App() {
   // ---------------------------------------------------------------------
   // Agent-facing surface.
   //
-  // The device agent drives this page over the DevTools Protocol. Two paths
-  // provision a board, both implemented:
-  //   • navigate to <board-url>?deviceId=<uuid>   (kiosk-url + .path watcher)
-  //   • Runtime.evaluate: window.MusallahBoard.setDeviceId('<uuid>')
+  // The device agent drives this page over the DevTools Protocol: its
+  // config.refresh command calls window.MusallahBoard.refresh(), and its
+  // telemetry reads getStatus().
   //
   // The globals must always see current values, but they are registered once
   // so the agent never races a re-render and finds them missing. Hence the
   // latest-value refs: registering them in an effect that closed over the
-  // first render would refetch with a stale deviceId forever.
+  // first render would report stale state forever.
   // ---------------------------------------------------------------------
   const refreshRef = useRef(loadPayload);
   const statusRef = useRef(null);
@@ -289,9 +364,10 @@ export default function App() {
   useEffect(() => {
     statusRef.current = () => ({
       deviceId: deviceId ?? null,
-      paired: !needsSetup,
-      mode: MODE,
-      bundle: localStatus?.bundle ?? null,
+      paired: isValidDeviceId(deviceId),
+      appVersion: APP_VERSION,
+      content: localStatus?.content ?? null,
+      noContent,
       slideKey: slides[slideIdx]?.key ?? null,
       slideIndex: slides.length ? slideIdx : null,
       slideCount: slides.length,
@@ -302,17 +378,6 @@ export default function App() {
 
   useEffect(() => {
     window.MusallahBoard = {
-      /** Provision (or re-point) this board. Rejects anything but a UUID. */
-      setDeviceId(id, { reload = true } = {}) {
-        const next = String(id ?? '').trim();
-        if (!isValidDeviceId(next)) {
-          throw new Error(`setDeviceId: not a UUID: ${JSON.stringify(id)}`);
-        }
-        saveDeviceId(next);
-        if (reload) window.location.reload();
-        else setDeviceIdState(next);
-        return next;
-      },
       /** Re-fetch the payload and repaint in place. No reload. */
       refresh: () => refreshRef.current(),
       /** What this board thinks it is and what is currently on screen. */
@@ -324,28 +389,20 @@ export default function App() {
       /** Apply presentation overrides without the drawer. Partial patch. */
       setDebug: (patch) => setDebug((d) => ({ ...d, ...(patch || {}) })),
       resetDebug: () => setDebug(NO_DEBUG),
-      getConfig: () => getSetupConfig(),
     };
-    // Alias for agent builds that predate MusallahBoard.refresh().
-    window.__refreshBoard = () => window.MusallahBoard.refresh();
-    return () => {
-      delete window.MusallahBoard;
-      delete window.__refreshBoard;
-    };
+    return () => { delete window.MusallahBoard; };
   }, []);
 
-  // Live content push. Only opened once this board is enrolled: the channel
-  // carries enrolled devices only, and the backend closes anything that cannot
-  // name a known device. The cookie poll above re-runs this on enrollment.
+  // The agent listens on the backend's refresh channel itself and turns it
+  // into content syncs. The page only hears the outcome, from the agent's event
+  // stream: new content re-fetches in place, a new app release reloads into it.
   // Goes through the ref so it always calls the current loader.
-  //
-  // Offline there is no backend to push anything; new content arrives as a
-  // bundle install, which reloads the page or is picked up by the 10-minute
-  // poll.
   useEffect(() => {
-    if (MODE === 'offline' || !isValidDeviceId(deviceId)) return undefined;
-    return connectRefreshSocket(deviceId, () => refreshRef.current());
-  }, [deviceId]);
+    return connectLocalEvents({
+      onContent: () => refreshRef.current(),
+      onApp: () => window.location.reload(),
+    });
+  }, []);
 
   // The drawer is reachable from every render path — a board stuck on the
   // loading screen is exactly when you want to force a theme or hold the deck.
@@ -367,46 +424,26 @@ export default function App() {
       />
     );
 
-  // Unpaired: wait, never prompt. This is a wall-mounted screen with no
-  // keyboard and a hidden cursor — a form here is a dead end. The agent
-  // provisions us on its own schedule and the poll above picks it up.
-  if (needsSetup) {
-    return (
-      <>
-        <Status
-          title="Waiting for device enrollment"
-          detail="This board has not been paired with a device yet."
-        />
-        {renderDebug()}
-        {setupOpen && (
-          <SetupModal
-            status={statusRef.current?.()}
-            localStatus={localStatus}
-            onCancel={() => setSetupOpen(false)}
-            onComplete={(id) => { setSetupOpen(false); setDeviceIdState(id); }}
-          />
-        )}
-      </>
-    );
-  }
-
-  // Loading / error screen — still allow the operator hotkey to summon setup
-  // so a mis-provisioned board can be fixed on the spot.
+  // Loading / error screen: the operator hotkeys still work, so a stuck board
+  // can be diagnosed on the spot.
   if (!data || !slides.length) {
     return (
       <>
-        <Status
-          title="MusallahBoard"
-          detail={error ? 'Reconnecting to the board service…' : 'Version 2027'}
-          error={error}
-        />
+        {noContent ? (
+          <WaitingForContent status={localStatus} />
+        ) : (
+          <Status
+            title="MusallahBoard"
+            detail={error ? 'Reconnecting to the board service…' : 'Version 2027'}
+            error={error}
+          />
+        )}
         {renderDebug()}
         {setupOpen && (
           <SetupModal
             status={statusRef.current?.()}
             localStatus={localStatus}
-            onCancel={() => setSetupOpen(false)}
-            onComplete={(id) => { setSetupOpen(false); setDeviceIdState(id); }}
+            onClose={() => setSetupOpen(false)}
           />
         )}
       </>
@@ -481,8 +518,7 @@ export default function App() {
       <SetupModal
         status={statusRef.current?.()}
         localStatus={localStatus}
-        onCancel={() => setSetupOpen(false)}
-        onComplete={(id) => { setSetupOpen(false); setDeviceIdState(id); }}
+        onClose={() => setSetupOpen(false)}
       />
     )}
     </>

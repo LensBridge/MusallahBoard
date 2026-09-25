@@ -1464,6 +1464,19 @@ body.cursor-hidden, body.cursor-hidden * { cursor: none !important; }
   margin-top: 18px; font-size: 12px; color: oklch(0.72 0.13 30);
   word-break: break-word; text-transform: none; letter-spacing: 0.02em;
 }
+.board-status .bs-hint {
+  margin-top: 28px; font-size: 15px; line-height: 1.6;
+  color: oklch(0.96 0.01 95);
+}
+/* Screens someone has to act on from across the room (waiting for content).
+   Same look as the loading screen, sized for distance rather than a glance
+   from up close. Not scaled with the stage: this sits outside it, so these are
+   real pixels on a 1080p panel. */
+.board-status.bs-large .bs-inner { max-width: 1280px; }
+.board-status.bs-large h1 { font-size: 72px; margin-bottom: 28px; }
+.board-status.bs-large p { font-size: 28px; letter-spacing: 0.12em; }
+.board-status.bs-large .bs-err { margin-top: 24px; font-size: 24px; }
+.board-status.bs-large .bs-hint { margin-top: 48px; font-size: 32px; }
 
 .setup-modal {
   position: fixed; inset: 0; z-index: 50;
@@ -1511,25 +1524,6 @@ body.cursor-hidden, body.cursor-hidden * { cursor: none !important; }
   overflow-wrap: anywhere;
 }
 
-.setup-hint {
-  font-family: var(--f-sans); font-size: 12px; line-height: 1.45;
-  color: oklch(0.68 0.03 95);
-}
-.setup-hint-bad { color: oklch(0.72 0.15 30); }
-
-.setup-field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
-.setup-field label {
-  font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.2em;
-  text-transform: uppercase; color: oklch(0.85 0.04 95);
-}
-.setup-field input[type="text"],
-.setup-field input[type="password"] {
-  background: oklch(0.20 0.08 258);
-  border: 1px solid oklch(0.38 0.07 258);
-  border-radius: 8px; padding: 12px 14px;
-  color: oklch(0.96 0.01 95); font-family: var(--f-mono); font-size: 14px;
-}
-.setup-field input:focus { outline: 2px solid oklch(0.91 0.16 95); }
 .setup-row { display: flex; align-items: center; gap: 10px; margin-bottom: 26px; }
 .setup-row label { font-family: var(--f-sans); font-size: 14px; color: oklch(0.85 0.04 95); }
 .setup-card button {

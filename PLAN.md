@@ -1,5 +1,7 @@
 # MusallahBoard Production Plan
 
+> Superseded: the board app is no longer hosted; it runs only served by the device agent (see README and agent/docs/architecture.md).
+
 Path from the current PoC (hosted Vite site + `setup.sh`-hardened Pi kiosk) to a
 production fleet with per-device identity, remote control from the admin
 portal, granular per-board configuration, and offline resilience.
@@ -89,6 +91,13 @@ elevated privileges, so they don't touch the agent.
 ## Component plan
 
 ### 1. Service worker (offline)
+
+> **Superseded.** Offline operation is no longer a service-worker concern:
+> every board is now served from its own disk by the device agent, with
+> signed content and app packages (local-first, no online/offline mode). See
+> `docs/architecture.md` in the [agent repo](https://github.com/LensBridge/agent).
+> The notes below, and the related non-goals and tech choices in this plan,
+> describe the earlier approach.
 
 In the existing Vite app, using `vite-plugin-pwa` (Workbox under the hood).
 

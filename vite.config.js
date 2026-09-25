@@ -1,36 +1,46 @@
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// The kiosk talks to the LensBridge backend. In dev we proxy /api to the
-// local Spring app so the browser stays same-origin (no CORS). In prod the
-// backend origin is injected via VITE_API_BASE_URL at build time; when unset
-// the app falls back to same-origin /api (reverse-proxied in deployment).
-const BACKEND = process.env.VITE_DEV_BACKEND || 'http://localhost:8080'
+// The board app only ever runs served by the device agent at 127.0.0.1:8080,
+// which answers /api (payload, status, SSE events) and /media same-origin. In
+// dev we proxy both to an agent so the page stays same-origin there too. Point
+// it at a real board with `ssh -L 8080:127.0.0.1:8080 <board>` (the default),
+// or set VITE_DEV_AGENT to another agent.
+const AGENT = process.env.VITE_DEV_AGENT || 'http://127.0.0.1:8080'
 
-import { cloudflare } from "@cloudflare/vite-plugin";
+// Baked into the bundle as the build's own version (src/version.js). It is the
+// same number scripts/package-mbu.mjs signs into the app package, so the
+// diagnostics can show which build is really running.
+const { version: APP_VERSION } = JSON.parse(
+  readFileSync(new URL('./package.json', import.meta.url), 'utf8')
+)
 
 export default defineConfig({
-  plugins: [cloudflare(), react()],
+  plugins: [react()],
+  define: {
+    __MB_APP_VERSION__: JSON.stringify(APP_VERSION),
+  },
   server: {
     host: '0.0.0.0',
     port: 3000,
     open: true,
     proxy: {
-      // ws: the refresh channel upgrades under /api too, and without this the
-      // upgrade isn't forwarded — the socket reconnect-loops silently in dev
-      // while every HTTP call works fine.
-      '/api': { target: BACKEND, changeOrigin: true, ws: true },
+      // /api/local/events is Server-Sent Events: a plain long-lived HTTP
+      // response, which the proxy streams through as it arrives.
+      '/api': { target: AGENT, changeOrigin: true },
+      '/media': { target: AGENT, changeOrigin: true },
     },
   },
   preview: {
     host: '0.0.0.0',
     port: 3000,
   },
-  // Vitest reads this config, so the React plugin and the aliases above apply
-  // to tests too — a component test compiles exactly like the bundle does.
+  // Vitest reads this config, so the React plugin applies to tests too: a
+  // component test compiles exactly like the bundle does.
   test: {
     environment: 'jsdom',
     globals: true,
-    include: ['src/**/*.test.{js,jsx}'],
+    include: ['src/**/*.test.{js,jsx}', 'scripts/**/*.test.mjs'],
   },
 })

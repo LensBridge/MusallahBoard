@@ -223,6 +223,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/board/devices/{deviceId}/offline-bundle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download a signed content package for a board
+         * @description A signed .mbu content package (format version 2) holding one fully assembled payload per day, starting today in the device's timezone, plus every poster image those payloads reference. Taken to the board by USB stick, laptop or phone. Requires board:device:read.
+         */
+        get: operations["downloadOfflineBundle"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/board/devices/{deviceId}/revoke": {
         parameters: {
             query?: never;
@@ -786,6 +806,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/agent/content-bundle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fetch this board's signed content package (online sync)
+         * @description Device-authenticated with the X-MB-* headers (Ed25519 signature by the enrolled device key over musallahboard-http-v1, method, path, device id, timestamp and the body's SHA-256). Returns a signed .mbu content package starting today in the device's timezone. Media whose SHA-256 is in haveMedia is listed and signed in mbu.json but left out of the zip.
+         */
+        post: operations["downloadContentBundle"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/agent/enroll": {
         parameters: {
             query?: never;
@@ -797,9 +837,49 @@ export interface paths {
         put?: never;
         /**
          * Exchange a one-time enrollment token for a device identity
-         * @description Called once per device by the MusallahBoard agent. The returned websocketUrl is persisted verbatim into the agent's config and never requested again.
+         * @description Called once per device by the MusallahBoard agent. The returned websocketUrl is persisted verbatim into the agent's config and never requested again. contentSigningKeys are the public content keys the agent pins in its trust store.
          */
         post: operations["enrollAgent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agent/signing-keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Public content signing keys boards should trust
+         * @description Current key first, then previous keys still valid during a rotation. Empty when the server has no content signing key. Used by `musallahboard-agent trust fetch` on boards enrolled before signed content existed.
+         */
+        get: operations["getSigningKeys"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agent/weather": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Current weather for this board
+         * @description Device-authenticated with the X-MB-* headers, like the content bundle; the signed body hash is the SHA-256 of the empty string. `weather` is the OpenWeatherMap current weather JSON exactly as the server last fetched it, or null when the server has none. `fetchedAt` is when the server answered.
+         */
+        get: operations["getAgentWeather"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1127,22 +1207,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/musallah/payload": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["getBoardPayload"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/musallah/weekly-content": {
         parameters: {
             query?: never;
@@ -1370,9 +1434,20 @@ export interface components {
             token: string;
         };
         AgentEnrollResponse: {
+            /** @description Public content signing keys the agent pins at enrollment. Always present; empty when the server has no content key configured. */
+            contentSigningKeys: components["schemas"]["SigningKeyView"][];
             /** Format: uuid */
             deviceId?: string;
             websocketUrl?: string;
+        };
+        AgentWeatherResponse: {
+            /**
+             * Format: date-time
+             * @example 2026-09-24T14:05:00Z
+             */
+            fetchedAt: string;
+            /** @description OpenWeatherMap current weather JSON, verbatim; null when unavailable */
+            weather: components["schemas"]["JsonNode"];
         };
         AuditEventDto: {
             /** @enum {string} */
@@ -1450,6 +1525,14 @@ export interface components {
             startedAt?: string;
             /** @enum {string} */
             status?: "PENDING" | "DELIVERED" | "ACKED" | "RUNNING" | "SUCCEEDED" | "FAILED" | "TIMEOUT" | "REJECTED" | "EXPIRED";
+        };
+        ContentBundleRequest: {
+            /**
+             * Format: int32
+             * @default 7
+             */
+            days: number;
+            haveMedia?: string[];
         };
         CreateCalendarEventRequest: {
             allDay?: boolean;
@@ -1675,6 +1758,7 @@ export interface components {
         MessageResponse: {
             message?: string;
         };
+        /** @description Format of each payloads/<date>.json file inside a signed content package (.mbu). Not returned by any endpoint; boards read it from installed packages. weather is always null here: boards fetch current weather from GET /api/agent/weather. */
         MusallahBoardPayload: {
             deviceConfig?: components["schemas"]["DeviceConfig"];
             frames?: components["schemas"]["FrameDefinition"][];
@@ -1875,6 +1959,14 @@ export interface components {
             description?: string;
             name?: string;
             permissions?: string[];
+        };
+        SigningKeyView: {
+            /** @example 0123456789abcdef */
+            keyId: string;
+            publicKey: string;
+        };
+        SigningKeysResponse: {
+            content: components["schemas"]["SigningKeyView"][];
         };
         SignupRequest: {
             /** Format: email */
@@ -2639,6 +2731,87 @@ export interface operations {
             };
             /** @description Caller lacks the permission for this command kind */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Request failed; body carries a human-readable message */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+        };
+    };
+    downloadOfflineBundle: {
+        parameters: {
+            query?: {
+                /** @description Number of days in the bundle, starting today in the device's timezone */
+                days?: number;
+            };
+            header?: never;
+            path: {
+                deviceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The package */
+            200: {
+                headers: {
+                    /** @description attachment; filename="musallahboard-content-<first 8 chars of deviceId>-<firstDay>.mbu" */
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.musallahboard.mbu": string;
+                };
+            };
+            /** @description days outside 1-31 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description No device with that id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Device is revoked */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description A poster image could not be fetched; the message names the poster */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description No content signing key is configured on the server */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4155,6 +4328,84 @@ export interface operations {
             };
         };
     };
+    downloadContentBundle: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Enrolled device id */
+                "X-MB-Device-Id": string;
+                /** @description Unix milliseconds; must be within 5 minutes of the server clock */
+                "X-MB-Timestamp": number;
+                /** @description Base64 Ed25519 signature by the device key */
+                "X-MB-Signature": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ContentBundleRequest"];
+            };
+        };
+        responses: {
+            /** @description The signed content package */
+            200: {
+                headers: {
+                    /** @description attachment; filename="musallahboard-content-<first 8 chars of deviceId>-<firstDay>.mbu" */
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.musallahboard.mbu": string;
+                };
+            };
+            /** @description Malformed body, days outside 1-31, or a bad haveMedia entry */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Missing or bad device signature, clock skew over 5 minutes, or an unknown or revoked device */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description A poster image could not be fetched; the message names the poster */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description No content signing key is configured on the server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Request failed; body carries a human-readable message */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+        };
+    };
     enrollAgent: {
         parameters: {
             query?: never;
@@ -4187,6 +4438,80 @@ export interface operations {
                 };
             };
             /** @description Enrollment token invalid, expired, or already used */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Request failed; body carries a human-readable message */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+        };
+    };
+    getSigningKeys: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SigningKeysResponse"];
+                };
+            };
+            /** @description Request failed; body carries a human-readable message */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+        };
+    };
+    getAgentWeather: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Enrolled device id */
+                "X-MB-Device-Id": string;
+                /** @description Unix milliseconds; must be within 5 minutes of the server clock */
+                "X-MB-Timestamp": number;
+                /** @description Base64 Ed25519 signature by the device key */
+                "X-MB-Signature": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current weather, or null weather when unavailable */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentWeatherResponse"];
+                };
+            };
+            /** @description Missing or bad device signature, clock skew over 5 minutes, or an unknown or revoked device */
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -4883,37 +5208,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BoardEvent"][];
-                };
-            };
-            /** @description Request failed; body carries a human-readable message */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MessageResponse"];
-                };
-            };
-        };
-    };
-    getBoardPayload: {
-        parameters: {
-            query: {
-                deviceId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MusallahBoardPayload"];
                 };
             };
             /** @description Request failed; body carries a human-readable message */
