@@ -16,6 +16,7 @@ import { buildSlideshow } from './frames/registry.js';
 import { resolveTheme, DEFAULT_THEME } from './themes/registry.js';
 import './frames/builders.jsx'; // registers default builders
 import { applyCursorPreference } from './utils/cookies.js';
+import { updateNotice } from './utils/updates.js';
 import { APP_VERSION } from './version.js';
 import SetupModal from './components/SetupModal.jsx';
 import DebugMenu from './components/DebugMenu.jsx';
@@ -401,6 +402,7 @@ export default function App() {
     return connectLocalEvents({
       onContent: () => refreshRef.current(),
       onApp: () => window.location.reload(),
+      onUpdates: () => getLocalStatus().then((s) => applyLocalStatusRef.current(s)),
     });
   }, []);
 
@@ -463,7 +465,11 @@ export default function App() {
   const boardTheme = resolveTheme(payload.deviceConfig.theme, autoTheme);
   const theme = resolveTheme(debug.theme, boardTheme);
 
-  const showTicker = data.scrollingMessages.length > 0;
+  // Software waiting for the night's install window is announced on the
+  // ticker, after the board's own messages.
+  const notice = updateNotice(localStatus?.updates, now, tz);
+  const tickerMessages = notice ? [...data.scrollingMessages, notice] : data.scrollingMessages;
+  const showTicker = tickerMessages.length > 0;
   // Show the Jummah card Wed–Fri (matches prior board behaviour). Read in the
   // board's zone: near midnight the browser's day can be the wrong one.
   const dow = zonedClock(now, tz).weekday;
@@ -506,7 +512,7 @@ export default function App() {
           </main>
 
           {showTicker ? (
-            <Ticker messages={data.scrollingMessages} now={now} />
+            <Ticker messages={tickerMessages} now={now} />
           ) : (
             <div style={{ gridArea: 'ticker', background: 'var(--bg)', borderTop: '1px solid var(--line)' }} />
           )}

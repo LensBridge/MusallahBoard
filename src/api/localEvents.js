@@ -12,6 +12,9 @@
  *   event: app       data: {"version": "..."}
  *     a new board app release is installed: reload, so
  *     the new build is what runs.
+ *   event: updates   data: the status's `updates` object
+ *     software started or stopped waiting for the night's
+ *     install window: re-read the status for the ticker.
  *   : ping           every 25 s, keeps the stream alive.
  *
  * EventSource reconnects on its own after a dropped
@@ -24,10 +27,10 @@
  */
 
 /**
- * @param {{ onContent: () => unknown, onApp: () => unknown }} handlers
+ * @param {{ onContent: () => unknown, onApp: () => unknown, onUpdates?: () => unknown }} handlers
  * @returns {() => void} disposer: closes the stream. Safe to call twice.
  */
-export function connectLocalEvents({ onContent, onApp }) {
+export function connectLocalEvents({ onContent, onApp, onUpdates }) {
   if (typeof EventSource === 'undefined') return () => {};
 
   const source = new EventSource('/api/local/events');
@@ -50,6 +53,7 @@ export function connectLocalEvents({ onContent, onApp }) {
   });
   source.addEventListener('content', () => run(onContent, 'content refresh'));
   source.addEventListener('app', () => run(onApp, 'app reload'));
+  if (onUpdates) source.addEventListener('updates', () => run(onUpdates, 'updates refresh'));
 
   return () => source.close();
 }
