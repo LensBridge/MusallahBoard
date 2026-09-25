@@ -6,8 +6,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MusallahBoard</title>
   <link rel="icon" type="image/svg+xml" href="/images/musallahboard-icon.svg" />
+  <style>
+    /* The board fades in from black. The agent fades the update screen to
+       black before it navigates back here (agent/docs/architecture.md,
+       section 8), so together the switch is a dip to black, not a cut. */
+    #mb-veil {
+      position: fixed;
+      inset: 0;
+      z-index: 2147483647;
+      background: #000;
+      pointer-events: none;
+      animation: mb-veil-out 700ms ease-out 150ms both;
+    }
+    @keyframes mb-veil-out {
+      from { opacity: 1; }
+      to { opacity: 0; visibility: hidden; }
+    }
+  </style>
 </head>
 <body>
+  <div id="mb-veil" aria-hidden="true"></div>
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
 </body>

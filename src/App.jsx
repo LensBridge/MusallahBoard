@@ -16,12 +16,14 @@ import { buildSlideshow } from './frames/registry.js';
 import { resolveTheme, DEFAULT_THEME } from './themes/registry.js';
 import './frames/builders.jsx'; // registers default builders
 import { applyCursorPreference } from './utils/cookies.js';
+import { updateNotice } from './utils/updates.js';
 import { APP_VERSION } from './version.js';
 import SetupModal from './components/SetupModal.jsx';
 import DebugMenu from './components/DebugMenu.jsx';
 import TopBar from './components/TopBar.jsx';
 import PrayerRail from './components/PrayerRail.jsx';
 import Ticker from './components/Ticker.jsx';
+import NoticeBanner from './components/NoticeBanner.jsx';
 
 const PAYLOAD_REFRESH_MS = 10 * 60 * 1000;
 const LOCAL_STATUS_REFRESH_MS = 60 * 1000;
@@ -78,9 +80,16 @@ const SERVICE_PORT_URL = 'http://10.77.0.1/';
  */
 function WaitingForContent({ status }) {
   const sync = status?.sync;
-  const offline =
-    `Plug in a USB stick with a MusallahBoard update, or connect a laptop or phone ` +
-    `to the board's ethernet port and open ${SERVICE_PORT_URL}`;
+  // Only the routes this board accepts: the service port is off by default,
+  // and a board that does not read USB sticks should not ask for one.
+  const routes = [];
+  if (status?.usbImport) routes.push('plug in a USB stick with this board\'s offline bundle');
+  if (status?.servicePort) {
+    routes.push(`connect a laptop or phone to the board's ethernet port and open ${SERVICE_PORT_URL}`);
+  }
+  const offline = routes.length
+    ? `Without internet: ${routes.join(', or ')}.`
+    : 'Connect the board to the internet so it can download its content.';
   if (sync?.enabled && !sync.lastError) {
     return (
       <Status
@@ -118,6 +127,9 @@ function WaitingForContent({ status }) {
  * content. Dated by when the package was made, in the content's zone.
  */
 function StaleNote({ status }) {
+  if (status?.staleDays === 0 && status.daysRemaining != null && status.daysRemaining <= CONTENT_LOW_DAYS) {
+    return <ContentEndsNote status={status} />;
+  }
   if (!(status?.staleDays > 0)) return null;
   const b = status?.content;
   let when = b?.lastDay ?? '';
@@ -132,6 +144,42 @@ function StaleNote({ status }) {
     } catch { /* keep lastDay */ }
   }
   return <div className="stale-note">Content last updated {when}</div>;
+}
+
+/** Content ending this many days after today, or sooner, gets a note. */
+const CONTENT_LOW_DAYS = 2;
+
+/**
+ * "Content ends Wednesday, October 1": the last days before an offline board's
+ * content runs out, so whoever maintains it has warning to send more before
+ * the stale note appears. An online board never gets here: it syncs a week
+ * ahead every half hour, unless its sync is failing, which is worth knowing.
+ */
+function ContentEndsNote({ status }) {
+  const lastDay = status?.content?.lastDay;
+  let when = lastDay ?? '';
+  const at = lastDay ? new Date(`${lastDay}T12:00:00Z`) : null;
+  if (at && !Number.isNaN(at.getTime())) {
+    when = new Intl.DateTimeFormat('en-US', {
+      weekday: 'long', month: 'long', day: 'numeric', timeZone: 'UTC',
+    }).format(at);
+  }
+  return <div className="stale-note">{status.daysRemaining === 0 ? 'Content ends today' : `Content ends ${when}`}</div>;
+}
+
+/**
+ * The agent could not confirm the board's clock since it booted: no NTP, no
+ * hardware clock, no laptop's time (agent/docs/architecture.md, section 10).
+ * After a power cut an offline Pi without an RTC comes up at whatever time it
+ * last saved, and every prayer time on screen follows it.
+ */
+function ClockNote({ status }) {
+  if (status?.clock?.trusted !== false) return null;
+  return (
+    <div className="clock-note">
+      The clock may be wrong: connect the board to the internet, or send an update from a laptop
+    </div>
+  );
 }
 
 function gregorian(now, timezone) {
@@ -163,6 +211,11 @@ export default function App() {
   const [setupOpen, setSetupOpen] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
   const [debug, setDebug] = useState(NO_DEBUG);
+  // The agent's latest update notice (components/NoticeBanner.jsx). Each
+  // gets an id so a banner timing out cannot clear the one that replaced it.
+  const [notice, setNotice] = useState(null);
+  const noticeSeq = useRef(0);
+  const clearNotice = useCallback((id) => setNotice((n) => (n && n.id === id ? null : n)), []);
   const advanceTimer = useRef(null);
 
   // Everything downstream reads `now`, so time travel is a single shift here.
@@ -401,6 +454,8 @@ export default function App() {
     return connectLocalEvents({
       onContent: () => refreshRef.current(),
       onApp: () => window.location.reload(),
+      onUpdates: () => getLocalStatus().then((s) => applyLocalStatusRef.current(s)),
+      onNotice: (n) => setNotice({ ...n, id: ++noticeSeq.current }),
     });
   }, []);
 
@@ -433,12 +488,15 @@ export default function App() {
           <WaitingForContent status={localStatus} />
         ) : (
           <Status
+            large={Boolean(error)}
             title="MusallahBoard"
-            detail={error ? 'Reconnecting to the board service…' : 'Version 2027'}
+            detail={error ? 'Reconnecting to the board service…' : `Version ${APP_VERSION}`}
             error={error}
+            hint={error ? 'This usually clears within a minute. If it does not, switch the board off and on again.' : null}
           />
         )}
         {renderDebug()}
+        <NoticeBanner notice={notice} onDone={clearNotice} />
         {setupOpen && (
           <SetupModal
             status={statusRef.current?.()}
@@ -463,7 +521,11 @@ export default function App() {
   const boardTheme = resolveTheme(payload.deviceConfig.theme, autoTheme);
   const theme = resolveTheme(debug.theme, boardTheme);
 
-  const showTicker = data.scrollingMessages.length > 0;
+  // Software waiting for the night's install window is announced on the
+  // ticker, after the board's own messages.
+  const updateLine = updateNotice(localStatus?.updates, now, tz);
+  const tickerMessages = updateLine ? [...data.scrollingMessages, updateLine] : data.scrollingMessages;
+  const showTicker = tickerMessages.length > 0;
   // Show the Jummah card Wed–Fri (matches prior board behaviour). Read in the
   // board's zone: near midnight the browser's day can be the wrong one.
   const dow = zonedClock(now, tz).weekday;
@@ -502,11 +564,14 @@ export default function App() {
                 );
               })}
             </div>
-            <StaleNote status={localStatus} />
+            <div className="board-notes">
+              <ClockNote status={localStatus} />
+              <StaleNote status={localStatus} />
+            </div>
           </main>
 
           {showTicker ? (
-            <Ticker messages={data.scrollingMessages} now={now} />
+            <Ticker messages={tickerMessages} now={now} />
           ) : (
             <div style={{ gridArea: 'ticker', background: 'var(--bg)', borderTop: '1px solid var(--line)' }} />
           )}
@@ -514,6 +579,7 @@ export default function App() {
       </ScaledStage>
     </div>
     {renderDebug(boardTheme, autoJummah)}
+    <NoticeBanner notice={notice} onDone={clearNotice} onBoard />
     {setupOpen && (
       <SetupModal
         status={statusRef.current?.()}
