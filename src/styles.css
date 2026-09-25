@@ -611,9 +611,9 @@ img { display: block; max-width: 100%; }
    on the recessed ground, the eyebrow type, so it informs whoever maintains
    the board without competing with the slide. */
 .stale-note {
-  padding: 5px 14px;
+  padding: 6px 16px;
   font-family: var(--f-mono);
-  font-size: 11px;
+  font-size: 15px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -632,9 +632,9 @@ img { display: block; max-width: 100%; }
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 7px 16px 7px 14px;
+  padding: 9px 20px 9px 16px;
   font-family: var(--f-sans);
-  font-size: 15px;
+  font-size: 22px;
   color: var(--fg-2);
   background: color-mix(in oklch, var(--bg-soft) 92%, transparent);
   border: 1px solid var(--line);
@@ -1901,19 +1901,19 @@ body.cursor-hidden, body.cursor-hidden * { cursor: none !important; }
 
 .nb-text { min-width: 0; }
 .nb-headline {
-  font-size: 3vmin;
+  font-size: 3.4vmin;
   font-weight: 500;
   line-height: 1.25;
 }
 .nb-footer {
   margin-top: 1vmin;
-  font-size: 2.1vmin;
+  font-size: 2.6vmin;
   font-weight: 500;
   color: var(--gold);
 }
 .nb-line {
   margin-top: 0.6vmin;
-  font-size: 2.1vmin;
+  font-size: 2.6vmin;
   line-height: 1.4;
   color: rgba(255, 255, 255, 0.78);
   text-wrap: pretty;

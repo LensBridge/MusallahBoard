@@ -488,9 +488,11 @@ export default function App() {
           <WaitingForContent status={localStatus} />
         ) : (
           <Status
+            large={Boolean(error)}
             title="MusallahBoard"
-            detail={error ? 'Reconnecting to the board service…' : 'Version 2027'}
+            detail={error ? 'Reconnecting to the board service…' : `Version ${APP_VERSION}`}
             error={error}
+            hint={error ? 'This usually clears within a minute. If it does not, switch the board off and on again.' : null}
           />
         )}
         {renderDebug()}
