@@ -49,6 +49,8 @@ const TIMEOUT_MS = 5000;
  * @property {number|null} [staleDays]
  * @property {{enabled:boolean,lastSuccessAt:string|null,lastAttemptAt:string|null,lastError:string|null}} [sync]
  * @property {{active:boolean}} [update]
+ * @property {boolean} [servicePort]  the ethernet upload page is on
+ * @property {boolean} [usbImport]    USB sticks are read
  * @property {{source:string,trusted:boolean}} [clock]
  *   where the clock's time comes from (ntp, rtc, uploader, starting,
  *   unverified); trusted false means the board should say it may be wrong

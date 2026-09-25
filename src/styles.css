@@ -1905,6 +1905,12 @@ body.cursor-hidden, body.cursor-hidden * { cursor: none !important; }
   font-weight: 500;
   line-height: 1.25;
 }
+.nb-footer {
+  margin-top: 1vmin;
+  font-size: 2.1vmin;
+  font-weight: 500;
+  color: var(--gold);
+}
 .nb-line {
   margin-top: 0.6vmin;
   font-size: 2.1vmin;

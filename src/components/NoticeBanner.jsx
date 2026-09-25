@@ -12,7 +12,10 @@ import { useEffect, useState } from 'react';
  * arrives as the `notice` event on /api/local/events:
  *
  *   { tone: "progress" | "ok" | "neutral" | "problem",
- *     headline, lines: [..], seconds }
+ *     headline, lines: [..], footer?, seconds }
+ *
+ * `footer` is a standing instruction ("You can remove the
+ * USB stick"), shown in the accent under the lines.
  *
  * `seconds` 0 means it stays until the next notice
  * replaces it (a progress banner is always followed by
@@ -99,6 +102,7 @@ export default function NoticeBanner({ notice, onDone, onBoard = false }) {
         {lines.map((line, i) => (
           <div className="nb-line" key={i}>{line}</div>
         ))}
+        {shown.footer && <div className="nb-footer">{shown.footer}</div>}
       </div>
     </div>
   );

@@ -80,9 +80,16 @@ const SERVICE_PORT_URL = 'http://10.77.0.1/';
  */
 function WaitingForContent({ status }) {
   const sync = status?.sync;
-  const offline =
-    `Plug in a USB stick with a MusallahBoard update, or connect a laptop or phone ` +
-    `to the board's ethernet port and open ${SERVICE_PORT_URL}`;
+  // Only the routes this board accepts: the service port is off by default,
+  // and a board that does not read USB sticks should not ask for one.
+  const routes = [];
+  if (status?.usbImport) routes.push('plug in a USB stick with this board\'s offline bundle');
+  if (status?.servicePort) {
+    routes.push(`connect a laptop or phone to the board's ethernet port and open ${SERVICE_PORT_URL}`);
+  }
+  const offline = routes.length
+    ? `Without internet: ${routes.join(', or ')}.`
+    : 'Connect the board to the internet so it can download its content.';
   if (sync?.enabled && !sync.lastError) {
     return (
       <Status
