@@ -1434,8 +1434,8 @@ export interface components {
             token: string;
         };
         AgentEnrollResponse: {
-            /** @description Public content signing keys the agent pins at enrollment. Empty when the server has no content key configured. Optional so agents built before it existed still decode the response. */
-            contentSigningKeys?: components["schemas"]["SigningKeyView"][];
+            /** @description Public content signing keys the agent pins at enrollment. Always present; empty when the server has no content key configured. */
+            contentSigningKeys: components["schemas"]["SigningKeyView"][];
             /** Format: uuid */
             deviceId?: string;
             websocketUrl?: string;
