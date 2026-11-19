@@ -14,7 +14,12 @@
 // ---------------------------------------------------------------------------
 //
 // GET /api/musallah/payload (served by the agent)  -> MusallahBoardPayload
-//   { deviceConfig: DeviceConfig, frames: FrameDefinition[] }
+//   { deviceConfig: DeviceConfig, frames: FrameDefinition[],
+//     weather?: object|null, expired?: bool, lastDay?: "YYYY-MM-DD" }
+//   `expired` is the agent's, not the backend's: true once the installed
+//   content has run out (the agent then serves its last day's payload).
+//   A payload without the field (an older agent) is not expired. See
+//   normalizePayload() for what run-out hides.
 //
 // DeviceConfig {
 //   id: uuid, location: Location, darkModeAfterIsha: bool,
@@ -308,6 +313,24 @@ function normalizeJummah(slot) {
   };
 }
 
+/**
+ * The frames an expired board still shows: prayer times only. Posters, agenda,
+ * quotes and socials are all dated or editorial content that has run out, and
+ * the payload carries no "evergreen" marker that would say otherwise, so none
+ * of it survives. A payload with no next_prayer frame gets one, so the board
+ * is never left with an empty slideshow.
+ */
+function prayerFramesOnly(frames) {
+  const kept = frames.filter((f) => String(f?.frameType || '').toLowerCase() === 'next_prayer');
+  if (kept.length) return kept;
+  return [{
+    frameId: 'next-prayer',
+    frameType: 'next_prayer',
+    durationInSeconds: null,
+    frameConfig: { type: 'next_prayer' },
+  }];
+}
+
 /** Default board config when the API is unreachable. */
 export function emptyDeviceConfig() {
   return {
@@ -329,8 +352,14 @@ export function emptyDeviceConfig() {
  * later in App from the prayer service. Weather, however, now rides along
  * in the payload (`payload.weather`, raw OpenWeatherMap response).
  *
+ * When the agent says the content has run out (`expired: true`), only prayer
+ * frames are kept and the ticker messages are dropped; weather and everything
+ * computed locally are untouched. A missing `expired` means not expired.
+ *
  * @param {any} payload  raw MusallahBoardPayload
  * @returns {{
+ *   expired: boolean,
+ *   lastDay: string,
  *   deviceConfig: object,
  *   frames: any[],
  *   weather: {temp:number,condition:string,city:string}|null,
@@ -356,7 +385,9 @@ export function normalizePayload(payload) {
   // sequence is the backend's job, and a client-side sort could only ever fight
   // it. The frames previously carried `slot` and `priority` for a reordering
   // that was never built; both are gone from the contract.
-  const frames = Array.isArray(payload?.frames) ? payload.frames : [];
+  const expired = payload?.expired === true;
+  const allFrames = Array.isArray(payload?.frames) ? payload.frames : [];
+  const frames = expired ? prayerFramesOnly(allFrames) : allFrames;
 
   const tz = deviceConfig.location?.timezone;
   const ft = (f) => String(f?.frameType || '').toLowerCase();
@@ -406,6 +437,8 @@ export function normalizePayload(payload) {
   );
 
   return {
+    expired,
+    lastDay: typeof payload?.lastDay === 'string' ? payload.lastDay : '',
     deviceConfig,
     frames,
     weather: normalizeWeather(payload?.weather, deviceConfig.location?.city),
@@ -414,7 +447,7 @@ export function normalizePayload(payload) {
     jummahPrayers,
     verse: normalizeQuote(verseFrame?.frameConfig),
     hadith: normalizeQuote(hadithFrame?.frameConfig),
-    scrollingMessages: deviceConfig.enableScrollingMessage
+    scrollingMessages: deviceConfig.enableScrollingMessage && !expired
       ? deviceConfig.scrollingMessages || []
       : [],
   };

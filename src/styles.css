@@ -649,6 +649,30 @@ img { display: block; max-width: 100%; }
   border-radius: 1px;
 }
 
+/* The installed content has run out. Louder than the stale note, since it
+   asks someone to act, but calm: sentence case, no alarm colour, the same
+   accent diamond as the clock note. Prayer times above it stay the focus. */
+.expired-note {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 28px 14px 22px;
+  font-family: var(--f-sans);
+  font-size: 30px;
+  color: var(--fg-2);
+  background: color-mix(in oklch, var(--bg-soft) 92%, transparent);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+}
+.expired-note::before {
+  content: "";
+  flex: none;
+  width: 10px; height: 10px;
+  transform: rotate(45deg);
+  background: var(--accent);
+  border-radius: 1px;
+}
+
 /* Slide indicators (bottom-right of stage-main) */
 .slide-indicators {
   position: absolute;

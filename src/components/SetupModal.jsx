@@ -83,6 +83,7 @@ export default function SetupModal({ onClose, status, localStatus }) {
           <LocalRows local={localStatus} />
           <Row label="Last payload" value={status?.lastPayloadAt} />
           <Row label="On screen" value={status?.slideKey} />
+          {status?.expired && <Row label="Announcements" value="out of date: content has run out" />}
           {status?.error && <Row label="Last error" value={status.error} />}
         </div>
 

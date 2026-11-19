@@ -146,6 +146,20 @@ function StaleNote({ status }) {
   return <div className="stale-note">Content last updated {when}</div>;
 }
 
+/**
+ * Shown instead of the content slides once the installed content has run out
+ * (the payload says `expired`). Prayer times keep working underneath it, so
+ * this is the whole message: calm, readable from across the room, and it says
+ * what to do.
+ */
+function ExpiredNote() {
+  return (
+    <div className="expired-note">
+      Announcements are out of date. Plug in an update stick.
+    </div>
+  );
+}
+
 /** Content ending this many days after today, or sooner, gets a note. */
 const CONTENT_LOW_DAYS = 2;
 
@@ -421,6 +435,7 @@ export default function App() {
       appVersion: APP_VERSION,
       content: localStatus?.content ?? null,
       noContent,
+      expired: payload?.expired ?? false,
       slideKey: slides[slideIdx]?.key ?? null,
       slideIndex: slides.length ? slideIdx : null,
       slideCount: slides.length,
@@ -566,7 +581,7 @@ export default function App() {
             </div>
             <div className="board-notes">
               <ClockNote status={localStatus} />
-              <StaleNote status={localStatus} />
+              {payload.expired ? <ExpiredNote /> : <StaleNote status={localStatus} />}
             </div>
           </main>
 
