@@ -2,15 +2,15 @@
  * =====================================================
  * MusallahBoard Data Models + Normalizers
  * =====================================================
- * The wire types below mirror the LensBridge OpenAPI spec
- * (GET /api/musallah/*). UI code consumes the *normalized*
- * design shape produced by normalizePayload(), not the raw
- * wire types.
+ * The wire shape below is the payload the device agent serves
+ * (GET /api/musallah/payload; types in api/types.d.ts). UI code
+ * consumes the *normalized* design shape produced by
+ * normalizePayload(), not the raw wire types.
  * =====================================================
  */
 
 // ---------------------------------------------------------------------------
-// Wire contract (authoritative — from /v3/api-docs)
+// Wire contract
 // ---------------------------------------------------------------------------
 //
 // GET /api/musallah/payload (served by the agent)  -> MusallahBoardPayload
@@ -26,7 +26,7 @@
 //   enableScrollingMessage: bool, scrollingMessages: string[],
 //   theme?: string
 // }
-//   `theme` is not in the OpenAPI schema yet — it is read forward so a board
+//   `theme` is not sent by the backend yet — it is read forward so a board
 //   already in the field picks the field up the day the backend starts
 //   sending it, with no frontend release. Unknown names are ignored rather
 //   than applied; see themes/registry.js.

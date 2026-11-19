@@ -12,16 +12,15 @@
  * sent, and a 503 "no content installed" is a state, not
  * an outage: see isNoContentError().
  *
- * The path is the agent's, not the backend's, so it is
- * not in the generated `paths`; the body is still the
- * backend's MusallahBoardPayload schema component, which
- * the agent serves verbatim from its content package.
+ * The body is the backend's payload, served verbatim by
+ * the agent from its content package, plus the agent's own
+ * `expired` and `lastDay` (see types.d.ts).
  * =====================================================
  */
 
 import { normalizePayload } from '../models/index.js';
 
-/** @typedef {import('./schema').components['schemas']['MusallahBoardPayload']} MusallahBoardPayload */
+/** @typedef {import('./types').MusallahBoardPayload} MusallahBoardPayload */
 
 const PAYLOAD_URL = '/api/musallah/payload';
 const TIMEOUT_MS = 30000;
