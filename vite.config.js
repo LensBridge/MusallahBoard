@@ -10,7 +10,7 @@ import react from '@vitejs/plugin-react'
 const AGENT = process.env.VITE_DEV_AGENT || 'http://127.0.0.1:8080'
 
 // Baked into the bundle as the build's own version (src/version.js). It is the
-// same number scripts/package-mbu.mjs signs into the app package, so the
+// same number scripts/package.sh signs into the app package, so the
 // diagnostics can show which build is really running.
 const { version: APP_VERSION } = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url), 'utf8')
@@ -41,6 +41,6 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    include: ['src/**/*.test.{js,jsx}', 'scripts/**/*.test.mjs'],
+    include: ['src/**/*.test.{js,jsx}'],
   },
 })
