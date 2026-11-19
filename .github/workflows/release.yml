@@ -2,7 +2,8 @@ name: Release
 
 # Publishes the board app for the device agents (agent/docs/architecture.md,
 # sections 4, 9.4 and 15). Pushing a tag vX.Y.Z builds the SPA, signs it into
-# musallahboard-app-X.Y.Z.mbu with the release key, and attaches that plus
+# musallahboard-app-X.Y.Z.mbu with the release key (using the agent repo's
+# mbpack, the code boards verify with), and attaches that plus
 # app-channel.json to the GitHub release. Boards poll
 # releases/latest/download/app-channel.json, so publishing the release is what
 # rolls the fleet forward; the package signature, not this workflow, is what
@@ -15,6 +16,11 @@ on:
 permissions:
   contents: write
 
+env:
+  # The agent commit whose mbpack builds the package (tag 0.3.0; Go cannot
+  # resolve that tag, it is not vX.Y.Z). Bump it when the .mbu format changes.
+  MBPACK_REF: 794d639da7e4ce62f305501ee9904085aa88aac5
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -25,6 +31,16 @@ jobs:
         with:
           node-version: '22'
           cache: npm
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: false
+
+      - name: Install mbpack
+        run: |
+          go install "github.com/LensBridge/agent/cmd/mbpack@${MBPACK_REF}"
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
       - run: npm ci
 
