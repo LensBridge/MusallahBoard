@@ -18,3 +18,6 @@ ds-bundle/
 .design-sync/*
 .design-sync/learnings/
 .design-sync/node_modules
+
+# Per-developer Claude Code permissions
+.claude/settings.local.json
