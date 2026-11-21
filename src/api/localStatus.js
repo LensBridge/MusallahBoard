@@ -1,0 +1,52 @@
+/**
+ * =====================================================
+ * Local Status
+ * =====================================================
+ * The device agent serves this page, and the payload,
+ * from 127.0.0.1:8080 off an installed content package.
+ * GET /api/local/status says who this board is, what is
+ * installed and how fresh it is (agent/docs/architecture.md,
+ * section 7; the shape is LocalStatus in types.d.ts).
+ * =====================================================
+ */
+
+const TIMEOUT_MS = 5000;
+
+/** @typedef {import('./types').LocalStatus} LocalStatus */
+
+/**
+ * Fetch the agent's status. Never throws: the status feeds the device id, the
+ * waiting screen, the staleness note and the diagnostics panel, and a board
+ * must keep showing its payload even if the agent cannot answer right now.
+ * @returns {Promise<LocalStatus|null>}
+ */
+export async function getLocalStatus() {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const res = await fetch('/api/local/status', {
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+    if (!res.ok) return null;
+    const body = await res.json();
+    return body && typeof body === 'object' ? body : null;
+  } catch (e) {
+    console.warn('local status fetch failed', e);
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Whether the agent's `deviceId` is a real device id (a UUID). An agent that
+ * is not enrolled yet has none, and the board then reports itself unpaired.
+ * @param {unknown} value
+ */
+export function isValidDeviceId(value) {
+  return typeof value === 'string' && UUID_RE.test(value.trim());
+}

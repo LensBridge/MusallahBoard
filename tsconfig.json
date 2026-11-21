@@ -1,7 +1,6 @@
 {
-  // Scoped to src/api: this is the layer that must stay in step with the
-  // backend contract. The rest of the kiosk stays plain .jsx and is not
-  // type-checked, so `npm run typecheck` fails only on real API drift.
+  // Scoped to src/api: the layer that reads the agent's JSON (types.d.ts).
+  // The rest of the kiosk stays plain .jsx and is not type-checked.
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],

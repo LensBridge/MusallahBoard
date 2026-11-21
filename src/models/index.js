@@ -2,26 +2,31 @@
  * =====================================================
  * MusallahBoard Data Models + Normalizers
  * =====================================================
- * The wire types below mirror the LensBridge OpenAPI spec
- * (GET /api/musallah/*). UI code consumes the *normalized*
- * design shape produced by normalizePayload(), not the raw
- * wire types.
+ * The wire shape below is the payload the device agent serves
+ * (GET /api/musallah/payload; types in api/types.d.ts). UI code
+ * consumes the *normalized* design shape produced by
+ * normalizePayload(), not the raw wire types.
  * =====================================================
  */
 
 // ---------------------------------------------------------------------------
-// Wire contract (authoritative — from /v3/api-docs)
+// Wire contract
 // ---------------------------------------------------------------------------
 //
-// GET /api/musallah/payload?deviceId=<uuid>  -> MusallahBoardPayload
-//   { deviceConfig: DeviceConfig, frames: FrameDefinition[] }
+// GET /api/musallah/payload (served by the agent)  -> MusallahBoardPayload
+//   { deviceConfig: DeviceConfig, frames: FrameDefinition[],
+//     weather?: object|null, expired?: bool, lastDay?: "YYYY-MM-DD" }
+//   `expired` is the agent's, not the backend's: true once the installed
+//   content has run out (the agent then serves its last day's payload).
+//   A payload without the field (an older agent) is not expired. See
+//   normalizePayload() for what run-out hides.
 //
 // DeviceConfig {
 //   id: uuid, location: Location, darkModeAfterIsha: bool,
 //   enableScrollingMessage: bool, scrollingMessages: string[],
 //   theme?: string
 // }
-//   `theme` is not in the OpenAPI schema yet — it is read forward so a board
+//   `theme` is not sent by the backend yet — it is read forward so a board
 //   already in the field picks the field up the day the backend starts
 //   sending it, with no frontend release. Unknown names are ignored rather
 //   than applied; see themes/registry.js.
@@ -68,11 +73,40 @@
 // For the same reason DayBucket carries no isToday flag.
 // ---------------------------------------------------------------------------
 
-/** Prayer calculation method enum → Aladhan numeric method id. */
-export const ALADHAN_METHOD = {
-  KARACHI: 1, ISNA: 2, MWL: 3, MAKKAH: 4, EGYPT: 5, TEHRAN: 7,
-  GULF: 8, KUWAIT: 9, QATAR: 10, SINGAPORE: 11, FRANCE: 12,
-  TURKEY: 13, RUSSIA: 14, DUBAI: 16,
+/**
+ * Prayer calculation method enum → the parameters the board computes with.
+ *
+ * Transcribed from Aladhan's own method table (GET api.aladhan.com/v1/methods,
+ * aladhan.com/calculation-methods). The board used to fetch its timings from
+ * Aladhan, and every method a mosque has picked in LensBridge was picked while
+ * looking at those times, so they are the reference — not adhan's presets.
+ * Several of adhan's presets differ from Aladhan's definitions (a +1 min Dhuhr
+ * on ISNA/MWL/Egypt/Karachi/Singapore, a different set of offsets on Dubai,
+ * round-up on Singapore), which is why prayerService builds every method from
+ * these raw numbers rather than from a named preset.
+ *
+ * `fajr`/`isha` are degrees below the horizon; `ishaMinutes` replaces the Isha
+ * angle with a fixed interval after Maghrib, and `ramadanIshaMinutes` replaces
+ * that during Ramadan (Umm al-Qura's 120 min — Aladhan applies it, and it is not
+ * in its method table, only in the offsets it reports); `maghrib` is Tehran's
+ * Maghrib angle (Maghrib otherwise = sunset); `adjust` is minutes added per
+ * prayer, as Aladhan reports them in `meta.offset`.
+ */
+export const CALCULATION_METHODS = {
+  KARACHI:   { fajr: 18,   isha: 18 },
+  ISNA:      { fajr: 15,   isha: 15 },
+  MWL:       { fajr: 18,   isha: 17 },
+  MAKKAH:    { fajr: 18.5, ishaMinutes: 90, ramadanIshaMinutes: 120 },
+  EGYPT:     { fajr: 19.5, isha: 17.5 },
+  TEHRAN:    { fajr: 17.7, isha: 14, maghrib: 4.5 },
+  GULF:      { fajr: 19.5, ishaMinutes: 90 },
+  KUWAIT:    { fajr: 18,   isha: 17.5 },
+  QATAR:     { fajr: 18,   ishaMinutes: 90 },
+  SINGAPORE: { fajr: 20,   isha: 18 },
+  FRANCE:    { fajr: 12,   isha: 12 },
+  TURKEY:    { fajr: 18,   isha: 17, adjust: { sunrise: -7, dhuhr: 5, asr: 4, maghrib: 7 } },
+  RUSSIA:    { fajr: 16,   isha: 15 },
+  DUBAI:     { fajr: 18.2, isha: 18.2, adjust: { dhuhr: 3, maghrib: 3 } },
 };
 
 export const PRAYER_ORDER = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
@@ -86,16 +120,26 @@ export const PRAYER_LABELS = {
   isha:    { english: 'Isha',    arabic: 'الْعِشَاء' },
 };
 
-const HIJRI_MONTH_AR = {
-  Muharram: 'مُحَرَّم', Safar: 'صَفَر',
-  'Rabi al-awwal': 'رَبِيع ٱلْأَوَّل', "Rabi' al-awwal": 'رَبِيع ٱلْأَوَّل',
-  'Rabi al-thani': 'رَبِيع ٱلثَّانِي', "Rabi' al-thani": 'رَبِيع ٱلثَّانِي',
-  'Jumada al-awwal': 'جُمَادَىٰ ٱلْأُولَىٰ', 'Jumada al-thani': 'جُمَادَىٰ ٱلثَّانِيَة',
-  Rajab: 'رَجَب', "Sha'ban": 'شَعْبَان', Shaban: 'شَعْبَان',
-  Ramadan: 'رَمَضَان', Shawwal: 'شَوَّال',
-  "Dhul-Qadah": 'ذُو ٱلْقَعْدَة', 'Dhu al-Qadah': 'ذُو ٱلْقَعْدَة',
-  "Dhul-Hijjah": 'ذُو ٱلْحِجَّة', 'Dhu al-Hijjah': 'ذُو ٱلْحِجَّة',
-};
+/**
+ * Hijri months by number (index 0 = month 1). The board resolves the Hijri date
+ * with Intl's Umm al-Qura calendar and takes only the month *number* from it:
+ * Intl's English month names vary across ICU versions ("Rabiʻ I", "Rabi I"…),
+ * and a spelling change would silently blank the Arabic line.
+ */
+const HIJRI_MONTHS = [
+  { en: 'Muharram',        ar: 'مُحَرَّم' },
+  { en: 'Safar',           ar: 'صَفَر' },
+  { en: "Rabi' al-awwal",  ar: 'رَبِيع ٱلْأَوَّل' },
+  { en: "Rabi' al-thani",  ar: 'رَبِيع ٱلثَّانِي' },
+  { en: 'Jumada al-awwal', ar: 'جُمَادَىٰ ٱلْأُولَىٰ' },
+  { en: 'Jumada al-thani', ar: 'جُمَادَىٰ ٱلثَّانِيَة' },
+  { en: 'Rajab',           ar: 'رَجَب' },
+  { en: "Sha'ban",         ar: 'شَعْبَان' },
+  { en: 'Ramadan',         ar: 'رَمَضَان' },
+  { en: 'Shawwal',         ar: 'شَوَّال' },
+  { en: 'Dhul-Qadah',      ar: 'ذُو ٱلْقَعْدَة' },
+  { en: 'Dhul-Hijjah',     ar: 'ذُو ٱلْحِجَّة' },
+];
 
 // ---------------------------------------------------------------------------
 // Time helpers
@@ -159,8 +203,8 @@ export function isoToHM(iso, timezone) {
  * Wall-clock parts at `instant` as read in `timezone`.
  *
  * The board's clock, its prayer times and its event times must all be read in
- * the *board's* zone, not the browser's. Aladhan returns timings for the
- * configured lat/long, so comparing them against `Date#getHours()` is only
+ * the *board's* zone, not the browser's. Prayer times are computed for the
+ * configured lat/long and formatted in its zone, so comparing them against `Date#getHours()` is only
  * correct while the Pi's OS timezone happens to match `location.timezone` —
  * and it is exactly the "happens to" cases (a reimaged box, a VM left on UTC)
  * where the board then highlights the wrong prayer.
@@ -269,6 +313,24 @@ function normalizeJummah(slot) {
   };
 }
 
+/**
+ * The frames an expired board still shows: prayer times only. Posters, agenda,
+ * quotes and socials are all dated or editorial content that has run out, and
+ * the payload carries no "evergreen" marker that would say otherwise, so none
+ * of it survives. A payload with no next_prayer frame gets one, so the board
+ * is never left with an empty slideshow.
+ */
+function prayerFramesOnly(frames) {
+  const kept = frames.filter((f) => String(f?.frameType || '').toLowerCase() === 'next_prayer');
+  if (kept.length) return kept;
+  return [{
+    frameId: 'next-prayer',
+    frameType: 'next_prayer',
+    durationInSeconds: null,
+    frameConfig: { type: 'next_prayer' },
+  }];
+}
+
 /** Default board config when the API is unreachable. */
 export function emptyDeviceConfig() {
   return {
@@ -290,8 +352,14 @@ export function emptyDeviceConfig() {
  * later in App from the prayer service. Weather, however, now rides along
  * in the payload (`payload.weather`, raw OpenWeatherMap response).
  *
+ * When the agent says the content has run out (`expired: true`), only prayer
+ * frames are kept and the ticker messages are dropped; weather and everything
+ * computed locally are untouched. A missing `expired` means not expired.
+ *
  * @param {any} payload  raw MusallahBoardPayload
  * @returns {{
+ *   expired: boolean,
+ *   lastDay: string,
  *   deviceConfig: object,
  *   frames: any[],
  *   weather: {temp:number,condition:string,city:string}|null,
@@ -317,7 +385,9 @@ export function normalizePayload(payload) {
   // sequence is the backend's job, and a client-side sort could only ever fight
   // it. The frames previously carried `slot` and `priority` for a reordering
   // that was never built; both are gone from the contract.
-  const frames = Array.isArray(payload?.frames) ? payload.frames : [];
+  const expired = payload?.expired === true;
+  const allFrames = Array.isArray(payload?.frames) ? payload.frames : [];
+  const frames = expired ? prayerFramesOnly(allFrames) : allFrames;
 
   const tz = deviceConfig.location?.timezone;
   const ft = (f) => String(f?.frameType || '').toLowerCase();
@@ -367,6 +437,8 @@ export function normalizePayload(payload) {
   );
 
   return {
+    expired,
+    lastDay: typeof payload?.lastDay === 'string' ? payload.lastDay : '',
     deviceConfig,
     frames,
     weather: normalizeWeather(payload?.weather, deviceConfig.location?.city),
@@ -375,7 +447,7 @@ export function normalizePayload(payload) {
     jummahPrayers,
     verse: normalizeQuote(verseFrame?.frameConfig),
     hadith: normalizeQuote(hadithFrame?.frameConfig),
-    scrollingMessages: deviceConfig.enableScrollingMessage
+    scrollingMessages: deviceConfig.enableScrollingMessage && !expired
       ? deviceConfig.scrollingMessages || []
       : [],
   };
@@ -492,14 +564,18 @@ export function buildTodayEvents(agendaDays, now, timezone) {
     }));
 }
 
-/** Build the design's hijri date block from an Aladhan hijri object. */
+/**
+ * Build the design's hijri date block.
+ * @param {{day:number, month:number, year:number}|null} hijri numeric Umm
+ *   al-Qura date, as returned by getPrayerData()
+ */
 export function buildHijri(hijri) {
-  if (!hijri) return { day: '', monthEn: '', monthAr: '', year: '' };
-  const en = hijri.month?.en || '';
+  const month = HIJRI_MONTHS[(hijri?.month ?? 0) - 1];
+  if (!hijri || !month) return { day: '', monthEn: '', monthAr: '', year: '' };
   return {
-    day: hijri.day || '',
-    monthEn: en,
-    monthAr: hijri.month?.ar || HIJRI_MONTH_AR[en] || '',
-    year: hijri.year || '',
+    day: String(hijri.day),
+    monthEn: month.en,
+    monthAr: month.ar,
+    year: String(hijri.year),
   };
 }

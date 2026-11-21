@@ -1,0 +1,118 @@
+{
+  "deviceConfig": {
+    "id": "3f2a1c9e-4b7d-4e0a-9a51-0c6d2b8f7e11",
+    "location": {
+      "city": "Mississauga",
+      "country": "Canada",
+      "latitude": 43.5489,
+      "longitude": -79.6624,
+      "timezone": "America/Toronto",
+      "method": "ISNA"
+    },
+    "darkModeAfterIsha": true,
+    "enableScrollingMessage": true,
+    "scrollingMessages": [
+      "Eid prayer is at 8:00 AM in the gym"
+    ]
+  },
+  "frames": [
+    {
+      "frameId": "next-prayer",
+      "frameType": "next_prayer",
+      "durationInSeconds": 12,
+      "frameConfig": {
+        "type": "next_prayer"
+      }
+    },
+    {
+      "frameId": "poster:1",
+      "frameType": "poster",
+      "durationInSeconds": 12,
+      "frameConfig": {
+        "type": "poster",
+        "posterUrl": "/media/aaaa.png",
+        "title": "Fall Bake Sale",
+        "signupUrl": null
+      }
+    },
+    {
+      "frameId": "agenda",
+      "frameType": "agenda",
+      "durationInSeconds": null,
+      "frameConfig": {
+        "type": "agenda",
+        "heading": "This week",
+        "days": [
+          {
+            "date": "2026-10-07",
+            "events": [
+              {
+                "name": "Halaqa",
+                "description": "",
+                "location": "MN 1210",
+                "startTime": "2026-10-07T22:00:00Z",
+                "endTime": "2026-10-07T23:00:00Z",
+                "allDay": false
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "frameId": "jummah",
+      "frameType": "jummah",
+      "durationInSeconds": null,
+      "frameConfig": {
+        "type": "jummah",
+        "prayers": [
+          {
+            "prayerTime": "13:30",
+            "khatib": "Br. Ahmed",
+            "room": "Gym"
+          }
+        ]
+      }
+    },
+    {
+      "frameId": "quote:1",
+      "frameType": "islamic_quote",
+      "durationInSeconds": null,
+      "frameConfig": {
+        "type": "islamic_quote",
+        "kind": "VERSE",
+        "arabic": "إِنَّ مَعَ ٱلْعُسْرِ يُسْرًا",
+        "transliteration": "Inna maʿa al-ʿusri yusrā",
+        "translation": "Indeed, with hardship comes ease.",
+        "reference": "Qur'an 94:6"
+      }
+    },
+    {
+      "frameId": "social:1",
+      "frameType": "socials",
+      "durationInSeconds": 12,
+      "frameConfig": {
+        "type": "socials",
+        "socialType": "instagram",
+        "url": "https://instagram.com/utmmsa",
+        "headerText": "Follow us",
+        "heroText": "@utmmsa",
+        "handle": "utmmsa",
+        "footerText": ""
+      }
+    }
+  ],
+  "weather": {
+    "main": {
+      "temp": 11.4
+    },
+    "weather": [
+      {
+        "main": "Clouds"
+      }
+    ],
+    "name": "Mississauga"
+  },
+  "expired": true,
+  "lastDay": "2026-10-07"
+}
