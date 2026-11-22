@@ -30,7 +30,7 @@ export const THEMES = [
     name: 'night',
     label: 'Night',
     appearance: 'dark',
-    note: 'Deep navy, Energy Yellow. Auto after Isha.',
+    note: 'Deep navy, Energy Yellow. Auto from Maghrib to sunrise.',
   },
   {
     name: 'reverent',
@@ -42,6 +42,49 @@ export const THEMES = [
 
 /** Fallback when nothing else resolves. Also what `:root` paints. */
 export const DEFAULT_THEME = 'day';
+
+/**
+ * Theme modes, as the backend sends them in `deviceConfig.themeMode`: always
+ * light, always dark, or AUTO (dark from Maghrib until sunrise).
+ *
+ * A mode picks an appearance, not a theme. Which theme stands for each
+ * appearance is decided here and nowhere else, so the day custom themes
+ * arrive, each can bring its own light and dark pair without App changing.
+ */
+export const THEME_MODES = ['LIGHT', 'DARK', 'AUTO'];
+
+/** What a board with no usable mode does. Matches the backend's default. */
+export const DEFAULT_THEME_MODE = 'AUTO';
+
+/** The theme painted for each appearance. */
+const THEME_FOR_APPEARANCE = { light: 'day', dark: 'night' };
+
+/**
+ * A wire value as a known mode, or null. Case-insensitive, so a hand-edited
+ * payload saying `auto` still means AUTO.
+ *
+ * @param {unknown} mode
+ * @returns {'LIGHT'|'DARK'|'AUTO'|null}
+ */
+export function parseThemeMode(mode) {
+  if (typeof mode !== 'string') return null;
+  const m = mode.trim().toUpperCase();
+  return THEME_MODES.includes(m) ? /** @type {any} */ (m) : null;
+}
+
+/**
+ * The theme a mode resolves to right now.
+ *
+ * @param {unknown} mode       LIGHT | DARK | AUTO; anything else is AUTO
+ * @param {boolean} afterSunset  whether the board's clock is between Maghrib
+ *   and sunrise (see utils/prayers.js isAfterSunset). Only AUTO consults it.
+ * @returns {string} a theme name
+ */
+export function themeForMode(mode, afterSunset) {
+  const m = parseThemeMode(mode) ?? DEFAULT_THEME_MODE;
+  const dark = m === 'DARK' || (m === 'AUTO' && afterSunset);
+  return THEME_FOR_APPEARANCE[dark ? 'dark' : 'light'];
+}
 
 const BY_NAME = new Map(THEMES.map((t) => [t.name, t]));
 
@@ -59,7 +102,7 @@ export function getTheme(name) {
  * Pick the first name that is actually a theme.
  *
  * Callers pass their preference order — typically operator override, then the
- * backend's configured theme, then whatever the time of day implies. Anything
+ * backend's pinned theme name, then whatever the theme mode resolves to. Anything
  * unrecognised (null, undefined, a typo, a theme this build doesn't ship yet)
  * is skipped rather than applied, so a stale or malformed backend value
  * degrades to the next choice down instead of breaking the board.
