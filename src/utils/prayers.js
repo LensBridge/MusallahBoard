@@ -26,3 +26,26 @@ export function classifyPrayers(prayers, now, timezone) {
   if (current === 'sunrise') current = null;
   return { ordered, next, current };
 }
+
+/**
+ * Whether `now` falls between Maghrib (sunset) and the next sunrise, read on
+ * the board's wall clock: the window the AUTO theme mode paints dark.
+ *
+ * Both ends come from today's schedule. That is exact at Maghrib and a minute
+ * or so off at the small-hours end (tomorrow's sunrise, not today's), which
+ * a theme switch can afford. With either time missing the answer is false:
+ * a board that cannot place sunset stays on its light theme rather than
+ * guessing.
+ *
+ * @param {object} prayers  { sunrise:{adhan}, maghrib:{adhan}, ... }
+ * @param {Date} now
+ * @param {string} [timezone]  board timezone, as for classifyPrayers
+ * @returns {boolean}
+ */
+export function isAfterSunset(prayers, now, timezone) {
+  const maghrib = prayers?.maghrib?.adhan;
+  const sunrise = prayers?.sunrise?.adhan;
+  if (!maghrib || !sunrise) return false;
+  const nowM = zonedMinutes(now, timezone);
+  return nowM >= toMinutes(maghrib) || nowM < toMinutes(sunrise);
+}
