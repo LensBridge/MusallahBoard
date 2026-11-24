@@ -62,20 +62,27 @@ function toLocalInputValue(d) {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
+const MODE_NOTE = {
+  LIGHT: 'Theme mode is Light in the console: always day.',
+  DARK: 'Theme mode is Dark in the console: always night.',
+  AUTO: 'Theme mode is Auto: night from Maghrib until sunrise.',
+};
+
 /**
- * Why the board is on the theme it is on. Worth spelling out: once the backend
- * can pin a theme, "it won't go night after Isha" stops being a bug report and
- * starts being a config question, and this line is the difference.
+ * Why the board is on the theme it is on. Worth spelling out: the console can
+ * force light or dark, so "it won't go night at Maghrib" is often a config
+ * question rather than a bug report, and this line is the difference.
  */
-function themeNote(autoTheme, pinnedTheme) {
+function themeNote(autoTheme, themeMode, pinnedTheme) {
   if (isKnownTheme(pinnedTheme)) {
-    return `Pinned to ${pinnedTheme} by the backend — time of day is not consulted.`;
+    return `Pinned to ${pinnedTheme} by the backend — the theme mode is not consulted.`;
   }
+  const mode = MODE_NOTE[themeMode] ?? MODE_NOTE.AUTO;
   if (pinnedTheme) {
     return `Backend asked for “${pinnedTheme}”, which this build does not ship. ` +
-      `Ignored; auto resolves to ${autoTheme}.`;
+      `Ignored. ${mode} Currently ${autoTheme}.`;
   }
-  return `Auto currently resolves to ${autoTheme}.`;
+  return `${mode} Currently ${autoTheme}.`;
 }
 
 function Seg({ options, value, onChange, disabled }) {
@@ -109,7 +116,7 @@ function Section({ title, note, children }) {
 export default function DebugMenu({
   debug, setDebug, onClose,
   data, now, slides, slideIdx, setSlideIdx,
-  autoTheme, pinnedTheme, autoJummah,
+  autoTheme, themeMode, pinnedTheme, autoJummah,
 }) {
   useEffect(() => {
     const onKey = (e) => {
@@ -126,7 +133,7 @@ export default function DebugMenu({
     .map((n) => String(n).padStart(2, '0')).join(':');
 
   // Land one minute before the adhān so the countdown, the rail's next/current
-  // classification and the after-Isha theme flip are all still watchable.
+  // classification and the Maghrib theme flip are all still watchable.
   function jumpToPrayer(key) {
     const adhan = data?.prayers?.[key]?.adhan;
     if (!adhan) return;
@@ -173,7 +180,7 @@ export default function DebugMenu({
 
       <Section
         title="Theme"
-        note={themeNote(autoTheme, pinnedTheme)}
+        note={themeNote(autoTheme, themeMode, pinnedTheme)}
       >
         <Seg
           options={THEMES}
@@ -218,7 +225,7 @@ export default function DebugMenu({
         note={
           'The offset is applied to the live clock, so the board keeps ticking ' +
           'from the mocked instant. Prayer times, the countdown, the rail and the ' +
-          'after-Isha theme follow it. Server-scoped content (this week’s grid, ' +
+          'Maghrib-to-sunrise night theme follow it. Server-scoped content (this week’s grid, ' +
           'today’s events, the Hijrī date) is fetched for the real date and does not.'
         }
       >

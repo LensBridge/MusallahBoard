@@ -9,6 +9,8 @@
  * =====================================================
  */
 
+import { DEFAULT_THEME_MODE, parseThemeMode } from '../themes/registry.js';
+
 // ---------------------------------------------------------------------------
 // Wire contract
 // ---------------------------------------------------------------------------
@@ -22,10 +24,14 @@
 //   normalizePayload() for what run-out hides.
 //
 // DeviceConfig {
-//   id: uuid, location: Location, darkModeAfterIsha: bool,
+//   id: uuid, location: Location, themeMode: LIGHT|DARK|AUTO,
 //   enableScrollingMessage: bool, scrollingMessages: string[],
 //   theme?: string
 // }
+//   `themeMode` picks light or dark; AUTO is dark from Maghrib until
+//   sunrise. It replaced `darkModeAfterIsha: bool`, which content from an
+//   older backend still carries (true reads as AUTO, false as LIGHT): an
+//   offline board can hold such content for weeks. See normalizeThemeMode().
 //   `theme` is not sent by the backend yet — it is read forward so a board
 //   already in the field picks the field up the day the backend starts
 //   sending it, with no frontend release. Unknown names are ignored rather
@@ -331,12 +337,32 @@ function prayerFramesOnly(frames) {
   }];
 }
 
+/**
+ * The theme mode a raw deviceConfig asks for, always one of THEME_MODES.
+ *
+ * `themeMode` wins when it is a known mode. Without one, content built by a
+ * backend from before theme modes still says `darkModeAfterIsha`, and keeps
+ * meaning what its operator chose: on is AUTO (now from Maghrib, not Isha),
+ * off is LIGHT. Neither gives the default, AUTO.
+ *
+ * @param {any} rawConfig  payload.deviceConfig as received
+ * @returns {'LIGHT'|'DARK'|'AUTO'}
+ */
+export function normalizeThemeMode(rawConfig) {
+  const mode = parseThemeMode(rawConfig?.themeMode);
+  if (mode) return mode;
+  if (typeof rawConfig?.darkModeAfterIsha === 'boolean') {
+    return rawConfig.darkModeAfterIsha ? 'AUTO' : 'LIGHT';
+  }
+  return DEFAULT_THEME_MODE;
+}
+
 /** Default board config when the API is unreachable. */
 export function emptyDeviceConfig() {
   return {
     id: null,
     location: { city: '', country: '', latitude: 43.5489, longitude: -79.6624, timezone: 'America/Toronto', method: 'ISNA' },
-    darkModeAfterIsha: true,
+    themeMode: DEFAULT_THEME_MODE,
     enableScrollingMessage: false,
     scrollingMessages: [],
     // Board-wide theme name, pinned by the backend. Null means "decide
@@ -372,13 +398,15 @@ export function emptyDeviceConfig() {
  * }}
  */
 export function normalizePayload(payload) {
+  const { darkModeAfterIsha: _legacy, ...rawConfig } = payload?.deviceConfig || {};
   const deviceConfig = {
     ...emptyDeviceConfig(),
-    ...(payload?.deviceConfig || {}),
+    ...rawConfig,
     location: {
       ...emptyDeviceConfig().location,
       ...(payload?.deviceConfig?.location || {}),
     },
+    themeMode: normalizeThemeMode(payload?.deviceConfig),
   };
 
   // Payload order is slideshow order. The board does not re-sort: composing the
