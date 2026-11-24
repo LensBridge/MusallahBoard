@@ -209,6 +209,21 @@ img { display: block; max-width: 100%; }
   margin-bottom: 4px;
   white-space: nowrap;
 }
+/* The Arabic month in the Hijri eyebrow. The eyebrow's own face (Montserrat)
+   has no Arabic, so without this the month fell back to whatever the board's
+   system has: DejaVu Sans for most months, which lacks alef wasla (ٱ, U+0671),
+   so the months spelled with it showed a box on a Pi. Amiri ships with the
+   app and covers all of U+0600-06FF. Letter-spacing is cleared because it
+   pulls joined Arabic letters apart. The size is raised so the Arabic reads
+   at the eyebrow's scale; line-height 0 keeps the taller face from growing the
+   eyebrow's line, so the Hijri date stays level with the Gregorian one. */
+.date-ar {
+  font-family: var(--f-arabic);
+  font-size: 1.45em;
+  letter-spacing: 0;
+  text-transform: none;
+  line-height: 0;
+}
 .date-value {
   font-family: var(--f-serif);
   font-size: 22px;
