@@ -1536,6 +1536,39 @@ body.cursor-hidden, body.cursor-hidden * { cursor: none !important; }
 .board-status.bs-large p { font-size: 28px; letter-spacing: 0.12em; }
 .board-status.bs-large .bs-err { margin-top: 24px; font-size: 24px; }
 .board-status.bs-large .bs-hint { margin-top: 48px; font-size: 32px; }
+.board-status .bs-foot {
+  margin-top: 32px; font-size: 13px; line-height: 1.6;
+  color: oklch(0.85 0.04 95 / 0.7);
+}
+.board-status.bs-large .bs-foot { margin-top: 56px; font-size: 22px; }
+
+/* Something on the board needs a person (damaged content). Still the calm
+   navy ground, never red: it hangs in a musallah, and nothing is on fire. A
+   short amber rule over the title is the only thing that says "attention",
+   and the hint, the part to act on, is set apart from the explanation. */
+.board-status.bs-warn h1::before {
+  content: ''; display: block;
+  width: 120px; height: 6px; border-radius: 3px;
+  margin: 0 auto 40px;
+  background: oklch(0.78 0.15 65);
+}
+.board-status.bs-warn .bs-hint {
+  display: inline-block;
+  padding: 28px 40px;
+  border-left: 4px solid oklch(0.78 0.15 65);
+  background: oklch(0.26 0.08 258);
+  text-align: left;
+  border-radius: 0 12px 12px 0;
+}
+.board-status .bs-hint-lead { color: oklch(0.85 0.04 95); }
+.board-status .bs-hint ul { margin: 16px 0 0; padding: 0; list-style: none; }
+.board-status .bs-hint li { position: relative; padding-left: 40px; }
+.board-status .bs-hint li + li { margin-top: 12px; }
+.board-status .bs-hint li::before {
+  content: ''; position: absolute; left: 6px; top: 0.62em;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: oklch(0.78 0.15 65);
+}
 
 .setup-modal {
   position: fixed; inset: 0; z-index: 50;

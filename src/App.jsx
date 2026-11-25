@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   getBoardPayload, getPrayerData, getLocalStatus, connectLocalEvents,
-  isNoContentError, isValidDeviceId,
+  isNoContentError, isDamagedContentError, isValidDeviceId,
 } from './api/index.js';
 import { prefetchPayloadImages } from './utils/prefetch.js';
 import {
@@ -53,14 +53,17 @@ function ScaledStage({ children }) {
 
 // `large` is for screens that someone has to act on from across the room (the
 // waiting-for-content screen); `hint` is a second, plainer line under detail.
-function Status({ title, detail, error, hint, large = false }) {
+// `foot` is a quiet last line for whoever maintains the board.
+function Status({ title, detail, error, hint, foot, large = false, tone }) {
+  const cls = ['board-status', large && 'bs-large', tone && `bs-${tone}`].filter(Boolean).join(' ');
   return (
-    <div className={large ? 'board-status bs-large' : 'board-status'}>
+    <div className={cls}>
       <div className="bs-inner">
         <h1>{title}</h1>
         <p>{detail}</p>
         {error && <div className="bs-err">{error}</div>}
         {hint && <div className="bs-hint">{hint}</div>}
+        {foot && <div className="bs-foot">{foot}</div>}
       </div>
     </div>
   );
@@ -78,15 +81,24 @@ const SERVICE_PORT_URL = 'http://10.77.0.1/';
  *     attempts fail fast with no route, section 11 of the architecture doc).
  *   - sync off, or no status at all: only the offline routes can help.
  */
-function WaitingForContent({ status }) {
-  const sync = status?.sync;
-  // Only the routes this board accepts: the service port is off by default,
-  // and a board that does not read USB sticks should not ask for one.
+/**
+ * The ways to get content onto this board without internet. Only the routes it
+ * accepts: the service port is off by default, and a board that does not read
+ * USB sticks should not ask for one.
+ * @returns {string[]}
+ */
+function offlineRoutes(status) {
   const routes = [];
   if (status?.usbImport) routes.push('plug in a USB stick with this board\'s offline bundle');
   if (status?.servicePort) {
     routes.push(`connect a laptop or phone to the board's ethernet port and open ${SERVICE_PORT_URL}`);
   }
+  return routes;
+}
+
+function WaitingForContent({ status }) {
+  const sync = status?.sync;
+  const routes = offlineRoutes(status);
   const offline = routes.length
     ? `Without internet: ${routes.join(', or ')}.`
     : 'Connect the board to the internet so it can download its content.';
@@ -116,6 +128,45 @@ function WaitingForContent({ status }) {
       title="Waiting for content"
       detail="No content is installed on this board"
       hint={offline}
+    />
+  );
+}
+
+/**
+ * The agent has a content package but cannot use it: a file is missing,
+ * unreadable or no longer matches its signed hash. On a board that runs all
+ * day this is nearly always the SD card, so the screen says so, calmly: the
+ * people in the musallah only need to know the board is not broken for good,
+ * and whoever maintains it needs the one thing that fixes it, a fresh copy of
+ * the content. The agent's own words go in small type for that person.
+ *
+ * Shown only when nothing has been loaded since the page started: a board
+ * already showing today's content keeps showing it from memory.
+ */
+function ContentDamaged({ status, error }) {
+  const fixes = [];
+  if (status?.sync?.enabled) fixes.push('save any change for this board in LensBridge to send a fresh copy');
+  fixes.push(...offlineRoutes(status));
+  if (!fixes.length) fixes.push('connect the board to the internet, or have it set up again');
+  // One fix per line: read from across the room, a run-on "or, or" sentence
+  // loses people by the second option.
+  const hint = (
+    <>
+      <div className="bs-hint-lead">{fixes.length > 1 ? 'To fix it, do one of these:' : 'To fix it:'}</div>
+      <ul>
+        {fixes.map((f) => <li key={f}>{f.charAt(0).toUpperCase() + f.slice(1)}</li>)}
+      </ul>
+    </>
+  );
+  return (
+    <Status
+      large
+      tone="warn"
+      title="Content needs replacing"
+      detail="The content stored on this board is damaged"
+      error={status?.error || error}
+      hint={hint}
+      foot="If this happens again, the board's SD card may be wearing out. Replace it."
     />
   );
 }
@@ -215,6 +266,8 @@ export default function App() {
   const [error, setError] = useState(null);
   // The last payload fetch said the agent has no content yet.
   const [noContent, setNoContent] = useState(false);
+  // The last payload fetch said the installed content is damaged.
+  const [damaged, setDamaged] = useState(false);
   const [lastPayloadAt, setLastPayloadAt] = useState(null);
   // The agent's /api/local/status, refreshed with the payload and every
   // minute (see applyLocalStatus below).
@@ -286,6 +339,7 @@ export default function App() {
       setPayload(p);
       setError(null);
       setNoContent(false);
+      setDamaged(false);
       setLastPayloadAt(Date.now());
       // Computed locally (adhan + Intl), recomputed on every payload load —
       // which is also what rolls the times over after midnight.
@@ -299,8 +353,10 @@ export default function App() {
       // Not an error on a board that has simply never been given content: it
       // gets its own screen instead of "Reconnecting…".
       const empty = isNoContentError(e);
+      const broken = isDamagedContentError(e);
       if (!empty) console.error('payload fetch failed', e);
       setNoContent(empty);
+      setDamaged(broken);
       setError(e?.message || 'Unknown error');
       return { ok: false, error: e?.message || 'Unknown error' };
     }
@@ -342,6 +398,10 @@ export default function App() {
       return;
     }
     if (fromPoll && noContent && s?.content) refreshRef.current();
+    // Damaged content: try again every minute. The `content` event normally
+    // brings the fresh copy at once; this covers a missed one, and the payload
+    // is a local read, so retrying costs nothing.
+    if (fromPoll && damaged) refreshRef.current();
   };
   const applyLocalStatusRef = useRef(applyLocalStatus);
   useEffect(() => { applyLocalStatusRef.current = applyLocalStatus; });
@@ -435,6 +495,7 @@ export default function App() {
       appVersion: APP_VERSION,
       content: localStatus?.content ?? null,
       noContent,
+      contentDamaged: damaged,
       expired: payload?.expired ?? false,
       slideKey: slides[slideIdx]?.key ?? null,
       slideIndex: slides.length ? slideIdx : null,
@@ -501,6 +562,8 @@ export default function App() {
       <>
         {noContent ? (
           <WaitingForContent status={localStatus} />
+        ) : damaged ? (
+          <ContentDamaged status={localStatus} error={error} />
         ) : (
           <Status
             large={Boolean(error)}
