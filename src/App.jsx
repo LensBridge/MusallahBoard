@@ -486,6 +486,8 @@ export default function App() {
   // ---------------------------------------------------------------------
   const refreshRef = useRef(loadPayload);
   const statusRef = useRef(null);
+  const slidesRef = useRef([]);
+  useEffect(() => { slidesRef.current = slides; });
 
   useEffect(() => { refreshRef.current = loadPayload; });
   useEffect(() => {
@@ -518,6 +520,17 @@ export default function App() {
       /** Apply presentation overrides without the drawer. Partial patch. */
       setDebug: (patch) => setDebug((d) => ({ ...d, ...(patch || {}) })),
       resetDebug: () => setDebug(NO_DEBUG),
+      /** Show one slide and hold it there: an index, or a slide key ("hadith"). */
+      goTo: (target) => {
+        const list = slidesRef.current;
+        const i = typeof target === 'number' ? target : list.findIndex((sl) => sl.key === target);
+        if (i < 0 || i >= list.length) return false;
+        setSlideIdx(i);
+        setDebug((d) => ({ ...d, paused: true }));
+        return true;
+      },
+      /** The slide keys in deck order, for goTo. */
+      slideKeys: () => slidesRef.current.map((sl) => sl.key),
     };
     return () => { delete window.MusallahBoard; };
   }, []);

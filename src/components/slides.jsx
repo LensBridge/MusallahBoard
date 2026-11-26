@@ -4,6 +4,8 @@ import { classifyPrayers } from '../utils/prayers.js';
 import QRCode, { hasQR } from './QRCode.jsx';
 import Markdown from './Markdown.jsx';
 import Digits from './Digits.jsx';
+import useFitScale from './useFitScale.js';
+import { useRef } from 'react';
 
 // ---------- Next Prayer ----------
 export function NextPrayerSlide({ data, now }) {
@@ -402,8 +404,13 @@ export function PosterSlide({ poster }) {
 }
 
 // ---------- Quote (verse or hadith) ----------
+// Sized to fit: every size on this slide is a multiple of --fit, which
+// useFitScale shrinks until the quote fits the frame. A short verse shows at
+// full size, a long hadith as large as the frame allows.
 export function QuoteSlide({ kind, quote }) {
   const label = kind === 'verse' ? 'Verse of the Week' : 'Hadith of the Week';
+  const body = useRef(null);
+  useFitScale(body, [quote.arabic, quote.translit, quote.translation, quote.reference]);
   return (
     <div className="quote-slide" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div className="slide-eyebrow">
@@ -411,11 +418,11 @@ export function QuoteSlide({ kind, quote }) {
         <span className="rule" />
         <span>{label}</span>
       </div>
-      <div className="quote-body">
-        <div className="quote-arabic">{quote.arabic}</div>
+      <div className="quote-body" ref={body}>
+        {quote.arabic && <div className="quote-arabic" lang="ar" dir="rtl">{quote.arabic}</div>}
         {quote.translit && <div className="quote-translit">{quote.translit}</div>}
-        <div className="quote-translation">{quote.translation}</div>
-        <div className="quote-ref">{quote.reference}</div>
+        {quote.translation && <div className="quote-translation">{quote.translation}</div>}
+        {quote.reference && <div className="quote-ref">{quote.reference}</div>}
       </div>
     </div>
   );
@@ -457,7 +464,7 @@ export function SocialsSlide({ social }) {
               board-wide setting. */}
           <QRCode
             value={social?.url}
-            size={300}
+            size={340}
             caption="Scan with your camera"
             className="qr-panel--social"
           />
