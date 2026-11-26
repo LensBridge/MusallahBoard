@@ -87,10 +87,27 @@ export function isNoContentError(error) {
   );
 }
 
+/**
+ * The agent's answer when the installed content package is there but cannot be
+ * used: its manifest is unreadable, today's payload file is missing, or (with
+ * an agent that re-checks the package when it loads it) a file no longer
+ * matches its signed hash. Usually a failing SD card. Every such message names
+ * "installed content" (agent/internal/core/localserver/server.go). Retrying
+ * cannot help: only a fresh copy of the content can.
+ * @param {unknown} error
+ */
+export function isDamagedContentError(error) {
+  return (
+    error instanceof ApiError &&
+    error.status === 500 &&
+    /installed content/i.test(error.message || '')
+  );
+}
+
 /** 429 / 5xx / network errors are worth retrying; other 4xx are not. */
 function isTransient(error) {
   if (!(error instanceof ApiError)) return false;
-  if (isNoContentError(error)) return false;
+  if (isNoContentError(error) || isDamagedContentError(error)) return false;
   const { status } = error;
   return status === 429 || status === 0 || status >= 500;
 }
