@@ -9,7 +9,7 @@
       "timezone": "America/Toronto",
       "method": "ISNA"
     },
-    "darkModeAfterIsha": true,
+    "themeMode": "AUTO",
     "enableScrollingMessage": true,
     "scrollingMessages": [
       "Eid prayer is at 8:00 AM in the gym"

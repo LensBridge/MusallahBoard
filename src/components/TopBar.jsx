@@ -21,7 +21,7 @@ export default function TopBar({ data, now }) {
         </div>
         <div className="date-divider" />
         <div className="date-block">
-          <div className="date-eyebrow">Hijrī · {date.hijri.monthAr}</div>
+          <div className="date-eyebrow">Hijrī · <span className="date-ar" lang="ar" dir="rtl">{date.hijri.monthAr}</span></div>
           <div className="date-value hijri">
             {date.hijri.day} {date.hijri.monthEn} {date.hijri.year} AH
           </div>

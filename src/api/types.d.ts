@@ -20,12 +20,21 @@ export interface MusallahBoardPayload {
 export interface DeviceConfig {
   id?: string;
   location: Location;
-  darkModeAfterIsha: boolean;
+  /** LIGHT, DARK, or AUTO: dark from Maghrib until sunrise. */
+  themeMode: ThemeMode;
+  /**
+   * Gone from the backend; replaced by themeMode. Content built before the
+   * change still carries it: true reads as AUTO, false as LIGHT.
+   * @deprecated
+   */
+  darkModeAfterIsha?: boolean;
   enableScrollingMessage: boolean;
   scrollingMessages: string[];
   /** Not sent by the backend yet; see themes/registry.js. */
   theme?: string | null;
 }
+
+export type ThemeMode = 'LIGHT' | 'DARK' | 'AUTO';
 
 export interface Location {
   city: string;

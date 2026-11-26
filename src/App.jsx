@@ -11,9 +11,9 @@ import { prefetchPayloadImages } from './utils/prefetch.js';
 import {
   buildAgendaDays, buildTodayEvents, buildHijri, zonedClock, isoDateKey,
 } from './models/index.js';
-import { classifyPrayers } from './utils/prayers.js';
+import { isAfterSunset } from './utils/prayers.js';
 import { buildSlideshow } from './frames/registry.js';
-import { resolveTheme, DEFAULT_THEME } from './themes/registry.js';
+import { resolveTheme, themeForMode, DEFAULT_THEME } from './themes/registry.js';
 import './frames/builders.jsx'; // registers default builders
 import { applyCursorPreference } from './utils/cookies.js';
 import { updateNotice } from './utils/updates.js';
@@ -550,6 +550,7 @@ export default function App() {
         slideIdx={slideIdx}
         setSlideIdx={setSlideIdx}
         autoTheme={autoTheme}
+        themeMode={payload?.deviceConfig?.themeMode ?? null}
         pinnedTheme={payload?.deviceConfig?.theme ?? null}
         autoJummah={autoJummah}
       />
@@ -586,16 +587,16 @@ export default function App() {
     );
   }
 
-  // Theme, in precedence order: the operator's drawer override, then whatever
-  // the backend pinned on this device, then the board's own time-of-day rule
-  // (night after Isha, when the device opts in). resolveTheme skips anything
-  // that isn't a real theme, so an unset or misspelled backend value simply
-  // falls through to the next choice instead of blanking the stage.
-  const { current, next } = classifyPrayers(data.prayers, now, tz);
-  const autoTheme =
-    payload.deviceConfig.darkModeAfterIsha && (current === 'isha' || next === 'fajr')
-      ? 'night'
-      : 'day';
+  // Theme, in precedence order: the operator's drawer override, then a theme
+  // name the backend pinned on this device, then the device's theme mode
+  // (LIGHT, DARK, or AUTO: night from Maghrib until sunrise, on the board's
+  // own clock). resolveTheme skips anything that isn't a real theme, so an
+  // unset or misspelled backend value simply falls through to the next choice
+  // instead of blanking the stage.
+  const autoTheme = themeForMode(
+    payload.deviceConfig.themeMode,
+    isAfterSunset(data.prayers, now, tz),
+  );
   const boardTheme = resolveTheme(payload.deviceConfig.theme, autoTheme);
   const theme = resolveTheme(debug.theme, boardTheme);
 
